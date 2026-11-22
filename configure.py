@@ -674,7 +674,7 @@ config.libs = [
         "objects": [
             Object(NonMatching, "board/exit.c"),
             Object(NonMatching, "board/board.c"),
-            Object(NonMatching, "board/math.c"),
+            Object(NonMatching, "board/math.c", extra_cflags=["-O3,p", "-char signed", "-opt nopeephole"]),
             Object(NonMatching, "board/camera.c"),
             Object(NonMatching, "board/player.c"),
             Object(NonMatching, "board/snpc.c"),
