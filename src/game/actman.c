@@ -1481,7 +1481,7 @@ static void PlayerModeSquish(MGPLAYER *playerP)
     
     switch(playerP->subMode) {
         case 0:
-            body = ColBodyGetSafe(playerP->actor->no);
+            body = ColBodyGet(playerP->actor->no);
             MgPlayerAttrSet(playerP, MGPLAYER_ATTR_ANGLELOCK|MGPLAYER_ATTR_MOVEOFF);
             playerP->timer = 8;
             if(!MgPlayerModeAttrCheck(playerP, MGPLAYER_MODEATTR_SQUISH)) {
@@ -1526,7 +1526,7 @@ static void PlayerModeSquishHard(MGPLAYER *playerP)
             MgPlayerModeAttrSet(playerP, MGPLAYER_MODEATTR_SQUISH_HARD);
             MgPlayerAttrSet(playerP, MGPLAYER_ATTR_ANGLELOCK|MGPLAYER_ATTR_MOVEOFF);
             if(MgPlayerModeAttrCheck(playerP, MGPLAYER_MODEATTR_SQUISH)) {
-                body = ColBodyGetSafe(playerP->actor->no);
+                body = ColBodyGet(playerP->actor->no);
                 MgPlayerModeAttrReset(playerP, MGPLAYER_MODEATTR_SQUISH);
                 body->param.height = playerP->squishOldHeight;
             }
@@ -1654,15 +1654,17 @@ static void PlayerModeJumpAlt(MGPLAYER *playerP)
 
 static void InitColPoint(MGACTOR *actorP, COLBODY *colBody)
 {
-    COLBODY_POINT *point; //r27
+    COLBODY_POINT *point;
     if(colBody->colPointNum) {
         point = &colBody->colPoint[colBody->colPointNum-1];
+        actorP->colOfs = point->colOfs;
         actorP->colNorm = point->normal;
         actorP->colMesh = point->meshNo;
         actorP->colObj = point->obj;
         actorP->colFace = point->faceNo;
         actorP->terminalVelY = (point->colOfs.y < 0) ? (100*point->colOfs.y) : 0;
     } else {
+        memset(&actorP->colOfs, 0, sizeof(HuVecF));
         actorP->colMesh = 0xFFFF;
         actorP->colObj = NULL;
         actorP->colFace = -1;
@@ -1672,26 +1674,26 @@ static void InitColPoint(MGACTOR *actorP, COLBODY *colBody)
 
 void MgActorExec(void)
 {
-    MGPLAYER *playerP; //r31
-    MGACTOR *actorP; //r30
-    COLBODY *colBody; //r29
-    int i; //r28
+    MGPLAYER *playerP;
+    MGACTOR *actorP;
+    COLBODY *colBody;
+    int i;
     
+    float stickSpeed;
+    float t;
+    float scaleXZ;
+    float angle;
+    float scaleY;
+    float speedY;
     
-    float stickSpeed; //f30
-    float t; //f29
-    float scaleXZ; //f28
-    float angle; //f27
-    float scaleY; //f26
-    float speedY; //f22
-    
-    Mtx stickMtx; //sp+0xB4
-    Mtx rotMtx; //sp+0x84
-    HuVecF stickVec; //sp+0x78
-    HuVecF stickDir; //sp+0x6C
-    HuVecF vel; //sp+0x60
-    HuVecF gravityForce; //sp+0x54
-    HuVecF normForce; //sp+0x48
+    Mtx stickMtx;
+    Mtx rotMtx;
+    HuVecF stickVec;
+    HuVecF stickDir;
+    HuVecF vel;
+    HuVecF pos;
+    HuVecF gravityForce;
+    HuVecF normForce;
     
     if(!ColMapInitCheck()) {
         return;
@@ -1714,7 +1716,7 @@ void MgActorExec(void)
                 stickSpeed = HuMag2Point3D(stickVec.x, stickVec.y, stickVec.z);
                 if(!MgPlayerAttrCheck(playerP, MGPLAYER_ATTR_ANGLELOCK)) {
                     if(stickSpeed >= 0.001) {
-                        VECNormalize(&stickVec, &stickDir);
+                        SafeNormalize(&stickVec, &stickDir);
                         if(stickDir.z > 1) {
                             stickDir.z = 1;
                         } else if(stickDir.z < -1) {
@@ -1750,7 +1752,7 @@ void MgActorExec(void)
                            if(playerP->squishTime > (-20.0f/3.0f)) {
                                 t = playerP->squishTime/(-20.0f/3.0f);
                                 scaleY = 0.5f+(0.3f*t);
-                                scaleXZ = 1+(0.25f-(t*0.25f));
+                                scaleXZ = 1+(0.25f-(0.25f*t));
                             } else if(playerP->squishTime > (-40.0f/3.0f)) {
                                 t = (playerP->squishTime-(-20.0f/3.0f))/(-20.0f/3.0f);
                                 scaleY = 0.8f-(0.1f*t);
@@ -1758,7 +1760,7 @@ void MgActorExec(void)
                             } else {
                                 t = (playerP->squishTime-(-40.0f/3.0f))/(-20.0f/3.0f);
                                 scaleXZ = 1;
-                                scaleY = 0.7f+(t*0.3f);
+                                scaleY = 0.7f+(0.3f*t);
                             }
                             Hu3DModelScaleSet(playerP->actor->mdlId, scaleXZ, scaleY, scaleXZ);
                         }
@@ -1873,6 +1875,7 @@ void MgActorExec(void)
             vel = actorP->vel;
             MTXRotDeg(rotMtx, 'Y', actorP->rotY);
             MTXMultVec(rotMtx, &vel, &vel);
+            VECAdd(&vel, &actorP->velWorld, &vel);
             VECAdd(&vel, &actorP->forceB, &vel);
             VECAdd(&vel, &actorP->forceA, &vel);
             VECAdd(&actorP->pos, &vel, &actorP->pos);
@@ -1894,11 +1897,8 @@ void MgActorExec(void)
             } else {
                 ColBodyPosGet(&actorP->pos, i);
                 if(actorP->mdlId >= 0) {
-                    if(actmanWork.colCylF) {
-                        Hu3DModelPosSet(actorP->mdlId, actorP->pos.x, actorP->pos.y-(colBody->param.height/2), actorP->pos.z);
-                    } else {
-                        Hu3DModelPosSet(actorP->mdlId, actorP->pos.x, actorP->pos.y-colBody->param.radius, actorP->pos.z);
-                    }
+                    MgActorPosGet(actorP, &pos);
+                    Hu3DModelPosSet(actorP->mdlId, pos.x, pos.y, pos.z);
                 }
                 actorP->colGroundAttr = colBody->groundAttr;
                 InitColPoint(actorP, colBody);
@@ -1985,9 +1985,9 @@ void MgActorPosGet(MGACTOR *actorP, HuVecF *pos)
     }
 }
 
-void MgActorPushSet(MGACTOR *actorP, HuVecF *vel)
+void MgActorPushSet(MGACTOR *actorP, HuVecF *push)
 {
-    actorP->vel = *vel;
+    actorP->vel = *push;
 }
 
 void MgActorRotYSet(MGACTOR *actorP, float rotY)
@@ -2017,9 +2017,7 @@ void MgActorVelSet(MGACTOR *actorP, HuVecF *vel)
 
 BOOL MgActorColMeshGet(MGACTOR *actorP, u32 *colMesh)
 {
-    COLBODY *colBody = ColBodyGet(actorP->no);
-    u32 attr = colBody->param.attr & 0x34000000;
-    if(!attr) {
+    if(MgActorColAttrGet(actorP, 0x34000000) == 0) {
         return FALSE;
     }
     *colMesh = actorP->colMesh;
@@ -2028,23 +2026,19 @@ BOOL MgActorColMeshGet(MGACTOR *actorP, u32 *colMesh)
 
 BOOL MgActorColNormalGet(MGACTOR *actorP, HuVecF *colNorm)
 {
-    COLBODY *colBody = ColBodyGet(actorP->no);
-    u32 attr = colBody->param.attr & 0x34000000;
-    if(!attr) {
+    if(MgActorColAttrGet(actorP, 0x34000000) == 0) {
         return FALSE;
     }
     *colNorm = actorP->colNorm;
     return TRUE;
 }
 
-BOOL MgActorColCodeGet(MGACTOR *actorP, u32 *code)
+BOOL MgActorColCodeGet(MGACTOR *actorP, u32 *colCode)
 {
-    COLBODY *colBody = ColBodyGet(actorP->no);
-    u32 attr = colBody->param.attr & 0x34000000;
-    if(!attr) {
+    if(MgActorColAttrGet(actorP, 0x34000000) == 0) {
         return FALSE;
     }
-    *code = actorP->colGroundAttr;
+    *colCode = actorP->colGroundAttr;
     return TRUE;
 }
 
@@ -2130,7 +2124,7 @@ u16 MgPlayerAttrCheck(MGPLAYER *playerP, u16 attr)
 
 BOOL MgPlayerStunSet(MGPLAYER *playerP, int stunType, float angle, int maxTime)
 {
-    if(!(playerP->actionFlag & MGPLAYER_ACTFLAG_STUN) || (playerP->attr & MGPLAYER_ATTR_STUNOFF)) {
+    if(!(playerP->actionFlag & MGPLAYER_ACTFLAG_STUN) || MgPlayerAttrCheck(playerP, MGPLAYER_ATTR_STUNOFF)) {
         return FALSE;
     }
     if(playerP->stunType != MGPLAYER_STUN_NONE) {
@@ -2147,17 +2141,17 @@ BOOL MgPlayerStunSet(MGPLAYER *playerP, int stunType, float angle, int maxTime)
 
 BOOL MgPlayerModeIdleSet(MGPLAYER *playerP)
 {
-    if(!(playerP->actionFlag & MGPLAYER_ACTFLAG_STUN) || (playerP->attr & MGPLAYER_ATTR_STUNOFF)) {
+    if(!(playerP->actionFlag & MGPLAYER_ACTFLAG_STUN) || MgPlayerAttrCheck(playerP, MGPLAYER_ATTR_STUNOFF)) {
         return FALSE;
     }
     if(playerP->stunType != MGPLAYER_STUN_NONE) {
-        Hu3DModelAttrReset(playerP->actor->mdlId, HU3D_ATTR_DISPOFF);
+        Hu3DModelDispOn(playerP->actor->mdlId);
         playerP->stunType = MGPLAYER_STUN_NONE;
         playerP->stunTime = 0;
     }
-    if(playerP->modeAttr & MGPLAYER_MODEATTR_SQUISH) {
+    if(MgPlayerModeAttrCheck(playerP, MGPLAYER_MODEATTR_SQUISH)) {
         Hu3DModelScaleSet(playerP->actor->mdlId, 1, 1, 1);
-        playerP->modeAttr &= ~MGPLAYER_MODEATTR_SQUISH;
+        MgPlayerModeAttrReset(playerP, MGPLAYER_MODEATTR_SQUISH);
     }
     return TRUE;
 }
