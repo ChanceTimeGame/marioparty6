@@ -7,6 +7,7 @@
 #include "game/object.h"
 #include "game/hu3d.h"
 #include "game/window.h"
+#include "game/gamework.h"
 
 typedef void (*MBCREATEHOOK)(void);
 typedef void (*MBKILLHOOK)(void);
@@ -48,5 +49,26 @@ void mbSaveStoryInit(int arg0, int arg1, int arg2);
 void mbSavePartyInit(int tagF, int bonusStarF, int mgPack, int turnMax, int handicapP1, int handicapP2, int handicapP3, int handicapP4);
 void fn_8014C818(void);
 void fn_8014C81C(void);
+
+/* Shared inlines retail uses across board units (B1: defined locally in audio, camera, pause, last5). */
+static inline int mbBoardNoGet(void)
+{
+    return GwSystem.boardNo;
+}
+
+#ifdef __MWERKS__
+/* Paired-single HuVecF copy (psq_l/lfs/psq_st/stfs), inlined in coin, player, dice, star, snpc, last5. */
+static inline void mbVecCopy(register HuVecF *src, register HuVecF *dst)
+{
+    register float xy;
+    register float z;
+    asm {
+        psq_l xy, 0(src), 0, 0
+        lfs z, 8(src)
+        psq_st xy, 0(dst), 0, 0
+        stfs z, 8(dst)
+    }
+}
+#endif
 
 #endif

@@ -10,11 +10,6 @@
 #include "msm.h"
 
 /* MP5's MBBoardNoGet; MP6 retail reads the board number through it here. */
-static inline int mbBoardNoGet(void)
-{
-    return GwSystem.boardNo;
-}
-
 #define MB_MUS_CHAN_MAX 2
 #define MB_AUD_FXOBJ_MAX 16
 #define MB_AUD_FX_MAX 32
