@@ -365,7 +365,7 @@ config.libs = [
             Object(NonMatching, "game/mggamemes.c"),
             Object(Matching, "game/mic.c"),
             Object(NonMatching, "game/code_80146BA0.c"),
-            Object(NonMatching, "game/kerent.c"),
+            Object(Matching, "game/kerent.c"),
         ],
     },
     DolphinLib(
