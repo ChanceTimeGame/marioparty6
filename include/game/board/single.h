@@ -7,7 +7,7 @@
    the function exists there; argN/fN are placeholder names. */
 void mbSingleInit(void);
 void mbSingleClose(void);
-void mbSingleSaveInit(int arg0, u8 arg1, u8 arg2);
+void mbSingleSaveInit(int arg0, int arg1, int arg2);
 void mbSingleMgUnlockInit(void);
 void mbSingleMgUnlockWrite(void);
 void mbSingleMgUnlockSet(int arg0);

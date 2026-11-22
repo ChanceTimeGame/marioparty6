@@ -673,7 +673,7 @@ config.libs = [
         "host": False,
         "objects": [
             Object(Matching, "board/exit.c"),
-            Object(NonMatching, "board/board.c"),
+            Object(Matching, "board/board.c"),
             Object(NonMatching, "board/math.c"),
             Object(Matching, "board/camera.c"),
             Object(NonMatching, "board/player.c"),
@@ -690,7 +690,7 @@ config.libs = [
             Object(NonMatching, "board/dice.c"),
             Object(NonMatching, "board/status.c"),
             Object(NonMatching, "board/opening.c"),
-            Object(NonMatching, "board/pause.c"),
+            Object(Matching, "board/pause.c"),
             Object(NonMatching, "board/tutorial.c"),
             Object(Matching, "board/roulette.c"),
             Object(NonMatching, "board/capselect.c"),
