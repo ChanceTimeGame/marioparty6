@@ -673,7 +673,7 @@ config.libs = [
         "host": False,
         "objects": [
             Object(NonMatching, "board/exit.c"),
-            Object(NonMatching, "board/board.c"),
+            Object(Matching, "board/board.c"),
             Object(NonMatching, "board/math.c"),
             Object(NonMatching, "board/camera.c"),
             Object(NonMatching, "board/player.c"),
