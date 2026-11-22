@@ -61,7 +61,7 @@ typedef struct ColBodyPoint_s {
 struct ColBody_s {
     COLBODY_PARAM param;
     u32 groundAttr;
-    u32 unk34;
+    u32 colAttr;
     HuVecF pos[2];
     s16 colPointNum;
     COLBODY_POINT colPoint[9];
