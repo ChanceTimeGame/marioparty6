@@ -7,7 +7,7 @@
    the function exists there; argN/fN are placeholder names. */
 void mbExitWatchCreate(void);
 void mbExitReq(void);
-int mbExitCheck(void);
+BOOL mbExitCheck(void);
 HUPROCESS *mbExitWatchProcGet(void);
 
 #endif

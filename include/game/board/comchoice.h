@@ -9,8 +9,8 @@ void mbComChoiceLeftSet(void);
 void mbComChoiceRightSet(void);
 void mbComChoiceUpSet(void);
 void mbComChoiceDownSet(void);
-void mbComChoiceListDownSet(int arg0);
-void mbComChoiceListRightSet(int arg0);
-void mbComChoiceListSet(int arg0, int arg1);
+void mbComChoiceListDownSet(int downNum);
+void mbComChoiceListRightSet(int rightNum);
+void mbComChoiceListSet(int rightNum, int downNum);
 
 #endif
