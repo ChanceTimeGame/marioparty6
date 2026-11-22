@@ -31,7 +31,7 @@ typedef struct MbWin_s {
    the function exists there; argN/fN are placeholder names. */
 void mbWinInit(void);
 void mbWinClose(void);
-int mbWinCreate(int type, u32 mess, s8 speakerNo);
+int mbWinCreate(int type, u32 mess, int speakerNo);
 int mbWinCreateChoice(int type, u32 mess, int speakerNo, int choiceNo);
 int mbWinCreateHelp(void *arg0);
 int mbWinCreateFrame(int arg0, int arg1, int arg2, int arg3);
@@ -58,7 +58,7 @@ s8 mbWinTopChoiceGet(void);
 int mbWinChoiceGet(s16 winNo);
 void mbWinPause(s16 winNo);
 void mbWinTopPause(void);
-void mbWinInsertMesSet(int arg0, void *arg1, int arg2);
+void mbWinInsertMesSet(s16 winNo, u32 insertMes, int insertMesNo);
 void mbWinTopInsertMesSet(void *arg0, int arg1);
 BOOL mbWinDoneCheck(s16 winNo);
 int mbWinTopDoneCheck(void);

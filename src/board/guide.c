@@ -208,7 +208,7 @@ void mbGuideKill(OMOBJ *obj)
     }
 }
 
-void mbGuideEnd(OMOBJ *obj)
+void mbGuideEnd(OMOBJ *obj, BOOL unused)
 {
     GUIDEWORK *work = (GUIDEWORK *)obj->work;
     work->state = GUIDE_STATE_FADEOUT;
