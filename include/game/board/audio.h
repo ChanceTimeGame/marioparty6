@@ -3,14 +3,12 @@
 
 #include "game/board/board.h"
 
-/* Prototypes from the MP6 asm: argument/return classes from register use, names after MP5 where
-   the function exists there; argN/fN are placeholder names. */
 void mbAudInit(void);
 void mbMusBoardPlay(void);
 void mbMusPlay(int chan, int id, s8 vol, u16 fadeSpeed);
-void mbMusFadeOut(int chan, u16 speed);
-void mbMusStop(int chan);
-void mbMusFadeOutSpeed(int arg0, u16 arg1);
+void mbMusFadeOut(int chan);
+void mbMusStop(int chan, int speed);
+void mbMusFadeOutSpeed(int chan, u16 speed);
 void mbMusStub(void);
 void mbMusParamSet(int chan, s8 vol, u16 fadeSpeed);
 void mbMusPauseFadeOut(int chan, BOOL pauseF, int speed);
@@ -18,36 +16,36 @@ s32 mbMusStatGet(int chan);
 void mbAudClose(void);
 BOOL mbMusCheck(int chan);
 BOOL mbMusStopCheck(int chan);
-int mbMusFadeCheck(int arg0);
+BOOL mbMusFadeCheck(int chan);
 BOOL mbMusEndCheck(int chan);
-int mbMusJinglePlay(int arg0);
-void mbMusJingleWait(int arg0);
+int mbMusJinglePlay(s16 id);
+void mbMusJingleWait(int streamNo);
 s32 mbMusJingleStatGet(int streamNo);
-int mbMusBoardFadeOut(int arg0, int arg1, int arg2, int arg3, int arg4, int arg5);
-int mbMusBoardFadeCheck(void);
-void mbMusPauseSet(int arg0);
+BOOL mbMusBoardFadeOut(int chan, int playChan, int speed, int fadeSpeed, int musId, BOOL pauseF);
+BOOL mbMusBoardFadeCheck(void);
+void mbMusPauseSet(BOOL pauseF);
 void mbAudStub1(void);
 void mbAudStub2(void);
-void mbAudFXObjSet(int arg0);
-int mbAudFXObjCreate(int arg0, int arg1);
-void mbAudFXObjVolSet(int arg0, int arg1);
-void mbAudFXObjKill(int arg0);
+int mbAudFXObjSet(int seId);
+int mbAudFXObjCreate(int seId, BOOL multiF);
+void mbAudFXObjVolSet(int seNo, s16 vol);
+void mbAudFXObjKill(int seNo);
 void mbAudFXObjClose(void);
-void mbAudFXObjEmitterSet(int arg0, HuVecF *arg1);
-int mbAudFXObjEmitterCreate(int arg0, HuVecF *arg1, int arg2);
-void mbAudFXObjEmitterUpdate(int arg0, HuVecF *arg1);
-void mbAudFXObjEmiterPosSet(int arg0, HuVecF *arg1);
-void mbAudFXObjRefSet(int arg0, int arg1);
+int mbAudFXObjEmitterSet(int seId, HuVecF *pos);
+int mbAudFXObjEmitterCreate(int seId, HuVecF *pos, BOOL multiF);
+void mbAudFXObjEmitterUpdate(int seNo, HuVecF *pos);
+void mbAudFXObjEmiterPosSet(int seId, HuVecF *pos);
+void mbAudFXObjRefSet(int seId, int *fxRef);
 int mbAudFXPlay(s16 seId);
 void mbAudFXStop(int seNo);
-void mbAudFXStopAll(int arg0);
-int mbAudFXPosPlay(s16 seNo, Vec *pos);
-u8 mbAudFXPosPanGet(Vec *pos);
-int mbAudFXEmitterPlay(s16 arg0, HuVecF *arg1);
+void mbAudFXStopAll(int speed);
+int mbAudFXPosPlay(s16 seId, HuVecF *pos);
+u8 mbAudFXPosPanGet(HuVecF *pos);
+int mbAudFXEmitterPlay(int seId, HuVecF *pos);
 void mbAudFXVolSet(int seNo, s16 vol);
-void mbAudFXPanning(int arg0, int arg1);
-void mbAudFXPosPanning(int arg0, HuVecF *arg1);
-void mbAudFXDelaySet(int arg0);
-int mbAudGuidePlay(s16 arg0);
+void mbAudFXPanning(int seNo, s16 pan);
+void mbAudFXPosPanning(int seNo, HuVecF *pos);
+void mbAudFXDelaySet(int delay);
+int mbAudGuidePlay(s16 seId);
 
 #endif
