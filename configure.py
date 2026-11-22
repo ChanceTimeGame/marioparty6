@@ -682,7 +682,7 @@ config.libs = [
             Object(Matching, "board/window.c"),
             Object(NonMatching, "board/audio.c"),
             Object(Matching, "board/comchoice.c"),
-            Object(NonMatching, "board/scroll.c"),
+            Object(Matching, "board/scroll.c"),
             Object(NonMatching, "board/masu.c"),
             Object(NonMatching, "board/coin.c"),
             Object(NonMatching, "board/star.c"),
