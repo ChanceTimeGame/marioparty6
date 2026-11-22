@@ -3,13 +3,20 @@
 
 #include "game/board/board.h"
 
+#define MBWIN_MAX 16
+
+#define MBWIN_MES_NONE -1
+#define MBWIN_NONE -1
+#define MBWIN_SPEAKER_NONE -1
+
+typedef void (*MBWINCOMKEYHOOK)(void);
+
 typedef struct MbWin_s {
     /* 0x00 */ HUPROCESS *proc;
     /* 0x04 */ int winId;
     /* 0x08 */ u32 mess;
     /* 0x0C */ u8 no;
     /* 0x0D */ s8 mesSpeed;
-    /* 0x0E */ u8 unkE[2];
     /* 0x10 */ u32 attr;
     /* 0x14 */ int type;
     /* 0x18 */ s8 speakerNo;
@@ -18,78 +25,77 @@ typedef struct MbWin_s {
     /* 0x20 */ HuVec2f pos;
     /* 0x28 */ HuVec2f size;
     /* 0x30 */ HuVec2f scale;
-    /* 0x38 */ HuVec2f unk38;
-    /* 0x40 */ int unk40;
-    /* 0x44 */ int unk44;
-    /* 0x48 */ int unk48;
-    /* 0x4C */ u8 unk4C[0xCC - 0x4C]; /* MP5 choiceDisable[]/insertMes[]; layout unproven */
-    /* 0xCC */ int unkCC;
-    /* 0xD0 */ void *unkD0;
-} MBWIN; /* size 0xD4 (stride in mbWinData) */
+    /* 0x38 */ HuVec2f ofs;
+    /* 0x40 */ BOOL pauseF;
+    /* 0x44 */ BOOL choiceF;
+    /* 0x48 */ int choiceNo;
+    /* 0x4C */ BOOL choiceDisable[HUWIN_CHOICE_MAX];
+    /* 0x8C */ u32 insertMes[HUWIN_INSERTMES_MAX];
+    /* 0xCC */ MBWINCOMKEYHOOK comKeyHook;
+    /* 0xD0 */ int frame;
+} MBWIN; /* size 0xD4 */
 
-/* Prototypes from the MP6 asm: argument/return classes from register use, names after MP5 where
-   the function exists there; argN/fN are placeholder names. */
 void mbWinInit(void);
 void mbWinClose(void);
-int mbWinCreate(int type, u32 mess, s8 speakerNo);
+int mbWinCreate(int type, u32 mess, int speakerNo);
 int mbWinCreateChoice(int type, u32 mess, int speakerNo, int choiceNo);
-int mbWinCreateHelp(void *arg0);
-int mbWinCreateFrame(int arg0, int arg1, int arg2, int arg3);
-int mbWinCreateTime(int arg0, int arg1, int arg2);
+int mbWinCreateHelp(u32 mess);
+int mbWinCreateFrame(int type, u32 mess, int speakerNo, int frame);
+int mbWinCreateTime(int type, u32 mess, int speakerNo);
 int mbWinCreateBlank(void);
-int mbWinCreateBlankFrame(int arg0);
+int mbWinCreateBlankFrame(int frame);
 MBWIN *mbWinGet(int winNo);
 void mbWinKill(s16 winNo);
 void mbWinTopKill(void);
 void mbWinKillAll(void);
 void mbWinPosSet(s16 winNo, s16 posX, s16 posY);
-void mbWinTopPosSet(s16 arg0, s16 arg1);
+void mbWinTopPosSet(s16 posX, s16 posY);
 void mbWinPosGet(s16 winNo, HuVec2f *pos);
-void mbWinTopPosGet(HuVec2f *arg0);
+void mbWinTopPosGet(HuVec2f *pos);
 void mbWinSizeSet(s16 winNo, s16 sizeX, s16 sizeY);
-void mbWinTopSizeSet(int arg0, int arg1);
+void mbWinTopSizeSet(s16 sizeX, s16 sizeY);
 void mbWinMesMaxSizeGet(s16 winNo, HuVec2f *size);
-void mbWinTopMesMaxSizeGet(void *arg0);
+void mbWinTopMesMaxSizeGet(HuVec2f *size);
 void mbWinScaleSet(s16 winNo, float scaleX, float scaleY);
-void mbWinTopScaleSet(float f0, float f1);
+void mbWinTopScaleSet(float scaleX, float scaleY);
 void mbWinScaleGet(s16 winNo, HuVec2f *scale);
-void mbWinTopScaleGet(HuVec2f *arg0);
-s8 mbWinTopChoiceGet(void);
+void mbWinTopScaleGet(HuVec2f *scale);
+int mbWinTopChoiceGet(void);
 int mbWinChoiceGet(s16 winNo);
 void mbWinPause(s16 winNo);
 void mbWinTopPause(void);
-void mbWinInsertMesSet(int arg0, void *arg1, int arg2);
-void mbWinTopInsertMesSet(void *arg0, int arg1);
+void mbWinInsertMesSet(s16 winNo, u32 insertMes, int insertMesNo);
+void mbWinTopInsertMesSet(u32 insertMes, int insertMesNo);
 BOOL mbWinDoneCheck(s16 winNo);
-int mbWinTopDoneCheck(void);
+BOOL mbWinTopDoneCheck(void);
 void mbWinWait(s16 winNo);
 void mbWinTopWait(void);
 void mbWinAttrSet(s16 winNo, u32 attr);
-void mbWinTopAttrSet(int arg0);
+void mbWinTopAttrSet(u32 attr);
 void mbWinAttrReset(s16 winNo, u32 attr);
-void mbWinTopAttrReset(int arg0);
+void mbWinTopAttrReset(u32 attr);
 void mbWinChoiceDisable(s16 winNo, int choiceNo);
-void mbWinTopChoiceDisable(int arg0);
+void mbWinTopChoiceDisable(int choiceNo);
 void mbWinMesSpeedSet(s16 winNo, int speed);
-void mbWinTopMesSpeedSet(int arg0);
-void mbWinMesColSet(s16 winNo, u8 mesCol);
-void mbWinTopMesColSet(u8 arg0);
+void mbWinTopMesSpeedSet(int speed);
+void mbWinMesColSet(s16 winNo, int mesCol);
+void mbWinTopMesColSet(int mesCol);
 s16 mbWinChoiceNowGet(s16 winNo);
 s16 mbWinTopChoiceNowGet(void);
 void mbWinPriSet(s16 winNo, s16 prio);
-void mbWinTopPriSet(int arg0);
+void mbWinTopPriSet(s16 prio);
 s16 mbWinChoiceNowGet2(s16 winNo);
-int mbWinTopChoiceNowGet2(void);
+s16 mbWinTopChoiceNowGet2(void);
 void mbWinPlayerDisable(s16 winNo, int playerNo);
-void mbWinTopPlayerDisable(int arg0);
-void mbWinTopComKeyHookSet(void *arg0);
+void mbWinTopPlayerDisable(int playerNo);
+void mbWinTopComKeyHookSet(MBWINCOMKEYHOOK comKeyHook);
 void mbWinDispSet(s16 winNo, BOOL dispF);
-void mbWinTopDispSet(int arg0);
+void mbWinTopDispSet(BOOL dispF);
 void mbWinPauseHook(BOOL dispF);
 HUWINID mbWinIDGet(s16 winNo);
-s16 mbWinTopIDGet(void);
+HUWINID mbWinTopIDGet(void);
 void mbWinCenterGet(s16 winNo, HuVec2f *pos);
-void mbWinCenterInsertGet(s16 arg0, int arg1);
-void mbWinTopCenterInsertGet(int arg0);
+void mbWinCenterInsertGet(s16 winNo, u32 mess);
+void mbWinTopCenterInsertGet(u32 mess);
 
 #endif
