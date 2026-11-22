@@ -61,13 +61,16 @@ typedef struct ColBodyPoint_s {
 struct ColBody_s {
     COLBODY_PARAM param;
     u32 groundAttr;
+    u32 colAttr;
     HuVecF pos[2];
-    u32 unk4C;
     s16 colPointNum;
     COLBODY_POINT colPoint[9];
     HuVecF oldPos;
     HuVecF moveDir;
     u32 paramAttr;
+    float colT;
+    float oldColT;
+    s32 colBit[(COLBODY_MAX+31)/32];
 };
 
 void ColMapClear(void);
