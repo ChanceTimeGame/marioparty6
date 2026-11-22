@@ -54,7 +54,7 @@ int mbCapDescMesGet(s16 arg0);
 int mbCapUseMesGet(s16 arg0);
 int mbCapDebugNameGet(s16 arg0);
 int mbCapMasuPatGet(s16 arg0);
-int mbCapColorGet(s16 arg0);
+int mbCapColorGet(int arg0);
 int mbCapUseCostGet(void);
 int mbCapUseCheck(s16 arg0);
 int mbCapValidCheck(s16 arg0);
