@@ -1473,7 +1473,7 @@ s16 mbMasuFind_TypeStepGet(s16 id, s16 type)
     return masuFindStep;
 }
 
-s16 mbMasuFind_TypeStepGet2(s16 id, s16 type, BOOL hookF, BOOL dispF)
+int mbMasuFind_TypeStepGet2(s16 id, s16 type, BOOL hookF, BOOL dispF)
 {
     MasuFind(id, MasuTypeCheck, type, 0, hookF, dispF);
     return masuFindStep;
@@ -1515,7 +1515,7 @@ s16 mbMasuFind_MAttrStepGet2(s16 id, u32 mAttr, u32 mask, BOOL hookF, BOOL dispF
     return masuFindStep;
 }
 
-s16 mbMasuFind_IdStepGet(s16 id, s16 targetId)
+int mbMasuFind_IdStepGet(s16 id, s16 targetId)
 {
     MasuFind(id, MasuIdCheck, targetId, 0, FALSE, TRUE);
     return masuFindStep;
