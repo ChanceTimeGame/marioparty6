@@ -3,20 +3,22 @@
 
 #include "game/board/board.h"
 
+typedef int (*MBBRANCHCOMHOOK)(int playerNo, int linkNum, s16 *linkTbl, BOOL partyF);
+
 /* Prototypes from the MP6 asm: argument/return classes from register use, names after MP5 where
    the function exists there; argN/fN are placeholder names. */
 void mbBranchInit(void);
-int mbev_Branch(int arg0, void *arg1);
-int mbev_BranchDebug(int arg0, void *arg1);
-void mbBranchAttrSet(int arg0);
-void mbBranchMAttrSet(int arg0);
-void mbBranchAttrReset(int arg0);
-void mbBranchMAttrReset(int arg0);
+BOOL mbev_Branch(int playerNo, s16 *masuId);
+BOOL mbev_BranchDebug(int playerNo, s16 *masuId);
+void mbBranchAttrSet(u16 attr);
+void mbBranchMAttrSet(u32 mAttr);
+void mbBranchAttrReset(u16 attr);
+void mbBranchMAttrReset(u32 mAttr);
 void mbBranchAttrInit(void);
 void mbBranchMAttrInit(void);
 u16 mbBranchAttrGet(void);
-int mbBranchMAttrGet(void);
-int mbBranchAttrCheck(s16 arg0);
-void mbBranchComStarHookSet(void *arg0);
+u32 mbBranchMAttrGet(void);
+BOOL mbBranchAttrCheck(int masuId);
+void mbBranchComStarHookSet(MBBRANCHCOMHOOK hook);
 
 #endif
