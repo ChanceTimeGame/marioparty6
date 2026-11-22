@@ -80,7 +80,7 @@ static void BranchGuideCreate(int playerNo, int masuId, s16 *linkTbl, int linkNu
     work->angle = 0;
     work->choice = choice;
     if(!_CheckFlag(FLAG_BOARD_TUTORIAL) && PartyFGet()) {
-        mbWinCreateHelp((void *)0x260007);
+        mbWinCreateHelp(0x260007);
     }
     mbMasuPosGet(masuId, &pos);
     pos.y += 350.0f;
