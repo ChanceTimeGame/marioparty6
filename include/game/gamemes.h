@@ -180,7 +180,7 @@ BOOL GameMesMgRecordInit(GAMEMES *mes, va_list args);
 BOOL GameMesMgRecordExec(GAMEMES *mes);
 
 extern GAMEMES GameMesData[GAMEMES_MAX];
-extern s16 GameMesTime;
+
 extern u8 GameMesCloseF;
 extern unsigned int GameMesVWait;
 extern int GameMesLanguageNo;
