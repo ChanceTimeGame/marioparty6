@@ -3,24 +3,26 @@
 
 #include "game/board/board.h"
 
-/* Prototypes from the MP6 asm: argument/return classes from register use, names after MP5 where
-   the function exists there; argN/fN are placeholder names. */
+#define MB_GUIDE_ATTR_SCREEN (1 << 0)
+#define MB_GUIDE_ATTR_FADEIN (1 << 1)
+#define MB_GUIDE_ATTR_MOT1 (1 << 2)
+
 void mbGuideInit(void);
-int mbGuideCreate(int arg0, HuVecF *arg1, HuVecF *arg2, void *arg3, int arg4, float f0);
-int mbGuideCreateFlag(HuVecF *arg0, void *arg1, int arg2, int arg3, int arg4);
-int mbGuideCreateIn(const HuVecF *pos, BOOL screenF, BOOL effInF, BOOL modelOffF);
-void mbGuideKill(void *arg0);
-void mbGuideEnd(void *arg0);
-void mbGuideFadeIn(int arg0);
-void mbGuideFadeOut(void *arg0);
-s16 mbGuideModelGet(void *arg0);
-void mbGuideScreenSet(void *arg0, int arg1);
-int mbGuideIdleCheck(int arg0);
-void mbGuideMotionNextSet(int arg0, int arg1);
-void mbGuideMotionSet(void *arg0, s16 arg1, int arg2);
-void mbGuideMotionShiftSet(void *arg0, s16 arg1, int arg2);
-void mbGuideMotionStop(int arg0);
-int mbGuideMotionCheck(int arg0);
+OMOBJ *mbGuideCreate(int guideNo, HuVecF *pos, HuVecF *rot, s8 *motTbl, float scale, u32 attr);
+OMOBJ *mbGuideCreateFlag(HuVecF *pos, s8 *motTbl, BOOL screenF, BOOL fadeInF, BOOL motF);
+OMOBJ *mbGuideCreateIn(void);
+void mbGuideKill(OMOBJ *obj);
+void mbGuideEnd(OMOBJ *obj);
+void mbGuideFadeIn(OMOBJ *obj);
+void mbGuideFadeOut(OMOBJ *obj);
+s16 mbGuideModelGet(OMOBJ *obj);
+void mbGuideScreenSet(OMOBJ *obj, BOOL screenF);
+BOOL mbGuideIdleCheck(OMOBJ *obj);
+void mbGuideMotionNextSet(OMOBJ *obj, s16 motNo);
+void mbGuideMotionSet(OMOBJ *obj, s16 motNo, BOOL shiftF);
+void mbGuideMotionShiftSet(OMOBJ *obj, s16 motNo, BOOL shiftF);
+void mbGuideMotionStop(OMOBJ *obj);
+BOOL mbGuideMotionCheck(OMOBJ *obj);
 int mbGuideNoGet(void);
 int mbGuideSpeakerNoGet(void);
 
