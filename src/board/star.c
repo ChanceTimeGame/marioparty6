@@ -1236,7 +1236,7 @@ static void StarAddAllProc(int *numTbl, BOOL instF, int *outTbl)
         for(i = 0; i < 2; i++) {
             playerNo = mbPlayerTeamFindPlayer(i, 0);
             addF[playerNo] = TRUE;
-            num[playerNo] = mbStatTeamMinValGet(i, mbPlayerGrpStarGet(i), 999, numTbl, (int)outTbl);
+            num[playerNo] = mbStatTeamMinValGet(i, mbPlayerGrpStarGet(i), 999, numTbl, outTbl);
         }
     }
     if(!instF) {
