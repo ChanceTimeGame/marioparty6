@@ -210,6 +210,11 @@ static const int tutorialCharNoTbl[GW_PLAYER_MAX] = { 3, 0, 2, 4 };
 
 static const int singleCharNoTbl[GW_PLAYER_MAX] = { 0, 11, 12, 13 };
 
+static inline int GWPlayerTeamGet(int playerNo)
+{
+    return GwPlayer[playerNo].team;
+}
+
 static inline BOOL PartyFGet(void)
 {
     BOOL partyF = GwSystem.partyF;
@@ -231,10 +236,6 @@ static inline BOOL GWTeamGet(void)
     return GwSystem.tagF;
 }
 
-static inline int GWPlayerTeamGet(int playerNo)
-{
-    return GwPlayer[playerNo].team;
-}
 
 static void ResetMetalColor(void);
 static void PlayerColOMExec(OMOBJ *obj);
@@ -326,7 +327,7 @@ void mbPlayerInit(BOOL noEventF)
         playerP->circuitOrder = workP->playerNo = i;
         GwPlayerConf[i].type = GwPlayer[i].comF;
         GwPlayerConf[i].padNo = GwPlayer[i].padNo;
-        GwPlayerConf[i].grpNo = GwPlayer[i].team;
+        GwPlayerConf[i].grpNo = GWPlayerTeamGet(i);
         GwPlayerConf[i].comDif = GwPlayer[i].comDif;
         charNo = GwPlayer[i].charNo;
         GwPlayerConf[i].charNo = charNo;
@@ -3610,6 +3611,11 @@ GXColor mbPlayerColorGet(int playerNo)
     };
     return color[GwPlayer[playerNo].charNo];
 }
+
+/* Unreferenced in retail: 16 bytes of 0xFF follow mbPlayerColorGet's table in .rodata. */
+static const GXColor playerColorWhiteTbl[4] = {
+    { 255, 255, 255, 255 }, { 255, 255, 255, 255 }, { 255, 255, 255, 255 }, { 255, 255, 255, 255 }
+};
 
 void mbPlayerBlackoutSet(BOOL value)
 {
