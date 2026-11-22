@@ -36,7 +36,7 @@ typedef struct MbObj_s {
 int mbObjDataNumGet(int arg0);
 void mbObjInit(void);
 void mbObjClose(void);
-int mbObjCreate(int arg0, void *arg1, int arg2);
+s16 mbObjCreate(int arg0, void *arg1, int arg2);
 int mbObjCharCreate(int arg0, int arg1, void *arg2, int arg3);
 void mbObjKill(int arg0);
 void mbObjDirSet(int arg0, int arg1);
@@ -82,7 +82,7 @@ s16 mbObjMotionGet(s16 arg0);
 void mbObjMotionSet(int arg0, int arg1, int arg2);
 s16 mbObjMotionIDCurGet(s16 arg0);
 s16 mbObjMotionIDGet(s16 arg0, int arg1);
-void mbObjMotionShiftSet(int arg0, int arg1, int arg2, float f0, float f1);
+void mbObjMotionShiftSet(int arg0, int arg1, float f0, float f1, int arg2);
 s16 mbObjMotionShiftIDGet(int arg0);
 void mbObjMotionNoCreate(s16 arg0, int arg1, int arg2);
 int mbObjMotionCreate(s16 arg0, int arg1);

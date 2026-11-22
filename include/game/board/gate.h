@@ -8,10 +8,10 @@
 void mbGateInit(void);
 void mbGateClose(void);
 void mbGateCreate(void);
-void mbGateBattanCreate(s16 masuId);
+void mbGateBattanCreate(int masuId);
 void mbGateBattanKill(int no);
-int mbev_GateMasu(int arg0, s16 arg1, s16 arg2);
-int mbev_GateBattanMasuFind(s16 arg0);
-int mbev_GateBattan(int arg0, int arg1);
+s16 mbev_GateMasu(int playerNo, s16 masuId, s16 masuNext);
+int mbev_GateBattanMasuFind(s16 masuId);
+int mbev_GateBattan(int playerNo, int masuId);
 
 #endif

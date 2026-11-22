@@ -54,7 +54,7 @@ void mbWinScaleSet(s16 winNo, float scaleX, float scaleY);
 void mbWinTopScaleSet(float f0, float f1);
 void mbWinScaleGet(s16 winNo, HuVec2f *scale);
 void mbWinTopScaleGet(HuVec2f *arg0);
-s8 mbWinTopChoiceGet(void);
+int mbWinTopChoiceGet(void);
 int mbWinChoiceGet(s16 winNo);
 void mbWinPause(s16 winNo);
 void mbWinTopPause(void);
