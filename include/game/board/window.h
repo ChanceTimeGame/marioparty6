@@ -33,7 +33,7 @@ void mbWinInit(void);
 void mbWinClose(void);
 int mbWinCreate(int type, u32 mess, s8 speakerNo);
 int mbWinCreateChoice(int type, u32 mess, int speakerNo, int choiceNo);
-int mbWinCreateHelp(void *arg0);
+int mbWinCreateHelp(u32 mess);
 int mbWinCreateFrame(int arg0, int arg1, int arg2, int arg3);
 int mbWinCreateTime(int arg0, int arg1, int arg2);
 int mbWinCreateBlank(void);
@@ -58,7 +58,7 @@ s8 mbWinTopChoiceGet(void);
 int mbWinChoiceGet(s16 winNo);
 void mbWinPause(s16 winNo);
 void mbWinTopPause(void);
-void mbWinInsertMesSet(int arg0, void *arg1, int arg2);
+void mbWinInsertMesSet(s16 winNo, u32 insertMes, int insertMesNo);
 void mbWinTopInsertMesSet(void *arg0, int arg1);
 BOOL mbWinDoneCheck(s16 winNo);
 int mbWinTopDoneCheck(void);
@@ -89,7 +89,7 @@ void mbWinPauseHook(BOOL dispF);
 HUWINID mbWinIDGet(s16 winNo);
 s16 mbWinTopIDGet(void);
 void mbWinCenterGet(s16 winNo, HuVec2f *pos);
-void mbWinCenterInsertGet(s16 arg0, int arg1);
+void mbWinCenterInsertGet(s16 winNo, u32 mess);
 void mbWinTopCenterInsertGet(int arg0);
 
 #endif

@@ -7,13 +7,13 @@
    the function exists there; argN/fN are placeholder names. */
 void mbGuideInit(void);
 int mbGuideCreate(int arg0, HuVecF *arg1, HuVecF *arg2, void *arg3, int arg4, float f0);
-int mbGuideCreateFlag(HuVecF *arg0, void *arg1, int arg2, int arg3, int arg4);
+OMOBJ *mbGuideCreateFlag(HuVecF *pos, s8 *motTbl, BOOL screenF, BOOL fadeInF, BOOL motF);
 int mbGuideCreateIn(const HuVecF *pos, BOOL screenF, BOOL effInF, BOOL modelOffF);
-void mbGuideKill(void *arg0);
+void mbGuideKill(OMOBJ *obj);
 void mbGuideEnd(void *arg0);
 void mbGuideFadeIn(int arg0);
 void mbGuideFadeOut(void *arg0);
-s16 mbGuideModelGet(void *arg0);
+s16 mbGuideModelGet(OMOBJ *obj);
 void mbGuideScreenSet(void *arg0, int arg1);
 int mbGuideIdleCheck(int arg0);
 void mbGuideMotionNextSet(int arg0, int arg1);

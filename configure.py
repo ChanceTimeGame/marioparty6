@@ -690,7 +690,7 @@ config.libs = [
             Object(NonMatching, "board/dice.c"),
             Object(NonMatching, "board/status.c"),
             Object(NonMatching, "board/opening.c"),
-            Object(NonMatching, "board/pause.c"),
+            Object(Matching, "board/pause.c"),
             Object(NonMatching, "board/tutorial.c"),
             Object(NonMatching, "board/roulette.c"),
             Object(NonMatching, "board/capselect.c"),
