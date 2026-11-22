@@ -357,7 +357,7 @@ config.libs = [
             Object(Matching, "game/flag.c"),
             Object(NonMatching, "game/saveload.c"),
             Object(NonMatching, "game/sreset.c"),
-            Object(NonMatching, "game/mgtimer.c"),
+            Object(Matching, "game/mgtimer.c"),
             Object(NonMatching, "game/mgscore.c"),
             Object(Matching, "game/seqman.c"),
             Object(NonMatching, "game/colman.c"),
