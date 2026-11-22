@@ -2,6 +2,7 @@
 #define _GAME_BOARD_STATUS_H
 
 #include "game/board/board.h"
+#include "game/sprite.h"
 
 /* Prototypes from the MP6 asm: argument/return classes from register use, names after MP5 where
    the function exists there; argN/fN are placeholder names. */
@@ -9,6 +10,7 @@ void mbStatusInit(void);
 void mbStatusClose(void);
 void mbStatusReset(void);
 void mbStatusMoveTo(int playerNo, HuVecF *posBegin, HuVecF *posEnd);
+void mbStatusMoveFrom(int playerNo, HuVecF *posBegin, HuVecF *posEnd);
 void mbStatusMoveSet(int playerNo, HuVecF *posBegin, HuVecF *posEnd, int type, int time);
 void mbStatusNoMoveSet(int statusNo, HuVecF *posBegin, HuVecF *posEnd, int type, int time);
 void mbStatusPosOnGet(int statusNo, HuVecF *pos);
@@ -25,15 +27,15 @@ int mbStatusNoGet(int playerNo);
 void mbStatusDispSetAll(BOOL dispF);
 void mbStatusDispForceSet(int playerNo, BOOL dispF);
 void mbStatusDispForceSetAll(BOOL dispF);
-void mbStatusMasuDispSet(int arg0);
+void mbStatusMasuDispSet(BOOL dispF);
 void mbStatusCapsuleDispSet(int statusNo, BOOL dispF);
-void mbStatusLayoutSet(int statusNo, u8 layoutNo);
-void mbStatusCapsuleFocusSet(int statusNo, s8 index);
+void mbStatusLayoutSet(int statusNo, int layoutNo);
+void mbStatusCapsuleFocusSet(int statusNo, int index);
 void mbStatusPosGet(int playerNo, HuVecF *pos);
 void mbStatusNoPosGet(int statusNo, HuVecF *pos);
-void mbStatusKaoNoSet(int statusNo, s16 kaoNo);
-void mbSprCreate(int arg0, s16 arg1, void *arg2, void *arg3);
-void mbSprNumSet(int arg0, int arg1, int arg2);
+void mbStatusKaoNoSet(int statusNo, int kaoNo);
+void mbSprCreate(int dataNum, int prio, ANIMDATA **animP, HUSPRID *sprIdP);
+void mbSprNumSet(HUSPR_GROUPID gid, s16 memberNo, int num);
 void mbStatusRainbowSet(int statusNo, float time, int colorEnd);
 void mbStatusColorSet(int playerNo, int color);
 int mbStatusColorGet(int playerNo);
