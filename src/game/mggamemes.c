@@ -2,6 +2,10 @@
 #include "game/audio.h"
 #include "game/sprite.h"
 #include "game/gamework.h"
+#include "game/flag.h"
+#include "game/object.h"
+
+int GameMesStrCopy(GAMEMES *mes, int id);
 
 static float SprPosX[15][2];
 static float SprPosY[15][2];
