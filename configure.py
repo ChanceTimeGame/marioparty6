@@ -684,7 +684,7 @@ config.libs = [
             Object(Matching, "board/comchoice.c"),
             Object(Matching, "board/scroll.c"),
             Object(NonMatching, "board/masu.c"),
-            Object(NonMatching, "board/coin.c"),
+            Object(Matching, "board/coin.c"),
             Object(NonMatching, "board/star.c"),
             Object(Matching, "board/padall.c"),
             Object(NonMatching, "board/dice.c"),

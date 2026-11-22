@@ -3,44 +3,54 @@
 
 #include "game/board/board.h"
 
-/* Prototypes from the MP6 asm: argument/return classes from register use, names after MP5 where
-   the function exists there; argN/fN are placeholder names. */
+#define MBCOIN_DISP_NONE -1
+
+typedef s16 MBCOINID;
+
+typedef struct MbCoinObj_s {
+    HuVecF pos; /* 0x00 */
+    HuVecF rot; /* 0x0C */
+    HuVecF scale; /* 0x18 */
+    float alpha; /* 0x24 */
+    u8 work[0x18]; /* 0x28: free for the caller */
+} MBCOINOBJ; /* size 0x40 */
+
 void mbCoinInit(void);
 void mbCoinClose(void);
-void mbCoinEffObjCreate(s16 arg0);
-s16 mbCoinCreate(void);
-s16 mbCoinCreate2(void);
-s16 mbCoinObjCreate(int arg0, int arg1);
-s16 mbCoinObjCreate2(int arg0, int arg1);
-int mbCoinObjGet(int arg0);
-void mbCoinObjNumDec(int arg0);
-void mbCoinObjKill(int arg0);
-void mbCoinObjPosSet(int arg0, float f0, float f1, float f2);
-void mbCoinObjPosSetV(int arg0, HuVecF *arg1);
-void mbCoinObjPosGet(int arg0, HuVecF *arg1);
-void mbCoinObjRotSet(int arg0, float f0, float f1, float f2);
-void mbCoinObjRotSetV(int arg0, HuVecF *arg1);
-void mbCoinObjRotGet(int arg0, HuVecF *arg1);
-void mbCoinObjScaleSet(int arg0, float f0, float f1, float f2);
-void mbCoinObjScaleSetV(int arg0, HuVecF *arg1);
-void mbCoinObjScaleGet(int arg0, HuVecF *arg1);
-void mbCoinObjAlphaSet(int arg0, float f0);
-float mbCoinObjAlphaGet(int arg0);
-void mbCoinObjDispSet(int arg0, int arg1);
-int mbCoinObjDispGet(int arg0);
-void mbCoinObjLayerSet(int arg0, u16 arg1);
-void mbCoinObjMotSet(int arg0, s8 arg1);
-void mbCoinEffCreate(HuVecF *arg0);
-s16 mbCoinDispCreate(HuVecF *arg0, int arg1, int arg2, int arg3);
-int mbCoinDispMasuCreate(HuVecF *arg0, int arg1, int arg2);
-int mbCoinDispCapsuleCreate(HuVecF *arg0, int arg1);
+void mbCoinEffObjCreate(int objId);
+MBCOINID mbCoinCreate(void);
+MBCOINID mbCoinCreate2(void);
+MBCOINID mbCoinObjCreate(int digit, int motNo);
+MBCOINID mbCoinObjCreate2(int sign, int motNo);
+MBCOINOBJ *mbCoinObjGet(MBCOINID id);
+void mbCoinObjNumDec(MBCOINID id);
+void mbCoinObjKill(MBCOINID id);
+void mbCoinObjPosSet(MBCOINID id, float x, float y, float z);
+void mbCoinObjPosSetV(MBCOINID id, HuVecF *pos);
+void mbCoinObjPosGet(MBCOINID id, HuVecF *pos);
+void mbCoinObjRotSet(MBCOINID id, float x, float y, float z);
+void mbCoinObjRotSetV(MBCOINID id, HuVecF *rot);
+void mbCoinObjRotGet(MBCOINID id, HuVecF *rot);
+void mbCoinObjScaleSet(MBCOINID id, float x, float y, float z);
+void mbCoinObjScaleSetV(MBCOINID id, HuVecF *scale);
+void mbCoinObjScaleGet(MBCOINID id, HuVecF *scale);
+void mbCoinObjAlphaSet(MBCOINID id, float alpha);
+float mbCoinObjAlphaGet(MBCOINID id);
+void mbCoinObjDispSet(MBCOINID id, BOOL dispF);
+BOOL mbCoinObjDispGet(MBCOINID id);
+void mbCoinObjLayerSet(MBCOINID id, u16 layer);
+void mbCoinObjMotSet(MBCOINID id, int motNo);
+void mbCoinEffCreate(HuVecF *pos);
+s16 mbCoinDispCreate(HuVecF *pos, int coinNum, int signNum, BOOL seF);
+s16 mbCoinDispMasuCreate(HuVecF *pos, int coinNum, BOOL seF);
+s16 mbCoinDispCapsuleCreate(HuVecF *pos, int coinNum);
 void mbCoinDispKill(s16 no);
 BOOL mbCoinDispKillCheck(s16 no);
-int mbCoinAddProcExec(int playerNo, int coinNum, BOOL dispF, BOOL fastF);
-int mbCoinAddDispExec(int arg0, int arg1, int arg2, int arg3);
+int mbCoinAddProcExec(int playerNo, int coinNum, int signNum, BOOL fastF);
+int mbCoinAddDispExec(int playerNo, int coinNum, BOOL dispF, BOOL fastF);
 int mbCoinAddExec(int playerNo, int coinNum);
-int mbStatTeamMinValGet(int arg0, int arg1, int arg2, void *arg3, int arg4);
-void mbCoinAddAllProcExecV(void *arg0, void *arg1, int arg2);
+int mbStatTeamMinValGet(int teamNo, int base, int max, int *value, int *out);
+void mbCoinAddAllProcExecV(int *coinNum, int *signNum, BOOL fastF);
 void mbCoinAddAllProcExec(int coinNumP1, int coinNumP2, int coinNumP3, int coinNumP4, BOOL dispF, BOOL fastF);
 void mbCoinAddAllExec(int coinNumP1, int coinNumP2, int coinNumP3, int coinNumP4);
 
