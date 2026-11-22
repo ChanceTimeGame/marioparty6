@@ -5,7 +5,7 @@
 static float SprPosX[30];
 static float SprPosY[30];
 static float SprMainAngle[30];
-static float SprOrbitAngle[15][2];
+static HuVec2f SprOrbitAngle[15];
 static float SprRareZRot[15];
 static float SdMesScale[15];
 static int SdMesScaleTime[15];
@@ -64,12 +64,12 @@ BOOL GameMesMgKoopaInit(GAMEMES *mes, va_list args)
         x = GetGameMesWidth(mes, 0, i, 1.0f);
         y = mes->pos.y;
         if(mes->subMode == GAMEMES_MG_TYPE_START) {
-            SprOrbitAngle[i][0] = SprOrbitAngle[i][1] = (56+(2*mes->pos.x))-GetGameMesWidth(mes, 0, 0, 1.0f);
-            x += SprOrbitAngle[i][0];
+            SprOrbitAngle[i].x = SprOrbitAngle[i].y = (56+(2*mes->pos.x))-GetGameMesWidth(mes, 0, 0, 1.0f);
+            x += SprOrbitAngle[i].x;
             HuSprScaleSet(mes->grpId[0], i, mes->scale.x, mes->scale.y);
         } else {
-            SprOrbitAngle[i][0] = 0;
-            SprOrbitAngle[i][1] = (2*mes->pos.x)-GetGameMesWidth(mes, 0, 0, 1.0f);
+            SprOrbitAngle[i].x = 0;
+            SprOrbitAngle[i].y = (2*mes->pos.x)-GetGameMesWidth(mes, 0, 0, 1.0f);
             GameMesScale = 0;
             HuSprScaleSet(mes->grpId[0], i, GameMesScale, GameMesScale);
         }
@@ -99,17 +99,17 @@ BOOL GameMesMgKoopaExec(GAMEMES *mes)
                     for(i=0; i<mes->charNum; i++) {
                         if(i == mes->charNum-1) {
                             if(mes->time >= 35) {
-                                SprOrbitAngle[i][0] -= SprOrbitAngle[i][1]/20.0f;
+                                SprOrbitAngle[i].x -= SprOrbitAngle[i].y/20.0f;
                             }
-                            x = SprOrbitAngle[i][0]+GetGameMesWidth(mes, 0, i, 1.0f);
+                            x = SprOrbitAngle[i].x+GetGameMesWidth(mes, 0, i, 1.0f);
                             if(x < GetGameMesWidth(mes, 0, i, 1.0f)) {
                                 x = GetGameMesWidth(mes, 0, i, 1.0f);
                             }
                         } else {
                             if(mes->time >= 15) {
-                                SprOrbitAngle[i][0] -= SprOrbitAngle[i][1]/20.0f;
+                                SprOrbitAngle[i].x -= SprOrbitAngle[i].y/20.0f;
                             }
-                            x = SprOrbitAngle[i][0]+GetGameMesWidth(mes, 0, i, 1.0f);
+                            x = SprOrbitAngle[i].x+GetGameMesWidth(mes, 0, i, 1.0f);
                             if(x < GetGameMesWidth(mes, 0, i, 1.0f)) {
                                 x = GetGameMesWidth(mes, 0, i, 1.0f);
                             }
@@ -161,12 +161,12 @@ BOOL GameMesMgKoopaExec(GAMEMES *mes)
                     for(i=0; i<mes->charNum; i++) {
                         if(i == mes->charNum-1) {
                             if(mes->time >= 70) {
-                                SprOrbitAngle[i][0] += SprOrbitAngle[i][1]/20.0f;
+                                SprOrbitAngle[i].x += SprOrbitAngle[i].y/20.0f;
                             }
                         } else {
-                            SprOrbitAngle[i][0] += SprOrbitAngle[i][1]/20.0f;
+                            SprOrbitAngle[i].x += SprOrbitAngle[i].y/20.0f;
                         }
-                        x = GetGameMesWidth(mes, 2, i, 1.0f)-SprOrbitAngle[i][0];
+                        x = GetGameMesWidth(mes, 2, i, 1.0f)-SprOrbitAngle[i].x;
                         y = mes->pos.y;
                         HuSprPosSet(mes->grpId[0], i, x, y);
                     }
@@ -224,14 +224,14 @@ BOOL GameMesMgLastInit(GAMEMES *mes, va_list args)
         x = GetGameMesWidth(mes, 0, i, 1.0f);
         y = mes->pos.y;
         if(mes->subMode == GAMEMES_MG_TYPE_START) {
-            SprOrbitAngle[i][0] = SprOrbitAngle[i][1] = (56+(2*mes->pos.x))-GetGameMesWidth(mes, 0, 0, 1.0f);
-            x += SprOrbitAngle[i][0];
+            SprOrbitAngle[i].x = SprOrbitAngle[i].y = (56+(2*mes->pos.x))-GetGameMesWidth(mes, 0, 0, 1.0f);
+            x += SprOrbitAngle[i].x;
             HuSprScaleSet(mes->grpId[0], i, mes->scale.x, mes->scale.y);
             SprRareZRot[i] = 600;
             HuSprZRotSet(mes->grpId[0], i, SprRareZRot[i]);
         } else {
-            SprOrbitAngle[i][0] = 0;
-            SprOrbitAngle[i][1] = (2*mes->pos.x)-GetGameMesWidth(mes, 0, 0, 1.0f);
+            SprOrbitAngle[i].x = 0;
+            SprOrbitAngle[i].y = (2*mes->pos.x)-GetGameMesWidth(mes, 0, 0, 1.0f);
             GameMesScale = 0;
             HuSprScaleSet(mes->grpId[0], i, GameMesScale, GameMesScale);
             SprRareZRot[i] = 0;
@@ -260,8 +260,8 @@ BOOL GameMesMgLastExec(GAMEMES *mes)
             if(mes->subMode == GAMEMES_MG_TYPE_START) {
                 if(mes->time <= 60 && mes->time >= 20) {
                     for(i=0; i<mes->charNum; i++) {
-                        SprOrbitAngle[i][0] -= SprOrbitAngle[i][1]/20.0f;
-                        x = SprOrbitAngle[i][0]+GetGameMesWidth(mes, 0, i, 1.0f);
+                        SprOrbitAngle[i].x -= SprOrbitAngle[i].y/20.0f;
+                        x = SprOrbitAngle[i].x+GetGameMesWidth(mes, 0, i, 1.0f);
                         if(x < GetGameMesWidth(mes, 0, i, 1.0f)) {
                             x = GetGameMesWidth(mes, 0, i, 1.0f);
                         }
@@ -314,8 +314,8 @@ BOOL GameMesMgLastExec(GAMEMES *mes)
                 }
                 if(mes->time >= 50) {
                     for(i=0; i<mes->charNum; i++) {
-                        SprOrbitAngle[i][0] += SprOrbitAngle[i][1]/20.0f;
-                        x = GetGameMesWidth(mes, 2, i, 1.0f)-SprOrbitAngle[i][0];
+                        SprOrbitAngle[i].x += SprOrbitAngle[i].y/20.0f;
+                        x = GetGameMesWidth(mes, 2, i, 1.0f)-SprOrbitAngle[i].x;
                         y = mes->pos.y;
                         HuSprPosSet(mes->grpId[0], i, x, y);
                         SprRareZRot[i] -= 30;
@@ -381,18 +381,18 @@ BOOL GameMesMgKettouInit(GAMEMES *mes, va_list args)
             if(i == center) {
                 GameMesScale = 0;
             } else {
-                SprOrbitAngle[i][0] = SprOrbitAngle[i][1] = 56+mes->pos.y;
+                SprOrbitAngle[i].x = SprOrbitAngle[i].y = 56+mes->pos.y;
                 if(i < center) {
-                    y -= SprOrbitAngle[i][0];
+                    y -= SprOrbitAngle[i].x;
                 } else {
-                    y += SprOrbitAngle[i][0];
+                    y += SprOrbitAngle[i].x;
                 }
                 GameMesScale = 1;
             }
             HuSprScaleSet(mes->grpId[0], i, GameMesScale, GameMesScale);
         } else {
-            SprOrbitAngle[i][0] = 0;
-            SprOrbitAngle[i][1] = 56+mes->pos.y;
+            SprOrbitAngle[i].x = 0;
+            SprOrbitAngle[i].y = 56+mes->pos.y;
             GameMesScale = 0;
             HuSprScaleSet(mes->grpId[0], i, GameMesScale, GameMesScale);
         }
@@ -423,7 +423,7 @@ BOOL GameMesMgKettouExec(GAMEMES *mes)
                 if(mes->time <= 60 && mes->time >= 20) {
                     for(i=0; i<mes->charNum; i++) {
                         x = GetGameMesWidth(mes, 0, i, 1.0f);
-                        SprOrbitAngle[i][0] -= SprOrbitAngle[i][1]/20.0f;
+                        SprOrbitAngle[i].x -= SprOrbitAngle[i].y/20.0f;
                         center = mes->charNum/2;
                         if(i == center) {
                             y = mes->pos.y;
@@ -433,12 +433,12 @@ BOOL GameMesMgKettouExec(GAMEMES *mes)
                             }
                             HuSprScaleSet(mes->grpId[0], i, mes->scale.x*GameMesScale, mes->scale.y*GameMesScale);
                         } else if(i < center) {
-                            y = mes->pos.y-SprOrbitAngle[i][0];
+                            y = mes->pos.y-SprOrbitAngle[i].x;
                             if(y > mes->pos.y) {
                                 y = mes->pos.y;
                             }
                         } else {
-                            y = mes->pos.y+SprOrbitAngle[i][0];
+                            y = mes->pos.y+SprOrbitAngle[i].x;
                             if(y < mes->pos.y) {
                                 y = mes->pos.y;
                             }
@@ -489,7 +489,7 @@ BOOL GameMesMgKettouExec(GAMEMES *mes)
                 if(mes->time >= 50) {
                     for(i=0; i<mes->charNum; i++) {
                         x = GetGameMesWidth(mes, 2, i, 1.0f);
-                        SprOrbitAngle[i][0] += SprOrbitAngle[i][1]/20.0f;
+                        SprOrbitAngle[i].x += SprOrbitAngle[i].y/20.0f;
                         center = mes->charNum/2;
                         if(i == center) {
                             y = mes->pos.y;
@@ -504,9 +504,9 @@ BOOL GameMesMgKettouExec(GAMEMES *mes)
                             }
                             HuSprTPLvlSet(mes->grpId[0], i, 1.0f-GameMesTPLvl);
                         } else if(i < center) {
-                            y = mes->pos.y-SprOrbitAngle[i][0];
+                            y = mes->pos.y-SprOrbitAngle[i].x;
                         } else {
-                            y = mes->pos.y+SprOrbitAngle[i][0];
+                            y = mes->pos.y+SprOrbitAngle[i].x;
                         }
                         HuSprPosSet(mes->grpId[0], i, x, y);
                     }
@@ -571,20 +571,20 @@ BOOL GameMesMgDonkeyInit(GAMEMES *mes, va_list args)
             if(i == center) {
                 GameMesScale = 0;
             } else {
-                SprOrbitAngle[i][0] = SprOrbitAngle[i][1] = 56+mes->pos.y;
+                SprOrbitAngle[i].x = SprOrbitAngle[i].y = 56+mes->pos.y;
                 if(i < center) {
-                    x -= SprOrbitAngle[i][0];
-                    y -= SprOrbitAngle[i][0];
+                    x -= SprOrbitAngle[i].x;
+                    y -= SprOrbitAngle[i].x;
                 } else {
-                    x += SprOrbitAngle[i][0];
-                    y -= SprOrbitAngle[i][0];
+                    x += SprOrbitAngle[i].x;
+                    y -= SprOrbitAngle[i].x;
                 }
                 GameMesScale = 1;
             }
             HuSprScaleSet(mes->grpId[0], i, GameMesScale, GameMesScale);
         } else {
-            SprOrbitAngle[i][0] = 0;
-            SprOrbitAngle[i][1] = 56+mes->pos.y;
+            SprOrbitAngle[i].x = 0;
+            SprOrbitAngle[i].y = 56+mes->pos.y;
             GameMesScale = 0;
             HuSprScaleSet(mes->grpId[0], i, GameMesScale, GameMesScale);
         }
@@ -615,7 +615,7 @@ BOOL GameMesMgDonkeyExec(GAMEMES *mes)
                 if(mes->time <= 60 && mes->time >= 20) {
                     for(i=0; i<mes->charNum; i++) {
                         x = GetGameMesWidth(mes, 0, i, 1.0f);
-                        SprOrbitAngle[i][0] -= SprOrbitAngle[i][1]/20.0f;
+                        SprOrbitAngle[i].x -= SprOrbitAngle[i].y/20.0f;
                         center = mes->charNum/2;
                         if(i == center) {
                             y = mes->pos.y;
@@ -625,20 +625,20 @@ BOOL GameMesMgDonkeyExec(GAMEMES *mes)
                             }
                             HuSprScaleSet(mes->grpId[0], i, mes->scale.x*GameMesScale, mes->scale.y*GameMesScale);
                         } else if(i < center) {
-                            x = GetGameMesWidth(mes, 0, i, 1.0f)-SprOrbitAngle[i][0];
+                            x = GetGameMesWidth(mes, 0, i, 1.0f)-SprOrbitAngle[i].x;
                             if(x > GetGameMesWidth(mes, 0, i, 1.0f)) {
                                 x = GetGameMesWidth(mes, 0, i, 1.0f);
                             }
-                            y = mes->pos.y-SprOrbitAngle[i][0];
+                            y = mes->pos.y-SprOrbitAngle[i].x;
                             if(y > mes->pos.y) {
                                 y = mes->pos.y;
                             }
                         } else {
-                            x = SprOrbitAngle[i][0]+GetGameMesWidth(mes, 0, i, 1.0f);
+                            x = SprOrbitAngle[i].x+GetGameMesWidth(mes, 0, i, 1.0f);
                             if(x < GetGameMesWidth(mes, 0, i, 1.0f)) {
                                 x = GetGameMesWidth(mes, 0, i, 1.0f);
                             }
-                            y = mes->pos.y-SprOrbitAngle[i][0];
+                            y = mes->pos.y-SprOrbitAngle[i].x;
                             if(y > mes->pos.y) {
                                 y = mes->pos.y;
                             }
@@ -689,7 +689,7 @@ BOOL GameMesMgDonkeyExec(GAMEMES *mes)
                 if(mes->time >= 50) {
                     for(i=0; i<mes->charNum; i++) {
                         x = GetGameMesWidth(mes, 2, i, 1.0f);
-                        SprOrbitAngle[i][0] += SprOrbitAngle[i][1]/20.0f;
+                        SprOrbitAngle[i].x += SprOrbitAngle[i].y/20.0f;
                         center = mes->charNum/2;
                         if(i == center) {
                             y = mes->pos.y;
@@ -704,11 +704,11 @@ BOOL GameMesMgDonkeyExec(GAMEMES *mes)
                             }
                             HuSprTPLvlSet(mes->grpId[0], i, 1.0f-GameMesTPLvl);
                         } else if(i < center) {
-                            x = GetGameMesWidth(mes, 2, i, 1.0f)-SprOrbitAngle[i][0];
-                            y = mes->pos.y-SprOrbitAngle[i][0];
+                            x = GetGameMesWidth(mes, 2, i, 1.0f)-SprOrbitAngle[i].x;
+                            y = mes->pos.y-SprOrbitAngle[i].x;
                         } else {
-                            x = SprOrbitAngle[i][0]+GetGameMesWidth(mes, 2, i, 1.0f);
-                            y = mes->pos.y-SprOrbitAngle[i][0];
+                            x = SprOrbitAngle[i].x+GetGameMesWidth(mes, 2, i, 1.0f);
+                            y = mes->pos.y-SprOrbitAngle[i].x;
                         }
                         HuSprPosSet(mes->grpId[0], i, x, y);
                     }
