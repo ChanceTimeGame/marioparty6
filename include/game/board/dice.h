@@ -29,17 +29,17 @@ s8 mbDiceMaxGet(int arg0);
 s8 mbDiceValueMaxGet(int arg0);
 int mbDiceNumObjCreate(u8 arg0, HuVecF *arg1, HuVecF *arg2, int arg3, u8 arg4, int arg5);
 void mbDiceNumObjKill(void *arg0);
-int mbDiceNumStopCheck(int arg0);
+BOOL mbDiceNumStopCheck(int playerNo);
 void mbDiceNumKill(int arg0);
 void mbDiceNumShrinkSet(int arg0);
 void mbDiceStub(void);
-int mbDiceSNpcNumCreate(int arg0, HuVecF *arg1);
-int mbDiceSNpcNumObjCreate(HuVecF *arg0, HuVecF *arg1, u8 arg2, u8 arg3, int arg4);
-void mbDiceSNpcNumKill(void *arg0);
-void mbDiceSNpcNumDispSet(void *arg0, u8 arg1);
-void mbDiceSNpcNumSet(void *arg0, u8 arg1);
-void mbDiceSNpcNumPosSet(void *arg0, HuVecF *arg1);
-void mbDiceSNpcNumOfsSet(void *arg0, HuVecF *arg1);
-void mbDiceSNpcNumOfsGet(void *arg0, HuVecF *arg1);
+OMOBJ *mbDiceSNpcNumCreate(int playerNo, HuVecF *pos);
+OMOBJ *mbDiceSNpcNumObjCreate(HuVecF *pos, HuVecF *ofs, int value, int flag, int color);
+void mbDiceSNpcNumKill(OMOBJ *obj);
+void mbDiceSNpcNumDispSet(OMOBJ *obj, int dispF);
+void mbDiceSNpcNumSet(OMOBJ *obj, int value);
+void mbDiceSNpcNumPosSet(OMOBJ *obj, HuVecF *pos);
+void mbDiceSNpcNumOfsSet(OMOBJ *obj, HuVecF *ofs);
+void mbDiceSNpcNumOfsGet(OMOBJ *obj, HuVecF *ofs);
 
 #endif

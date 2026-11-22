@@ -687,7 +687,7 @@ config.libs = [
             Object(NonMatching, "board/coin.c"),
             Object(NonMatching, "board/star.c"),
             Object(Matching, "board/padall.c"),
-            Object(NonMatching, "board/dice.c"),
+            Object(NonMatching, "board/dice.c", extra_cflags=["-O3,p", "-opt nopeephole"]),
             Object(NonMatching, "board/status.c"),
             Object(NonMatching, "board/opening.c"),
             Object(Matching, "board/pause.c"),
