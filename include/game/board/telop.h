@@ -2,31 +2,30 @@
 #define _GAME_BOARD_TELOP_H
 
 #include "game/board/board.h"
+#include "game/sprite.h"
 
-/* Prototypes from the MP6 asm: argument/return classes from register use, names after MP5 where
-   the function exists there; argN/fN are placeholder names. */
-void mbTelopCreate(s8 playerNo, s8 telopNo, BOOL waitF);
+void mbTelopCreate(int playerNo, int telopNo, BOOL waitF);
 void mbTelopPlayerCreate(int playerNo);
-void mbTelopPlayerSkipCreate(int arg0);
+void mbTelopPlayerSkipCreate(int telopNo);
 BOOL mbTelopCheck(void);
 void mbTelopLastTurnCreate(void);
 void mbTelopTimeCreate(void);
-s16 mbTelopTimeSprCreate(void);
-void mbTelopTimeSprKill(s16 arg0);
-void mbTelopTimeSprRotSet(s16 arg0, float f0);
-void mbTelopTimeStarSet(int arg0, int arg1);
-void mbTelopTimeTPLvlSet(int arg0, float f0);
-void mbTelopTimeDispSet(int arg0, int arg1);
+HUSPR_GROUPID mbTelopTimeSprCreate(void);
+void mbTelopTimeSprKill(HUSPR_GROUPID grpId);
+void mbTelopTimeSprRotSet(HUSPR_GROUPID grpId, float t);
+void mbTelopTimeStarSet(HUSPR_GROUPID grpId, int num);
+void mbTelopTimeTPLvlSet(HUSPR_GROUPID grpId, float tpLvl);
+void mbTelopTimeDispSet(HUSPR_GROUPID grpId, BOOL dispF);
 s8 mbPadStkXGet(int padNo);
 s8 mbPadStkYGet(int padNo);
 void mbTauntInit(void);
 void mbTauntClose(void);
 int mbLanguageGet(void);
-void mbLanguageSet(int arg0);
-int mbBoardDataNumGet(int arg0);
+void mbLanguageSet(int lang);
+int mbBoardDataNumGet(int dataNum);
 void mbBoardDataDirRead(void);
 void mbTelopTimeChangeCreate(void);
 void mbTelopTimeChangeKill(void);
-int mbTelopTimeChangeCheck(void);
+BOOL mbTelopTimeChangeCheck(void);
 
 #endif
