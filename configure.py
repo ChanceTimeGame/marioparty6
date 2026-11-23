@@ -704,7 +704,7 @@ config.libs = [
             Object(Matching, "board/guide.c"),
             Object(NonMatching, "board/branch.c"),
             Object(NonMatching, "board/mgcall.c"),
-            Object(NonMatching, "board/effect.c"),
+            Object(NonMatching, "board/effect.c", extra_cflags=["-O3,p", "-opt nopeephole"]),
             Object(NonMatching, "board/config.c"),
             Object(Matching, "board/gate.c"),
             Object(NonMatching, "board/last5.c"),
