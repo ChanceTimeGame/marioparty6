@@ -5,6 +5,7 @@
 #include "game/board/comchoice.h"
 #include "game/board/dice.h"
 #include "game/board/effect.h"
+#include "game/board/telop.h"
 #include "game/board/guide.h"
 #include "game/board/masu.h"
 #include "game/board/math.h"
@@ -29,9 +30,6 @@
 
 /* star.h declares mbStarMapViewProcExec(int, HuVecF *, int); retail calls it with no arguments. */
 void mbStarMapViewProcExec();
-/* telop.h declares mbTelopCreate(s8, s8, BOOL); retail passes the telop number unextended. */
-void mbTelopCreate(int playerNo, int telopNo, BOOL waitF);
-BOOL mbTelopCheck(void);
 
 typedef void (*OPENINGHOOK)(void);
 

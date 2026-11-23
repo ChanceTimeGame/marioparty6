@@ -14,6 +14,7 @@ int GWPlayerStarGet();
 #include "game/board/status.h"
 #include "game/board/star.h"
 #include "game/board/telop.h"
+#include "game/board/effect.h"
 #include "game/board/wipe.h"
 #include "game/board/pause.h"
 #include "game/board/tutorial.h"
@@ -142,10 +143,7 @@ typedef struct PlayerParticle_s {
     PLAYERPARTICLEDATA *data;
 } PLAYERPARTICLE;
 
-/* Local prototypes: these differ from effect.h/snpc.h (see the report). */
-s16 mbParticleCreate(ANIMDATA *anim, s16 num);
-void mbParticleKill(s16 modelId);
-void mbParticleHookSet(s16 modelId, void *hook);
+/* Local prototypes: these differ from snpc.h (see the report). */
 void mbObjMetalCreate(s16 objId);
 int mbObjMetalKill(s16 objId);
 void mbObjMetalTPLvlSet(s16 objId, float tpLvl);
