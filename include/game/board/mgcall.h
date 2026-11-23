@@ -7,7 +7,7 @@
    the function exists there; argN/fN are placeholder names. */
 void mbMgCallInit(void);
 int mbev_MgCall(void);
-void mbMgRouletteFocusKill(u8 arg0);
+void mbMgRouletteFocusKill(BOOL dispF);
 void mbev_MgCallKettou(void);
 void mbev_MgCallDonkey(void);
 void mbev_MgCallKoopa(void);
