@@ -34,9 +34,9 @@ typedef struct MgCallWork_s {
     s16 unk18[4]; /* 0x18 */
     MBOBJID guideObjId; /* 0x20 */
     MBOBJID hookObjId; /* 0x22 */
-    s16 battleSprId[3]; /* 0x24 */
-    s16 battleSprId2[3]; /* 0x2A */
-    s16 battleWinId[3]; /* 0x30 */
+    s16 picSprId[3]; /* 0x24 */
+    s16 frameSprId[3]; /* 0x2A */
+    s16 winId[3]; /* 0x30 */
 } MGCALL_WORK; /* size 0x38 */
 
 typedef struct MgListWork_s {
@@ -1705,9 +1705,9 @@ static void MgRouletteCreate(MGCALL_WORK *workP)
         workP->sprId[i] = -1;
     }
     for(i=0; i<3; i++) {
-        workP->battleSprId[i] = -1;
-        workP->battleSprId2[i] = -1;
-        workP->battleWinId[i] = -1;
+        workP->picSprId[i] = -1;
+        workP->frameSprId[i] = -1;
+        workP->winId[i] = -1;
     }
     workP->guideObjId = MB_OBJ_NONE;
     workP->hookObjId = MB_OBJ_NONE;
@@ -1728,14 +1728,14 @@ static void MgRouletteKill(MGCALL_WORK *workP)
         mbObjKill(workP->hookObjId);
     }
     for(i=0; i<3; i++) {
-        if(workP->battleSprId[i] >= 0) {
-            espKill(workP->battleSprId[i]);
+        if(workP->picSprId[i] >= 0) {
+            espKill(workP->picSprId[i]);
         }
-        if(workP->battleSprId2[i] >= 0) {
-            espKill(workP->battleSprId2[i]);
+        if(workP->frameSprId[i] >= 0) {
+            espKill(workP->frameSprId[i]);
         }
-        if(workP->battleWinId[i] >= 0) {
-            mbWinKill(workP->battleWinId[i]);
+        if(workP->winId[i] >= 0) {
+            mbWinKill(workP->winId[i]);
         }
     }
     MgRouletteCreate(workP);
