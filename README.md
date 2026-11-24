@@ -1,78 +1,64 @@
-decomp-toolkit Project Template
-===============================
+# Mario Party 6 (US) decompilation
 
-If starting a new GameCube / Wii decompilation project, this repository can be used as a scaffold.
+A matching decompilation of Mario Party 6 (GameCube, US, `GP6E01`). Built with the original
+compilers, it produces a `main.dol` and RELs byte-identical to the retail game.
 
-See [decomp-toolkit](https://github.com/encounter/decomp-toolkit) for background on the concept and more information on the tooling used.
+**Progress:** main.dol 31.8%, RELs 0.1%; overall 5.6% of code bytes. Only units with C appear in the objdiff report, so
+[OPEN_FUNCTIONS.md](OPEN_FUNCTIONS.md) lists those; every unit without source is open too.
 
-Documentation
--------------
+This repository is a fork of [mariopartyrd/marioparty6](https://github.com/mariopartyrd/marioparty6).
+Thanks to everyone who worked on it, and to
+[decomp-toolkit](https://github.com/encounter/decomp-toolkit), whose project template it is built on.
 
-- [Dependencies](docs/dependencies.md)
-- [Getting Started](docs/getting_started.md)
-- [`symbols.txt`](docs/symbols.md)
-- [`splits.txt`](docs/splits.md)
-- [GitHub Actions](docs/github_actions.md) (new!)
+## Why this fork exists: Chance Time
 
-General:
+This fork is the decompilation behind Mario Party 6 in **Chance Time**, a native PC port of the
+N64 and GameCube Mario Party games. Chance Time ships no game data: players supply their own ROM
+or disc.
 
-- [Common BSS](docs/common_bss.md)
-- [`.comment` section](docs/comment_section.md)
+How the two fit together:
 
-References
---------
+- **This repository is a pure matching decompilation.** It holds decompiled game code only, with
+  no PC-port code, no `#ifdef` for a PC build and no host types. Every commit passes the
+  `build.sha1` check against the retail disc.
+- **Chance Time will be built from it.** Chance Time's Mario Party 6 port has not started yet; when
+  it does, it takes this repository as a submodule and keeps its own changes as a patch series on
+  top, as it already does for [Mario Party 4](https://github.com/ChanceTimeGame/marioparty4). So
+  the port is always built from code that is provably the original game logic, and the
+  decompilation never carries port changes.
+- **Non-matching C must still be correct.** The PC port will compile every unit's C, including units
+  still marked `NonMatching`, so a function is only left short of 100% once its remaining
+  difference is register allocation, instruction order or a symbol name: same calls, same
+  constants, same stores.
+- **The Mario Party games share an engine.** Mario Party 4 is fully matched
+  ([ChanceTimeGame/marioparty4](https://github.com/ChanceTimeGame/marioparty4)) and Mario Party 5
+  is over 80% ([ChanceTimeGame/marioparty5](https://github.com/ChanceTimeGame/marioparty5)). A
+  large share of this game's code is identical or close to a function already decompiled there,
+  so a twin is often the fastest start.
 
-- [Discord: GC/Wii Decompilation](https://discord.gg/hKx3FJJgrV) (Come to `#dtk` for help!)
-- [objdiff](https://github.com/encounter/objdiff) (Local diffing tool)
-- [decomp.me](https://decomp.me) (Collaborate on matches)
-- [frogress](https://github.com/decompals/frogress) (Decompilation progress API)
-- [wibo](https://github.com/decompals/wibo) (Minimal Win32 wrapper for Linux)
-- [sjiswrap](https://github.com/encounter/sjiswrap) (UTF-8 to Shift JIS wrapper)
+Once Mario Party 6 reaches 100% this repository is finished: it takes genuine decompilation fixes
+only.
 
-Projects using this structure:
+## Contributing
 
-- [zeldaret/tww](https://github.com/zeldaret/tww)
-- [PrimeDecomp/prime](https://github.com/PrimeDecomp/prime)
-- [PrimeDecomp/echoes](https://github.com/PrimeDecomp/echoes)
-- [DarkRTA/rb3](https://github.com/DarkRTA/rb3)
-- [doldecomp/melee](https://github.com/doldecomp/melee)
-- [doldecomp/sadx](https://github.com/doldecomp/sadx)
-- [InputEvelution/wp](https://github.com/InputEvelution/wp)
-- [lepelog/ss-dtk](https://github.com/lepelog/ss-dtk)
-- [NWPlayer123/AnimalCrossing-dtk](https://github.com/NWPlayer123/AnimalCrossing-dtk)
-- [Rainchus/mp4-dtk](https://github.com/Rainchus/mp4-dtk)
-- [Rainchus/ttyd_dtk](https://github.com/Rainchus/ttyd_dtk)
-- [Sage-of-Mirrors/zmansion](https://github.com/Sage-of-Mirrors/zmansion)
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the workflow, the checks a change must pass and the
+compiler details that matter, and [OPEN_FUNCTIONS.md](OPEN_FUNCTIONS.md) for where to start. Pull
+requests are welcome.
 
-Features
---------
+## Building
 
-- Few external dependencies: Just `python` for the generator and `ninja` for the build system. See [Dependencies](docs/dependencies.md).
-- Simple configuration: Everything lives in `config.yml`, `symbols.txt`, and `splits.txt`.
-- Multi-version support: Separate configurations for each game version, and a `configure.py --version` flag to switch between them.
-- Feature-rich analyzer: Many time-consuming tasks are automated, allowing you to focus on the decompilation itself. See [Analyzer features](https://github.com/encounter/decomp-toolkit#analyzer-features).
-- REL support: RELs each have their own `symbols.txt` and `splits.txt`, and will automatically be built and linked against the main binary.
-- No manual assembly: decomp-toolkit handles splitting the DOL into relocatable objects based on the configuration. No game assets are committed to the repository.
-- Progress calculation and upload script for [frogress](https://github.com/decompals/frogress).
-- Integration with [objdiff](https://github.com/encounter/objdiff) for a diffing workflow.
-- CI workflow template for GitHub Actions.
+This repository contains no game assets or assembly. You need your own copy of the game.
 
-Project structure
------------------
+1. Install [Python 3](https://www.python.org/downloads/) and
+   [ninja](https://github.com/ninja-build/ninja/releases) (`pip install ninja` works). On Linux
+   x86-64, [wibo](https://github.com/decompals/wibo) is downloaded for the Windows compilers; on
+   other Linux platforms and on macOS, install Wine. On Windows, use native tools: WSL is not
+   needed.
+2. `git clone https://github.com/ChanceTimeGame/marioparty6`.
+3. Put your disc image (ISO, RVZ, WIA, WBFS, CISO, NFS, GCZ or TGC) in `orig/GP6E01/`. After the
+   first build it can be deleted.
+4. `python configure.py`, then `ninja`. The build checks every output against
+   `config/GP6E01/build.sha1` and writes the totals to `build/GP6E01/progress.json`.
 
-- `configure.py` - Project configuration and generator script.
-- `config/[GP6E01]` - Configuration files for each game version.
-- `config/[GP6E01]/build.sha1` - SHA-1 hashes for each built artifact, for final verification.
-- `build/` - Build artifacts generated by the the build process. Ignored by `.gitignore`.
-- `orig/[GP6E01]` - Original game files, extracted from the disc. Ignored by `.gitignore`.
-- `orig/[GP6E01]/.gitkeep` - Empty checked-in file to ensure the directory is created on clone.
-- `src/` - C/C++ source files.
-- `include/` - C/C++ header files.
-- `tools/` - Scripts shared between projects.
-
-Temporary, delete when done:
-
-- `config/GP6E01/config.example.yml` - Example configuration file and documentation.
-- `docs/` - Documentation for decomp-toolkit configuration.
-- `README.md` - This file, replace with your own. For a template, see [`README.example.md`](README.example.md).
-- `LICENSE` - This repository is licensed under the CC0 license. Replace with your own if desired.
+To compare functions, open the repository in [objdiff](https://github.com/encounter/objdiff): it
+reads `objdiff.json`, written by the first build, and rebuilds on every change.
