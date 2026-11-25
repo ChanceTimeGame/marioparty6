@@ -219,6 +219,11 @@ void mbCapMasuPlayerTypeSet(s16 masuId, s16 capsuleNo, s16 playerNo)
 static void CapSelectMasuAddFront(s16 *list, s16 masuId, int depth);
 static void CapSelectMasuAddBack(s16 *list, s16 masuId, int depth);
 /* @@PART3@@ */
+static inline void *CapMalloc(s32 size)
+{
+    return HuMemDirectMallocNum(HEAP_HEAP, size, HU_MEMNUM_OVL);
+}
+
 static int capsuleThrowTbl[8] = { 10, 11, 12, 13, 25, 15, 16, 17 };
 static int capsuleTrapTbl[5] = { 20, 21, 22, 23, 24 };
 static int capsuleChanceTbl[3][4][5] = {
@@ -391,7 +396,7 @@ BOOL mbCapValidCheck(int capsuleNo)
 
 int mbCapMasuDispTypeGet(s16 masuId)
 {
-    s16 capsuleNo = mbCapMasuTypeGet(masuId);
+    s16 capsuleNo = mbCapValueTypeGet(mbMasuCapsuleGet(masuId));
     if(capsuleNo == 0xFF) {
         return 0;
     }
@@ -405,18 +410,17 @@ int mbCapMasuDispTypeGet(s16 masuId)
     }
 }
 
-int mbCapSelectMasuNum(s16 masuId)
+int mbCapSelectMasuNum(int masuId)
 {
-    int backNum = mbCapSelectMasuBackNum(masuId);
-    return mbCapSelectMasuFrontNum(masuId)+backNum;
+    return mbCapSelectMasuBackNum(masuId)+mbCapSelectMasuFrontNum(masuId);
 }
 
-s16 mbCapSelectMasuFrontNum(s16 masuId)
+int mbCapSelectMasuFrontNum(int masuId)
 {
     s16 *list;
     s16 i;
     s16 num;
-    list = HuMemDirectMallocNum(HEAP_HEAP, 0x200, HU_MEMNUM_OVL);
+    list = CapMalloc(0x200);
     memset(list, 0, 0x200);
     capsuleMasuSelectEndF = TRUE;
     CapSelectMasuAddFront(list, masuId, 5);
@@ -429,12 +433,12 @@ s16 mbCapSelectMasuFrontNum(s16 masuId)
     return num;
 }
 
-s16 mbCapSelectMasuBackNum(s16 masuId)
+int mbCapSelectMasuBackNum(int masuId)
 {
     s16 *list;
     s16 i;
     s16 num;
-    list = HuMemDirectMallocNum(HEAP_HEAP, 0x200, HU_MEMNUM_OVL);
+    list = CapMalloc(0x200);
     memset(list, 0, 0x200);
     capsuleMasuSelectEndF = TRUE;
     CapSelectMasuAddBack(list, masuId, 5);
@@ -453,7 +457,8 @@ int mbCapValidListGet(int *list)
     int num;
     for(i=0, num=0; i<0x21; i++) {
         if(mbCapValidCheck(i)) {
-            list[num++] = i;
+            list[num] = i;
+            num++;
         }
     }
     return num;
