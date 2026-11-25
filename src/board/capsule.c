@@ -2,6 +2,7 @@
 #include "game/board/capsule.h"
 #include "game/board/audio.h"
 #include "game/board/camera.h"
+#include "game/board/branch.h"
 #include "game/board/capselect.h"
 #include "game/board/exit.h"
 /* Retail calls mbMasuCapsuleGet as returning int (no extsh of its result). */
@@ -14,18 +15,25 @@ int mbMasuCapsuleGet(s16 id);
 #include "game/board/pause.h"
 #include "game/board/player.h"
 #include "game/board/single.h"
+#include "game/board/telop.h"
 #include "game/board/tutorial.h"
 #include "game/board/window.h"
 #include "game/board/wipe.h"
 
 #include "game/charman.h"
+#include "game/data.h"
 #include "game/flag.h"
 #include "game/gamemes.h"
 #include "game/gamework.h"
+#include "game/hsfformat.h"
+#include "game/hsfload.h"
 #include "game/hu3d.h"
 #include "game/memory.h"
 #include "game/object.h"
+#include "game/pad.h"
+#include "game/printfunc.h"
 #include "game/process.h"
+#include "game/sprite.h"
 #include "math.h"
 #include "string.h"
 
@@ -33,6 +41,7 @@ int mbMasuCapsuleGet(s16 id);
 extern u32 mbCapEffNum;
 extern s16 *mbCapEffData;
 int mbev_CapCall(int playerNo, int capsuleNo, int arg2, int arg3);
+int mbev_CapMasuMoveCheck(int masuId);
 void mbev_CapBonusCoinCall(int playerNo, int capsuleNo, int coinNum, int arg3);
 void mbev_CapPlayerMotShiftWait(int playerNo, int motNo, u32 attr, BOOL waitF);
 void mbev_CapEffColorSet(GXColor *color, int no);
@@ -117,12 +126,16 @@ typedef struct CapAutoThrowWork_s {
     HuVecF pos[3]; //0x14
 } CAPAUTOTHROWWORK; //size=0x38
 
-typedef struct CapSelectMasuWork_s {
+typedef struct CapSelMasuWork_s {
     int playerNo; //0x00
-    int masuId; //0x04
+    int unk4; //0x04
     int capsuleNo; //0x08
-    u8 unk0C[0x14]; //0x0C
-} CAPSELECTMASUWORK; //size=0x20
+    int capObjId; //0x0C
+    int mdlId; //0x10
+    int winId; //0x14
+    int winId2; //0x18
+    int unk1C; //0x1C
+} CAPSELMASU_WORK; //size=0x20
 
 typedef struct CapListFile_s {
     int boardNo;
@@ -153,9 +166,9 @@ typedef struct CapObjColorData_s {
 
 /* Statics defined in later parts (forward declarations for the calls part 1 makes). */
 static int CapUseDelete(int playerNo, int capsuleNo);
-static void CapSelectMasuPlayer(CAPSELECTMASUWORK *work);
-static void CapSelectMasuCom(CAPSELECTMASUWORK *work);
-static void CapSelectMasuListGet(s16 *list, s16 masuId, int frontNum, int backNum);
+static void CapSelectMasuPlayer(CAPSELMASU_WORK *work);
+static void CapSelectMasuCom(CAPSELMASU_WORK *work);
+static void CapSelectMasuListGet(s16 *list, s16 masuId, s16 frontNum, s16 backNum);
 static void CapThrowEndWin(int masuId, int capsuleNo);
 static void CapEffRemoveAddDestroy(void);
 static void CapEffHiliteKill(void);
@@ -410,8 +423,6 @@ static inline void *CapMalloc(int size)
 {
     return HuMemDirectMallocNum(HEAP_HEAP, size, HU_MEMNUM_OVL);
 }
-
-
 /* Placeholder copies of part 2 functions that retail inlines into part 3 (own-file scoring only). */
 s16 mbCapValueTypeGet(s16 value)
 {
@@ -453,6 +464,19 @@ static void CapSelectMasuAddBack(s16 *list, s16 masuId, s16 num);
 /* Own-file only (the splice drops this section): pad for the .data part 2 emits before 0x1600.
    Stub bodies for part 2 statics are in PART4 so they do not inline. */
 static u8 capsulePart2DataPad[0x1600-0x14C0] = { 1 };
+/* Tables part 2 places after mbCapComChanceGet (copies for own-file scoring). */
+static int capsuleThrowTbl[8] = { 10, 11, 12, 13, 25, 15, 16, 17 };
+static int capsuleTrapTbl[5] = { 20, 21, 22, 23, 24 };
+static int capsuleChanceTbl2[3][4][5] = {
+    { { 70, 15, 15, 0, 0 }, { 70, 20, 10, 0, 0 }, { 70, 20, 0, 10, 0 }, { 50, 30, 0, 20, 0 } },
+    { { 40, 30, 30, 0, 0 }, { 30, 30, 20, 20, 0 }, { 10, 40, 10, 30, 10 }, { 10, 40, 0, 30, 20 } },
+    { { 30, 30, 30, 10, 0 }, { 20, 20, 20, 30, 10 }, { 10, 30, 0, 40, 20 }, { 10, 20, 0, 40, 30 } }
+};
+static int capsuleMaxTurnTbl[9] = { 10, 15, 20, 25, 30, 35, 40, 45, 50 };
+static int capsuleTurnTbl[9][2] = {
+    { 3, 6 }, { 5, 10 }, { 5, 15 }, { 8, 16 }, { 10, 20 }, { 10, 20 }, { 13, 26 }, { 15, 30 }, { 15, 35 }
+};
+
 /* @@PART3@@ */
 /* Part 3: includes, types and helpers part 1's HEAD does not have yet (see report). */
 #include "game/hsfload.h"
@@ -504,18 +528,6 @@ typedef struct CapsuleEffect_s {
     void *hook;
     HU3D_MODEL *hookMdlP;
 } CAPSULE_EFFECT;
-
-static int capsuleThrowTbl[8] = { 10, 11, 12, 13, 25, 15, 16, 17 };
-static int capsuleTrapTbl[5] = { 20, 21, 22, 23, 24 };
-static int capsuleNextChanceTbl[3][4][5] = {
-    { { 70, 15, 15, 0, 0 }, { 70, 20, 10, 0, 0 }, { 70, 20, 0, 10, 0 }, { 50, 30, 0, 20, 0 } },
-    { { 40, 30, 30, 0, 0 }, { 30, 30, 20, 20, 0 }, { 10, 40, 10, 30, 10 }, { 10, 40, 0, 30, 20 } },
-    { { 30, 30, 30, 10, 0 }, { 20, 20, 20, 30, 10 }, { 10, 30, 0, 40, 20 }, { 10, 20, 0, 40, 30 } }
-};
-static int capsuleMaxTurnTbl[9] = { 10, 15, 20, 25, 30, 35, 40, 45, 50 };
-static int capsuleTurnTbl[9][2] = {
-    { 3, 6 }, { 5, 10 }, { 5, 15 }, { 8, 16 }, { 10, 20 }, { 10, 20 }, { 13, 26 }, { 15, 30 }, { 15, 35 }
-};
 
 static HU3D_MODELID CapEffCreate(ANIMDATA *anim, s16 num);
 static void CapEffHiliteOMExec(OMOBJ *obj);
@@ -802,7 +814,7 @@ int mbCapNextGet(int chanceNo)
     if(chanceNo > 3) {
         chanceNo = 3;
     }
-    tbl = capsuleNextChanceTbl[phase][chanceNo];
+    tbl = capsuleChanceTbl2[phase][chanceNo];
     for(i=0, sum=0, n=0; i<5; i++) {
         if(tbl[i] > 0) {
             chanceList[n].type = i+'A';
