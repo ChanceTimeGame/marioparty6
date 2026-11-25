@@ -1120,11 +1120,6 @@ int mbCapDescWinCreate(int capsuleNo)
     return winId;
 }
 
-static inline void CapObjDispSet(s16 objId, BOOL dispF)
-{
-    mbObjDispSet(objId, dispF);
-}
-
 void mbCapInit(void)
 {
     int i;
