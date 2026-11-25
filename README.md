@@ -3,7 +3,7 @@
 A matching decompilation of Mario Party 6 (GameCube, US, `GP6E01`). Built with the original
 compilers, it produces a `main.dol` and RELs byte-identical to the retail game.
 
-**Progress:** main.dol 31.8%, RELs 0.1%; overall 5.6% of code bytes. Only units with C appear in the objdiff report, so
+**Progress:** main.dol 33.1%, RELs 0.1%; overall 5.9% of code bytes. Only units with C appear in the objdiff report, so
 [OPEN_FUNCTIONS.md](OPEN_FUNCTIONS.md) lists those; every unit without source is open too.
 
 This repository is a fork of [mariopartyrd/marioparty6](https://github.com/mariopartyrd/marioparty6).
