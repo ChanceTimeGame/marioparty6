@@ -116,15 +116,12 @@ static int CapEffRemoveCheck(void);
 static void CapEffRemoveKill(void);
 static void CapEffHiliteCreate(void);
 static void CapEffHiliteAdd(HuVecF pos, HuVecF rot, HuVecF scale, int arg3, int arg4, int arg5, int arg6, GXColor color);
-static void CapEffHiliteKill(void);
-static void CapComChoiceSet(int choice);
 static float CapCameraXZAngleGet(float angle);
 static float CapAngleSumWrap(float a, float b);
 
 static void CapSelectMasuKill(CAPSELMASU_WORK *work);
 static int CapSelectMasuCheck(int masuId);
 static int CapSelectMasuDispCheck(int masuId);
-static void CapSelectMasuListGet(s16 *list, s16 masuId, s16 frontNum, s16 backNum);
 static void CapSelectMasuAddFront(s16 *list, s16 masuId, s16 num);
 static void CapSelectMasuAddBack(s16 *list, s16 masuId, s16 num);
 static void CapSelectMasuLinkCheck(s16 *list, s16 masuId);
@@ -981,45 +978,6 @@ static void CapUseDeleteKill(CAPSELMASU_WORK *work)
     work->winId2 = -1;
 }
 
-typedef struct CapsuleListFile_s {
-    int boardNo;
-    int dataNum;
-} CAPSULE_LIST_FILE;
-
-typedef struct CapsuleListDefine_s {
-    u32 capsuleNo;
-    char *name;
-} CAPSULE_LIST_DEFINE;
-
-static CAPSULE_LIST_FILE capsuleListFileTbl[12] = { 1 };
-static CAPSULE_LIST_DEFINE capsuleListDefineTbl[24] = {
-    { 0, "CAPSULE_KINOKO" },
-    { 1, "CAPSULE_SKINOKO" },
-    { 2, "CAPSULE_PKINOKO" },
-    { 3, "CAPSULE_MKINOKO" },
-    { 4, "CAPSULE_KILLER" },
-    { 5, "CAPSULE_DOKAN" },
-    { 6, "CAPSULE_HANACHAN" },
-    { 7, "CAPSULE_TOGEZO" },
-    { 8, "CAPSULE_KURIBO" },
-    { 9, "CAPSULE_PAKKUN" },
-    { 10, "CAPSULE_JANGO" },
-    { 11, "CAPSULE_PATAPATA" },
-    { 12, "CAPSULE_KOKAMEKKU" },
-    { 13, "CAPSULE_KAMEKKU" },
-    { 14, "CAPSULE_THROWMAN" },
-    { 15, "CAPSULE_BOBLE" },
-    { 16, "CAPSULE_BIRIQ" },
-    { 17, "CAPSULE_TUMUJIKUN" },
-    { 18, "CAPSULE_DOSSUN" },
-    { 19, "CAPSULE_BOMHEI" },
-    { 20, "CAPSULE_HONE" },
-    { 21, "CAPSULE_LIGHT" },
-    { 22, "CAPSULE_TARU" },
-    { -1, "CAPSULE_NULL" },
-};
-static int capsuleListColW[16] = { 1 };
-
 void mbCapListInit(CAPSULE_LIST *list)
 {
     int i;
@@ -1041,7 +999,7 @@ void mbCapListInit(CAPSULE_LIST *list)
 
 void mbCapListRead(void)
 {
-    CAPSULE_LIST_FILE *file;
+    CAPLISTFILE *file;
     int i;
     int num;
     CAPSULE_LIST *buf;
@@ -1052,7 +1010,7 @@ void mbCapListRead(void)
             break;
         }
     }
-    data = HuDataSelHeapReadNum(file->dataNum, HU_MEMNUM_OVL, HEAP_MODEL);
+    data = HuDataSelHeapReadNum(file->file, HU_MEMNUM_OVL, HEAP_MODEL);
     buf = data;
     for(i = 0, num = 0; i < 33; i++, data++) {
         if(data->capsuleNo == -1) {
@@ -1095,7 +1053,7 @@ void mbCapListDebug(void)
     int color;
     CAPSULE_LIST *list;
     int x;
-    CAPSULE_LIST_DEFINE *def;
+    CAPLISTDEFINE *def;
     int mode;
     int dy;
     int y;
@@ -1444,10 +1402,10 @@ int mbCapBuyCostGet(s16 capsuleNo, s16 playerNo)
             break;
         }
         if(capsuleNo == capsuleList[i].capsuleNo) {
-            if(capsuleList[i].cost[type] <= 0) {
+            if(capsuleList[i].rate[type] <= 0) {
                 break;
             }
-            cost = capsuleList[i].cost[type];
+            cost = capsuleList[i].rate[type];
             break;
         }
     }
@@ -1479,10 +1437,10 @@ int mbCapSellCostGet(s16 capsuleNo, s16 playerNo)
             break;
         }
         if(capsuleNo == capsuleList[i].capsuleNo) {
-            if(capsuleList[i].cost[type] <= 0) {
+            if(capsuleList[i].rate[type] <= 0) {
                 break;
             }
-            cost = capsuleList[i].cost[type];
+            cost = capsuleList[i].rate[type];
             break;
         }
     }
@@ -1502,7 +1460,7 @@ int mbCapCostGet(s16 capsuleNo)
 int mbCapListExcludeCheck(s16 capsuleNo)
 {
     capsuleNo = mbCapValueTypeGet(capsuleNo);
-    return capsuleData[capsuleNo].listExcludeF;
+    return capsuleData[capsuleNo].listF;
 }
 
 BOOL mbCapThrowMasuCheck(int masuId)
@@ -1514,7 +1472,7 @@ static BOOL CapCheckComPath(int playerNo, int maxStep, int mode);
 
 int mbCapComChanceGet(int capsuleNo, int playerNo, int mode)
 {
-    CAPSULE_CHANCE *chance = capsuleChanceTbl;
+    CAPSULE_CHANCE_TBL *chance = capsuleChanceTbl;
     int i;
     int dif;
     int rate;
@@ -1536,8 +1494,8 @@ int mbCapComChanceGet(int capsuleNo, int playerNo, int mode)
     if(dif > 10) {
         dif = 10;
     }
-    rate = chance->dif[dif].chance;
-    flag = chance->dif[dif].flag;
+    rate = chance->chance[dif].chance;
+    flag = chance->chance[dif].mark[0];
     step = mbMasuFind_TypeStepGet(GwPlayer[playerNo].masuId, 7);
     switch(capsuleNo) {
         case 1:
@@ -1663,7 +1621,7 @@ int mbCapComChanceGet(int capsuleNo, int playerNo, int mode)
         case 0:
             return rate;
         case 1:
-            return chance->dif[dif].chance;
+            return chance->chance[dif].chance;
         case 2:
             return 100 - rate;
         default:

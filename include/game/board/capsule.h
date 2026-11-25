@@ -3,29 +3,60 @@
 
 #include "game/board/board.h"
 
+typedef struct CapsuleData_s {
+    u32 file; //0x00
+    u32 iconFile; //0x04
+    u32 descMes; //0x08
+    u32 useMes; //0x0C
+    s32 masuPat; //0x10
+    s32 color; //0x14
+    s32 cost; //0x18
+    char rank; //0x1C
+    s16 useMode; //0x1E
+    char *debugName; //0x20
+    u8 listF; //0x24
+} CAPSULE_DATA; //size=0x28
+
+typedef struct CapsuleChance_s {
+    s16 chance;
+    char mark[2];
+} CAPSULE_CHANCE;
+
+typedef struct CapsuleChanceTbl_s {
+    s16 capsuleNo;
+    CAPSULE_CHANCE chance[11];
+} CAPSULE_CHANCE_TBL; //size=0x2E
+
+typedef struct CapsuleList_s {
+    s8 capsuleNo;
+    s8 rate[3];
+    s8 boardRate[8];
+    s8 turnRate[4];
+} CAPSULE_LIST; //size=0x10
+
 /* Prototypes from the MP6 asm: argument/return classes from register use, names after MP5 where
    the function exists there; argN/fN are placeholder names. */
-int mbCapUse(int arg0, s16 arg1);
+int mbCapUse(int playerNo, int capsuleNo);
 void MBCapsuleStub1(void);
 int MBCapsuleStub2(void);
-int mbCapEffUseCreate(int arg0, s16 arg1);
-int mbCapEffUseModeGet(int arg0);
-int mbCapEffUsePosGet(int arg0, HuVecF *arg1);
-int mbCapEffUseWanWanCreate(int arg0, s16 arg1, HuVecF *arg2);
-void mbCapPlayerThrow(int arg0, int arg1, s16 arg2);
+int mbCapEffUseCreate(int playerNo, int capsuleNo);
+int mbCapEffUseModeGet(int playerNo);
+int mbCapEffUsePosGet(int playerNo, HuVecF *pos);
+int mbCapEffUseWanWanCreate(int playerNo, int capsuleNo, HuVecF *pos);
+void mbCapPlayerThrow(int playerNo, int masuId, int capsuleNo);
 int mbCapPlayerThrowCheck(void);
-int mbCapThrowColCreate(int arg0);
-int mbCapThrowColCheck(int arg0, int arg1, int arg2);
-void mbCapThrowHookSet(void *arg0);
-void mbCapEffThrowCreate(HuVecF *arg0, HuVecF *arg1);
-int mbCapEffThrowCheck(HuVecF *arg0, void *arg1);
-void mbCapAutoThrow(HuVecF *arg0, HuVecF *arg1, HuVecF *arg2, int arg3, int arg4, int arg5, int arg6, float f0);
-void mbCapAutoThrowEnd(void);
-int mbCapSelectMasu(int arg0, u8 arg1);
+int mbCapThrowColCreate(int dataNum);
+int mbCapThrowColCheck(HuVecF *pos, HuVecF *next, HuVecF *out);
+void mbCapThrowHookSet(void (*hook)(BOOL startF));
+void mbCapEffThrowCreate(HuVecF *start, HuVecF *end);
+int mbCapEffThrowCheck(HuVecF *pos, int *maxTime);
+void mbCapAutoThrow(HuVecF *start, HuVecF *mid, HuVecF *end, int playerNo, int masuId, int capsuleNo, int maxTime, float speed);
+void mbCapAutoThrowEnd(void *work);
+int mbCapSelectMasu(int playerNo, int capsuleNo);
 void mbCapSelectMasuInit(void);
-void mbCapListInit(struct CapsuleList_s *list);
+void mbCapListInit(CAPSULE_LIST *list);
 void mbCapListRead(void);
-int mbCapListCopy(struct CapsuleList_s *list);
+int mbCapListCopy(CAPSULE_LIST *list);
 void mbCapListDebug(void);
 void mbCapNumInc(int capsuleNo, int type);
 void mbCapNumDebug(void);
@@ -48,7 +79,7 @@ int mbCapSelectComGet(int playerNo, int *capsuleTbl, int num);
 int mbCapSelectDeleteComGet(int playerNo, int *capsuleTbl, int num);
 void mbCapRandomThrowAdd(int arg0, int arg1, int arg2);
 void mbCapRandomTrapAdd(int arg0, int arg1, int arg2);
-void mbCapMasuCapsuleSet(s16 arg0, s16 arg1, s16 arg2);
+void mbCapMasuCapsuleSet(int masuId, int capsuleNo, int playerNo);
 int mbCapFileGet(int capsuleNo);
 int mbCapDescMesGet(s16 arg0);
 int mbCapUseMesGet(int capsuleNo);
@@ -67,14 +98,14 @@ int mbCapNextGet(int arg0);
 int mbCapMasuNextGet(int arg0);
 int mbCapShopListGet(int arg0, void *arg1);
 int mbCapRandomListGet(void *arg0, int arg1);
-int mbCapBonusCoinNumGet(int arg0, s16 arg1);
-int mbCapDescWinCreate(s16 arg0);
+int mbCapBonusCoinNumGet(int playerNo, int capsuleNo);
+int mbCapDescWinCreate(s16 capsuleNo);
 void mbCapInit(void);
 int mbCapObjCreate(int capsuleNo, int arg1);
 s16 mbCapObjBorderCreate(s16 arg0, int arg1);
 void mbCapObjKill(int arg0);
 void mbCapObjBorderKill(int arg0);
-s16 mbCapObjColorCreate(s16 arg0, int arg1);
+int mbCapObjColorCreate(int capsuleNo, int arg1);
 void mbCapObjColorKill(int arg0);
 void mbCapObjColorPosSet(int arg0, float f0, float f1, float f2);
 void mbCapObjColorRotSet(int arg0, float f0, float f1, float f2);
