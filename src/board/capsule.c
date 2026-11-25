@@ -450,6 +450,9 @@ static void CapSelectMasuAddFront(s16 *list, s16 masuId, s16 num);
 static void CapSelectMasuAddBack(s16 *list, s16 masuId, s16 num);
 /* @@PART1@@ */
 /* @@PART2@@ */
+/* Own-file only (the splice drops this section): pad for the .data part 2 emits before 0x1600.
+   Stub bodies for part 2 statics are in PART4 so they do not inline. */
+static u8 capsulePart2DataPad[0x1600-0x14C0] = { 1 };
 /* @@PART3@@ */
 /* Part 3: includes, types and helpers part 1's HEAD does not have yet (see report). */
 #include "game/hsfload.h"
@@ -2024,4 +2027,18 @@ static void CapEffHiliteCreate(void)
     }
 }
 /* @@PART4@@ */
+/* Own-file only: stub bodies for part 2 and part 4 statics so the calls resolve. */
+static void CapSelectMasuAddFront(s16 *list, s16 masuId, s16 num)
+{
+}
+static void CapSelectMasuAddBack(s16 *list, s16 masuId, s16 num)
+{
+}
+static void CapEffHiliteOMExec(OMOBJ *obj)
+{
+}
+static HU3D_MODELID CapEffCreate(ANIMDATA *anim, s16 num)
+{
+    return 0;
+}
 /* @@END@@ */
