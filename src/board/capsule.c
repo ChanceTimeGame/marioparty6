@@ -261,8 +261,7 @@ static inline void *CapEffHeapMalloc(u32 size)
 
 static inline void *CapEffModelMalloc(u32 size, u32 num)
 {
-    void *ptr = HuMemDirectMallocNum(HEAP_MODEL, size, num);
-    return ptr;
+    return HuMemDirectMallocNum(HEAP_MODEL, size, num);
 }
 
 static inline float CapEffSqrtf(float x)
