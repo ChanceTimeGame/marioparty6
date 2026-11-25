@@ -35,7 +35,7 @@ void mbev_CapEffColorSet(GXColor *color, int no);
 OMOBJ *mbev_CapEffGlowCreate(void);
 void mbev_CapEffGlowKill(OMOBJ *obj);
 BOOL mbev_CapEffGlowDispGet(OMOBJ *obj);
-int mbev_CapEffGlowAdd(OMOBJ *obj, HuVecF pos, HuVecF vel, int time, GXColor color, float size, float speed, float scale);
+int mbev_CapEffGlowAdd(OMOBJ *obj, HuVecF pos, HuVecF vel, int time, float size, float speed, float scale, GXColor color);
 OMOBJ *mbev_CapEffRingCreate(void);
 void mbev_CapEffRingKill(OMOBJ *obj);
 int mbev_CapEffRingAdd(OMOBJ *obj, HuVecF pos, HuVecF rot, HuVecF scale, int arg4, int time, int arg6, GXColor color);
@@ -400,6 +400,8 @@ static inline float CapEffRandSF(void)
     return CapEffRandF()-0.5f;
 }
 
+#define CapHookNameGet(playerNo) CharModelItemHookGet(GwPlayer[playerNo].charNo, 4, 0)
+
 static inline void *CapMalloc(int size)
 {
     return HuMemDirectMallocNum(HEAP_HEAP, size, HU_MEMNUM_OVL);
@@ -421,12 +423,12 @@ static int CapEffThrowMasu(int masuId, int capsuleNo, int playerNo, BOOL coinF);
 static int CapEffThrowMasuWait(int coinNum);
 static void CapAutoThrow(CAPAUTOTHROWWORK *work);
 
-int mbCapUse(int playerNo, s16 capsuleNo)
+int mbCapUse(int playerNo, int capsuleNo)
 {
-    s32 selArg;
     s32 selObj;
+    s32 selArg;
     int masuId;
-    GAMEMESID mesId;
+    int mesId;
     capsuleNo = mbCapValueTypeGet(capsuleNo);
     capsuleUseRemoveOnF = FALSE;
     if(capsuleNo == 47) {
@@ -536,7 +538,7 @@ static int CapUseSelect(CAPUSEWORK *work)
     objPos = playerPos;
     objPos.y += 250.0f;
     if(selObj != -1) {
-        mbObjPosGet(objId, &playerPos);
+        mbObjPosGet(objId, &objPos);
         objPos.x = playerPos.x;
     }
     mbObjPosSet(objId, objPos.x, objPos.y, objPos.z);
@@ -604,7 +606,7 @@ static int CapUseSelect(CAPUSEWORK *work)
     return TRUE;
 }
 
-int mbCapEffUseCreate(int playerNo, s16 capsuleNo)
+int mbCapEffUseCreate(int playerNo, int capsuleNo)
 {
     CAPUSEWORK *work;
     capsuleNo = mbCapValueTypeGet(capsuleNo);
@@ -635,7 +637,7 @@ int mbCapEffUsePosGet(int playerNo, HuVecF *pos)
     return TRUE;
 }
 
-int mbCapEffUseWanWanCreate(int playerNo, s16 capsuleNo, HuVecF *pos)
+int mbCapEffUseWanWanCreate(int playerNo, int capsuleNo, HuVecF *pos)
 {
     CAPUSEWORK *work;
     int objId;
@@ -764,7 +766,7 @@ static void CapEffUse(void)
         vel.z = alpha*HuCos(angle);
         PSMTXMultVec(rotMtx, &vel, &vel);
         mbev_CapEffColorSet(&color, mbRandMod(0x8000));
-        mbev_CapEffGlowAdd(glowObj, effPos, vel, 60.0f*(0.4f+(0.5f*CAP_RAND_F())), color, 100.0f*(0.3f+(0.2f*CAP_RAND_F())), 5.0f*(-0.5f+CAP_RAND_F()), 0.0f);
+        mbev_CapEffGlowAdd(glowObj, effPos, vel, 60.0f*(0.4f+(0.5f*CAP_RAND_F())), 100.0f*(0.3f+(0.2f*CAP_RAND_F())), 5.0f*(-0.5f+CAP_RAND_F()), 0.0f, color);
         if(i == 128) {
             HuPrcVSleep();
         }
@@ -801,7 +803,7 @@ static void CapEffUseKill(void)
     HuMemDirectFree(work);
 }
 
-void mbCapPlayerThrow(int playerNo, int masuId, s16 capsuleNo)
+void mbCapPlayerThrow(int playerNo, int masuId, int capsuleNo)
 {
     CAPPLAYERTHROWWORK *work;
     capsuleNo = mbCapValueTypeGet(capsuleNo);
@@ -833,7 +835,7 @@ int mbCapPlayerThrowCheck(void)
 
 int mbCapThrowColCreate(int dataNum)
 {
-    s16 objId;
+    int objId;
     if(dataNum != -1) {
         objId = mbObjCreate(dataNum, NULL, FALSE);
         mbObjDispSet(objId, FALSE);
@@ -856,13 +858,12 @@ static void CapPlayerThrow(void)
 {
     CAPPLAYERTHROWWORK *work;
     int seNo;
-    int maxTime;
     int capsuleIdx;
-    s16 playerObjId;
-    s16 playerMdlId;
+    int maxTime;
+    int playerObjId;
+    int playerMdlId;
     int coinNum;
     int motTime;
-    char *hookName;
     float rate;
     float time;
     float scale;
@@ -921,8 +922,7 @@ static void CapPlayerThrow(void)
     mbPlayerMotionSet(work->playerNo, work->motId, HU3D_MOTATTR_NONE);
     mbPlayerMotionTimeSet(work->playerNo, 0.35f*mbPlayerMotionMaxTimeGet(work->playerNo));
     Hu3DMotionCalc(playerMdlId);
-    hookName = CharModelItemHookGet(GwPlayer[work->playerNo].charNo, 4, 0);
-    Hu3DModelObjMtxGet(mbObjModelIDGet(mbPlayerObjIDGet(work->playerNo)), hookName, mtx);
+    Hu3DModelObjMtxGet(mbObjModelIDGet(mbPlayerObjIDGet(work->playerNo)), CapHookNameGet(work->playerNo), mtx);
     work->pos.x = mtx[0][3];
     work->pos.y = mtx[1][3];
     work->pos.z = mtx[2][3];
@@ -957,16 +957,14 @@ static void CapPlayerThrow(void)
     maxTime = 45;
     mbObjPosGet(work->objId, &objPos);
     Hu3DMotionCalc(mbObjModelIDGet(mbPlayerObjIDGet(work->playerNo)));
-    hookName = CharModelItemHookGet(GwPlayer[work->playerNo].charNo, 4, 0);
-    Hu3DModelObjMtxGet(mbObjModelIDGet(mbPlayerObjIDGet(work->playerNo)), hookName, mtx);
+    Hu3DModelObjMtxGet(mbObjModelIDGet(mbPlayerObjIDGet(work->playerNo)), CapHookNameGet(work->playerNo), mtx);
     handPos.x = mtx[0][3];
     handPos.y = mtx[1][3];
     handPos.z = mtx[2][3];
     mbAudFXPlay(0x410);
     for(time=0.0f; time<maxTime; time+=1.0f) {
         Hu3DMotionCalc(mbObjModelIDGet(mbPlayerObjIDGet(work->playerNo)));
-        hookName = CharModelItemHookGet(GwPlayer[work->playerNo].charNo, 4, 0);
-        Hu3DModelObjMtxGet(mbObjModelIDGet(mbPlayerObjIDGet(work->playerNo)), hookName, mtx);
+        Hu3DModelObjMtxGet(mbObjModelIDGet(mbPlayerObjIDGet(work->playerNo)), CapHookNameGet(work->playerNo), mtx);
         handPos.x = mtx[0][3];
         handPos.y = mtx[1][3];
         handPos.z = mtx[2][3];
@@ -980,8 +978,7 @@ static void CapPlayerThrow(void)
         mbObjScaleSet(work->objId, scale, scale, scale);
         HuPrcVSleep();
     }
-    hookName = CharModelItemHookGet(GwPlayer[work->playerNo].charNo, 4, 0);
-    mbObjHookSet(mbPlayerObjIDGet(work->playerNo), hookName, work->objId);
+    mbObjHookSet(mbPlayerObjIDGet(work->playerNo), CapHookNameGet(work->playerNo), work->objId);
     mbPlayerRotateStart(work->playerNo, HuAtan(dir.x, dir.z), 15);
     while(!mbPlayerRotateCheck(work->playerNo)) {
         HuPrcVSleep();
@@ -1000,18 +997,16 @@ static void CapPlayerThrow(void)
         HuPrcVSleep();
     }
     time = mbPlayerMotionMaxTimeGet(work->playerNo);
-    while(mbPlayerMotionTimeGet(work->playerNo) <= 0.75f*time) {
+    while(mbPlayerMotionTimeGet(work->playerNo) <= 0.35f*time) {
         HuPrcVSleep();
     }
     Hu3DMotionCalc(mbObjModelIDGet(mbPlayerObjIDGet(work->playerNo)));
-    hookName = CharModelItemHookGet(GwPlayer[work->playerNo].charNo, 4, 0);
-    Hu3DModelObjMtxGet(mbObjModelIDGet(mbPlayerObjIDGet(work->playerNo)), hookName, mtx);
+    Hu3DModelObjMtxGet(mbObjModelIDGet(mbPlayerObjIDGet(work->playerNo)), CapHookNameGet(work->playerNo), mtx);
     posX[0] = work->pos.x = mtx[0][3];
     posY[0] = work->pos.y = mtx[1][3];
     posZ[0] = work->pos.z = mtx[2][3];
     if(work->objId != -1) {
-        hookName = CharModelItemHookGet(GwPlayer[work->playerNo].charNo, 4, 0);
-        mbObjHookObjReset(mbPlayerObjIDGet(work->playerNo), hookName);
+        mbObjHookObjReset(mbPlayerObjIDGet(work->playerNo), CapHookNameGet(work->playerNo));
         mbObjDispSet(work->objId, FALSE);
     }
     capsuleObjId = -1;
@@ -1061,7 +1056,7 @@ static void CapPlayerThrow(void)
             vel.x = vel.y = vel.z = 0.0f;
             color = capsulePlayerThrowColorTbl[mbCapColorGet(work->capsuleNo)];
             color.a = 192.0f+(63.0f*CAP_RAND_F());
-            mbev_CapEffGlowAdd(capsuleThrowGlowOMObj, pos, vel, 60.0f*(1.0f+CAP_RAND_F()), color, 100.0f*(0.2f+(0.025f*CAP_RAND_F())), 0.0f, 0.025f);
+            mbev_CapEffGlowAdd(capsuleThrowGlowOMObj, pos, vel, 60.0f*(1.0f+CAP_RAND_F()), 100.0f*(0.2f+(0.025f*CAP_RAND_F())), 0.0f, 0.025f, color);
         }
         HuPrcVSleep();
     } while(work->time < work->maxTime);
@@ -1290,8 +1285,8 @@ static void CapEffThrowHook(HU3D_MODEL *modelP, Mtx *mtx)
 
 static int CapEffThrowCheck(HuVecF *pos, int *maxTime)
 {
-    CAPEFFTHROWWORK *work;
     HU3D_MODEL *modelP;
+    CAPEFFTHROWWORK *work;
     if(capEffThrowMdlId == -1) {
         return FALSE;
     }
@@ -1498,8 +1493,9 @@ void mbCapEffThrowCreate(HuVecF *start, HuVecF *end)
 
 int mbCapEffThrowCheck(HuVecF *pos, int *maxTime)
 {
-    int result = CapEffThrowCheck(pos, maxTime);
-    if(result) {
+    int result;
+    result = CapEffThrowCheck(pos, maxTime);
+    if(result != FALSE) {
         CapEffThrowKill();
     }
     return result;
@@ -1589,7 +1585,7 @@ static void CapAutoThrow(CAPAUTOTHROWWORK *work)
             vel.x = vel.y = vel.z = 0.0f;
             color = capsuleAutoThrowColorTbl[mbCapColorGet(work->capsuleNo)];
             color.a = 192.0f+(63.0f*CAP_RAND_F());
-            mbev_CapEffGlowAdd(capsuleThrowGlowOMObj, glowPos, vel, 60.0f*(1.0f+CAP_RAND_F()), color, 100.0f*(0.2f+(0.025f*CAP_RAND_F())), 0.0f, 0.025f);
+            mbev_CapEffGlowAdd(capsuleThrowGlowOMObj, glowPos, vel, 60.0f*(1.0f+CAP_RAND_F()), 100.0f*(0.2f+(0.025f*CAP_RAND_F())), 0.0f, 0.025f, color);
         }
         HuPrcVSleep();
     } while(time < work->maxTime);
@@ -1622,15 +1618,18 @@ void mbCapAutoThrowEnd(void *work)
 {
 }
 
-int mbCapSelectMasu(int playerNo, u8 capsuleNo)
+int mbCapSelectMasu(int playerNo, int capsuleNo)
 {
     CAPSELECTMASUWORK *work;
+    capsuleNo = (u8)capsuleNo;
     switch(mbCapUseModeGet(capsuleNo)) {
         case 0:
-            return capsuleMasuSelectResult = -3;
+            capsuleMasuSelectResult = -3;
+            return capsuleMasuSelectResult;
         case 3:
         case 4:
-            return capsuleMasuSelectResult = -2;
+            capsuleMasuSelectResult = -2;
+            return capsuleMasuSelectResult;
     }
     capsuleMasuSelectResult = -1;
     capsuleMasuSelectComF[playerNo] = FALSE;
