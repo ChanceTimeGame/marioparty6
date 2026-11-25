@@ -282,14 +282,12 @@ static inline float CapEffSqrtf(float x)
 
 static inline float CapEffSinDeg(float deg)
 {
-    float result = mbSinDeg(deg);
-    return result;
+    return mbSinDeg(deg);
 }
 
 static inline float CapEffCosDeg(float deg)
 {
-    float result = mbCosDeg(deg);
-    return result;
+    return mbCosDeg(deg);
 }
 
 #define CAPEFF_RANDF() ((1.0f/268435456.0f)*mbRandMod(0x10000000))
@@ -719,9 +717,6 @@ static void CapEffCrackDraw(HU3D_MODEL *modelP, Mtx *mtx)
     int j;
     float sinRot;
     float cosRot;
-    GXColor tevColor;
-    GXColor ambColor;
-    GXColor matColor;
     HuVecF scaleVtx;
 
     work = modelP->hookData;
@@ -738,16 +733,13 @@ static void CapEffCrackDraw(HU3D_MODEL *modelP, Mtx *mtx)
         return;
     }
     GXSetZMode(GX_TRUE, GX_LEQUAL, GX_TRUE);
-    tevColor = work->color;
-    GXSetTevColor(GX_TEVREG2, tevColor);
+    GXSetTevColor(GX_TEVREG2, work->color);
     GXSetTevColorIn(GX_TEVSTAGE0, GX_CC_ZERO, GX_CC_ONE, GX_CC_RASC, GX_CC_C2);
     GXSetTevColorOp(GX_TEVSTAGE0, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
     GXSetTevAlphaIn(GX_TEVSTAGE0, GX_CA_ZERO, GX_CA_TEXA, GX_CA_RASA, GX_CA_A2);
     GXSetTevAlphaOp(GX_TEVSTAGE0, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
-    ambColor = capsuleCrackEffMatColor;
-    GXSetChanAmbColor(GX_COLOR0A0, ambColor);
-    matColor = capsuleCrackEffAmbColor;
-    GXSetChanMatColor(GX_COLOR0A0, matColor);
+    GXSetChanAmbColor(GX_COLOR0A0, capsuleCrackEffMatColor);
+    GXSetChanMatColor(GX_COLOR0A0, capsuleCrackEffAmbColor);
     GXSetNumChans(1);
     GXSetChanCtrl(GX_COLOR0A0, GX_FALSE, GX_SRC_VTX, GX_SRC_VTX, GX_LIGHT_NULL, GX_DF_CLAMP, GX_AF_NONE);
     HuSprTexLoad(work->anim, 0, GX_TEXMAP0, GX_REPEAT, GX_REPEAT, GX_LINEAR);
@@ -759,12 +751,13 @@ static void CapEffCrackDraw(HU3D_MODEL *modelP, Mtx *mtx)
     st = work->st;
     for(i=0; i<work->num; i++, dataP++) {
         if(dataP->dispF != FALSE) {
-            if(dataP->rot == 0.0f) {
+            if(!dataP->rot) {
                 for(j=0; j<3; j++) {
                     VECScale(&dataP->vtx[j], &scaleVtx, dataP->scale);
                     VECAdd(&scaleVtx, &dataP->pos, vtx);
                     vtx++;
-                    *st++ = dataP->st[j];
+                    *st = dataP->st[j];
+                    st++;
                 }
             } else {
                 sinRot = CapEffSinDeg(dataP->rot);
@@ -775,7 +768,8 @@ static void CapEffCrackDraw(HU3D_MODEL *modelP, Mtx *mtx)
                     vtx->y = dataP->pos.y+(dataP->vtx[j].x*sinRot)+(dataP->vtx[j].y*cosRot);
                     vtx->z = dataP->pos.z+dataP->vtx[j].z;
                     vtx++;
-                    *st++ = dataP->st[j];
+                    *st = dataP->st[j];
+                    st++;
                 }
             }
         } else {
