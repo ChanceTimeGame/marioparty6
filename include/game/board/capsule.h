@@ -3,6 +3,37 @@
 
 #include "game/board/board.h"
 
+typedef struct CapsuleData_s {
+    u32 file; //0x00
+    u32 iconFile; //0x04
+    u32 descMes; //0x08
+    u32 useMes; //0x0C
+    s32 masuPat; //0x10
+    s32 color; //0x14
+    s32 cost; //0x18
+    char rank; //0x1C
+    s16 useMode; //0x1E
+    char *debugName; //0x20
+    u8 listF; //0x24
+} CAPSULE_DATA; //size=0x28
+
+typedef struct CapsuleChance_s {
+    s16 chance;
+    char mark[2];
+} CAPSULE_CHANCE;
+
+typedef struct CapsuleChanceTbl_s {
+    s16 capsuleNo;
+    CAPSULE_CHANCE chance[11];
+} CAPSULE_CHANCE_TBL; //size=0x2E
+
+typedef struct CapsuleList_s {
+    s8 capsuleNo;
+    s8 rate[3];
+    s8 boardRate[8];
+    s8 turnRate[4];
+} CAPSULE_LIST; //size=0x10
+
 /* Prototypes from the MP6 asm: argument/return classes from register use, names after MP5 where
    the function exists there; argN/fN are placeholder names. */
 int mbCapUse(int arg0, s16 arg1);
@@ -15,12 +46,12 @@ int mbCapEffUseWanWanCreate(int arg0, s16 arg1, HuVecF *arg2);
 void mbCapPlayerThrow(int arg0, int arg1, s16 arg2);
 int mbCapPlayerThrowCheck(void);
 int mbCapThrowColCreate(int arg0);
-int mbCapThrowColCheck(int arg0, int arg1, int arg2);
-void mbCapThrowHookSet(void *arg0);
+int mbCapThrowColCheck(HuVecF *pos, HuVecF *next, HuVecF *out);
+void mbCapThrowHookSet(void (*hook)(BOOL startF));
 void mbCapEffThrowCreate(HuVecF *arg0, HuVecF *arg1);
-int mbCapEffThrowCheck(HuVecF *arg0, void *arg1);
+int mbCapEffThrowCheck(HuVecF *pos, int *maxTime);
 void mbCapAutoThrow(HuVecF *arg0, HuVecF *arg1, HuVecF *arg2, int arg3, int arg4, int arg5, int arg6, float f0);
-void mbCapAutoThrowEnd(void);
+void mbCapAutoThrowEnd(void *work);
 int mbCapSelectMasu(int arg0, u8 arg1);
 void mbCapSelectMasuInit(void);
 void mbCapListInit(int arg0);
@@ -70,7 +101,7 @@ int mbCapRandomListGet(void *arg0, int arg1);
 int mbCapBonusCoinNumGet(int arg0, s16 arg1);
 int mbCapDescWinCreate(s16 arg0);
 void mbCapInit(void);
-int mbCapObjCreate(int arg0);
+int mbCapObjCreate(int capsuleNo, int arg1);
 s16 mbCapObjBorderCreate(s16 arg0, int arg1);
 void mbCapObjKill(int arg0);
 void mbCapObjBorderKill(int arg0);
