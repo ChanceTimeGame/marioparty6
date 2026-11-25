@@ -67,7 +67,7 @@ int mbCapNextGet(int chanceNo);
 int mbCapMasuNextGet(int playerNo);
 int mbCapShopListGet(int playerNo, struct CapsuleList_s *out);
 int mbCapRandomListGet(int *out, int max);
-int mbCapBonusCoinNumGet(int playerNo, s16 capsuleNo);
+int mbCapBonusCoinNumGet(int playerNo, int capsuleNo);
 int mbCapDescWinCreate(int capsuleNo);
 void mbCapInit(void);
 int mbCapObjCreate(int capsuleNo);

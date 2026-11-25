@@ -216,6 +216,14 @@ void mbCapMasuPlayerTypeSet(s16 masuId, s16 capsuleNo, s16 playerNo)
     mbMasuCapsuleSet(masuId, value);
 }
 
+void CapsulePlaceholderBssUse(void)
+{
+    capsuleUseEffProc[0] = 0;
+    capsuleUseEffMode[0] = 0;
+    capsuleUseEffPos[0].x = 0;
+    capsuleNum[0] = 0;
+}
+
 static void CapSelectMasuAddFront(s16 *list, s16 masuId, int depth);
 static void CapSelectMasuAddBack(s16 *list, s16 masuId, int depth);
 /* @@PART3@@ */
@@ -791,7 +799,7 @@ int mbCapRandomListGet(int *out, int max)
     return outNum;
 }
 
-int mbCapBonusCoinNumGet(int playerNo, s16 capsuleNo)
+int mbCapBonusCoinNumGet(int playerNo, int capsuleNo)
 {
     int rank = 0;
     int coin = 0;
@@ -811,17 +819,17 @@ int mbCapBonusCoinNumGet(int playerNo, s16 capsuleNo)
     }
     switch(mbCapUseModeGet(capsuleNo)) {
         case 0:
-            if(CapRandF()*100 < 20+(rank*10)) {
+            if(CapRandF()*100 < 20.0f+(rank*10)) {
                 coin = mbRandMod(rank+1)+1;
             }
             break;
         case 1:
-            if(CapRandF()*100 < 40+(rank*10)) {
+            if(CapRandF()*100 < 40.0f+(rank*10)) {
                 coin = mbRandMod(rank+3)+5;
             }
             break;
         case 2:
-            if(CapRandF()*100 < 40+(rank*10)) {
+            if(CapRandF()*100 < 40.0f+(rank*10)) {
                 coin = mbRandMod(rank+2)+3;
             }
             break;
@@ -843,17 +851,24 @@ int mbCapDescWinCreate(int capsuleNo)
     return winId;
 }
 
+static inline void CapObjDispSet(s16 objId, BOOL dispF)
+{
+    mbObjDispSet(objId, dispF);
+}
+
 void mbCapInit(void)
 {
     int i;
     int j;
     s16 *idP;
-    MBOBJID objId;
-    memset(capsuleObjColorData, 0, sizeof(capsuleObjColorData));
+    int objId;
+    CAPSULE_OBJCOLOR *objP;
+    objP = capsuleObjColorData;
+    memset(objP, 0, sizeof(capsuleObjColorData));
     for(i=0; i<6; i++) {
         capsuleObjBorderId[i] = -1;
     }
-    idP = capsuleBorderObjId = HuMemDirectMallocNum(HEAP_HEAP, 0x300, HU_MEMNUM_OVL);
+    idP = capsuleBorderObjId = CapMalloc(0x300);
     memset(capsuleBorderObjId, 0, 0x300);
     for(i=0; i<6; i++) {
         for(j=0; j<64; j++, idP++) {
