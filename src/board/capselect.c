@@ -110,14 +110,6 @@ static int CapSelectComGet(int playerNo, BOOL deleteF);
 static void CapMasuOMExec(OMOBJ *obj);
 static int CapHelpWinCreate(int capsuleNo, BOOL deleteF);
 
-static inline int CapTutorialCall(int scene)
-{
-    if(_CheckFlag(FLAG_BOARD_TUTORIAL)) {
-        return mbTutorialCall(scene);
-    }
-    return 0;
-}
-
 static inline void *CapSelectMalloc(s32 size)
 {
     return HuMemDirectMallocNum(HEAP_HEAP, size, HU_MEMNUM_OVL);
@@ -541,7 +533,9 @@ static void CapSelect(CAPSELECTWORK *work)
             work->espId[i] = -1;
         }
     }
-    CapTutorialCall(16);
+    if(_CheckFlag(FLAG_BOARD_TUTORIAL)) {
+        mbTutorialCall(16);
+    }
     if(work->deleteF == FALSE && capSelectResult[playerNo] != -3 && capSelectResult[playerNo] != -4 && GWPartyGet() != FALSE) {
         mbStatusDispFocusSet(work->playerNo, FALSE);
     }
