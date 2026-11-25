@@ -137,7 +137,7 @@ typedef struct msmSe_s {
 	u8 span;
 	u8 reverb;
 	u8 chorus;
-	u8 doppler;
+	s8 doppler;
 	s8 comp;
 	u8 pad[3];
 } MSMSE;
@@ -169,7 +169,7 @@ typedef struct msmStreamParam_s {
 } MSM_STREAMPARAM;
 
 s32 msmSysInit(MSM_INIT *init, MSM_ARAM *aram);
-void msmSysSetOutputMode(SND_OUTPUTMODE mode);
+BOOL msmSysSetOutputMode(SND_OUTPUTMODE mode);
 void msmSysSetGroupLoadMode(s8 mode);
 
 s32 msmSysDelGroupAll(void);
@@ -188,7 +188,7 @@ s32 msmSeUpdataListener(Vec *pos, Vec *heading);
 void msmSeDelListener(void);
 s32 msmSeGetStatus(int seNo);
 s32 msmSeGetNumPlay(BOOL baseGrp);
-s32 msmSeGetEntryID(s16 seId, int *seNo);
+s32 msmSeGetEntryID(s32 seId, int *seNo);
 
 int msmMusPlay(int musId, MSM_MUSPARAM *musParam);
 s32 msmMusStop(int musNo, s32 speed);
