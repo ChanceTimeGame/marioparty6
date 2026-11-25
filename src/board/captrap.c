@@ -78,8 +78,6 @@ static void ev_CapBobleOMExec(OMOBJ *obj);
 
 #define CAP_RANDF() (0.0000000037252903f*mbRandMod(0x10000000))
 
-static HuVecF biriQEffectOfs = { 0.0f, 100.0f, 0.0f };
-char lbl_80248E80[] = "itemhook_c";
 
 static s32 bomheiMode[4];
 static float bomheiRotY[4];
@@ -474,6 +472,10 @@ static void ev_CapBobleOMExec(OMOBJ *obj)
     }
 }
 
+/* .data after ev_CapBobleOMExec's jump table */
+static HuVecF biriQEffectOfs = { 0.0f, 100.0f, 0.0f };
+char lbl_80248E80[16] = "itemhook_c";
+
 void mbev_CapBiriQ(void)
 {
     CAPWORK *work = HuPrcCurrentGet()->property;
@@ -732,7 +734,7 @@ static int ev_CapMasuNumGet(int playerNo)
 void mbev_CapTumujikun(void)
 {
     CAPWORK *work = HuPrcCurrentGet()->property;
-    int motTbl[3];
+    int motTbl[16];
     HuVecF pos;
     HuVecF masuPos;
     HuVecF startPos;
@@ -786,7 +788,7 @@ void mbev_CapTumujikun(void)
     mbObjDispSet(objId, TRUE);
     for(i=0; i<30.0f; i++) {
         t = i/30.0f;
-        mbObjScaleSet(objId, 2.5f, 1.5*HuSin(90.0f*t), 2.5f);
+        mbObjScaleSet(objId, 1.5f, 1.5*HuSin(90.0f*t), 1.5f);
         HuPrcVSleep();
     }
     if(!GwPlayer[work->playerNo].metalF) {
@@ -811,7 +813,7 @@ void mbev_CapTumujikun(void)
         work->explodeEff = mbev_CapEffExplodeCreate();
         for(i=0; i<12.0f; i++) {
             t = i/12.0f;
-            mbObjScaleSet(objId, 2.5f, 1.5*HuCos(90.0f*t), 2.5f);
+            mbObjScaleSet(objId, 1.5f, 1.5*HuCos(90.0f*t), 1.5f);
             mbObjAlphaSet(objId2, 255.0f*(1.0f-t));
             HuPrcVSleep();
         }
