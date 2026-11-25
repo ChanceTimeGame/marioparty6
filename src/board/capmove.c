@@ -51,7 +51,7 @@ void mbev_CapRandomBonusCoin(int playerNo, int capNo, int arg2);
 int mbev_CapBonusCoinCheck(int playerNo);
 int mbev_CapPlayerMasuNumGet(int masuId);
 void mbev_CapBubbleHookCall(int arg0, int arg1, int arg2, int arg3, int arg4);
-void mbev_CapBezierGetV(HuVecF *a, HuVecF *b, HuVecF *c, HuVecF *out, float t);
+void mbev_CapBezierGetV(float t, HuVecF *a, HuVecF *b, HuVecF *c, HuVecF *out);
 void mbev_CapPlayerMotShiftWait(int playerNo, int motNo, int attr, int arg3);
 int mbCapEffUseCreate(int playerNo, int capNo);
 int mbCapEffUseModeGet(int playerNo);
@@ -592,6 +592,359 @@ void mbev_CapDokan(void)
 
 void mbev_CapDokanKill(void)
 {
+}
+
+void mbev_CapHanachan(void)
+{
+    Mtx hookMtx;
+    HuVecF pts[5];
+    int motData[8];
+    HuVecF playerPos;
+    HuVecF masuPos;
+    HuVecF objPos;
+    HuVecF bez2;
+    HuVecF bez1;
+    HuVecF bez0;
+    HuVecF playerPosStart;
+    HuVecF hookPos;
+    HuVecF pos;
+    HuVecF effPos;
+    int motId[2];
+    int masuIdCur;
+    CAPEVENTWORK *work;
+    OMOBJ *obj;
+    float t;
+    float angle;
+    float ofsZ;
+    float radius;
+    float ofsY;
+    float ofsX;
+    float s;
+    float speed;
+    float angleStart;
+    int i;
+    int hanaObj;
+    int masuId;
+    int kinokoObj;
+    int seNo;
+    int missNo;
+    int missF;
+    HuVecF *effPosP;
+
+    work = HuPrcCurrentGet()->property;
+    work->effExplode = mbev_CapEffExplodeCreate();
+    HuPrcVSleep();
+    work->effGlow = mbev_CapEffGlowCreate();
+    HuPrcVSleep();
+    work->effRing = mbev_CapEffRingCreate();
+    HuPrcVSleep();
+    motId[0] = mbev_CapPlayerMotionCreate(work->objList, work->playerNo, 0x930022);
+    HuPrcVSleep();
+    motId[1] = mbev_CapPlayerMotionCreate(work->objList, work->playerNo, 0x93003F);
+    HuPrcVSleep();
+    mbev_CapWait(work);
+    motData[0] = 0xD0002;
+    motData[1] = 0xD0003;
+    motData[2] = -1;
+    hanaObj = mbev_CapObjCreate(work->objList, 0xD0001, motData, 0, 5, 0);
+    mbObjLayerSet(hanaObj, 3);
+    mbObjMotionSet(hanaObj, 1, 0x40000001);
+    mbObjDispSet(hanaObj, FALSE);
+    kinokoObj = mbev_CapObjCreate(work->objList, 0xC0044, NULL, 0, 5, 0);
+    mbObjDispSet(kinokoObj, FALSE);
+    HuPrcVSleep();
+    mbPlayerPosGet(work->playerNo, &playerPos);
+    playerPosStart = playerPos;
+    masuIdCur = GwPlayer[work->playerNo].masuId;
+    for(i=1; i<=mbMasuRawNumGet(); i++) {
+        if(mbMasuTypeGet(i) == 7) {
+            masuId = i;
+            break;
+        }
+    }
+    if(i > mbMasuRawNumGet()) {
+        masuId = GwPlayer[work->playerNo].masuId;
+    }
+    mbMasuPosGet(masuId, &masuPos);
+    mbObjPosSetV(kinokoObj, &playerPos);
+    mbCameraMoveObj(kinokoObj, NULL, &capsuleCameraOfs, -1.0f, -1.0f, 21);
+    mbCameraMoveWait();
+    obj = omAddObjEx(mbObjMan, -32768, 0, 0, -1, ev_CapHanachanOMExec);
+    obj->work[0] = 0;
+    obj->work[1] = 0;
+    work->objId = hanaObj;
+    obj->data = HuMemDirectMallocNum(HEAP_HEAP, sizeof(CAPEVENTWORK), HU_MEMNUM_OVL);
+    memcpy(obj->data, work, sizeof(CAPEVENTWORK));
+    seNo = mbAudFXPlay(0x41C);
+    objPos.x = playerPos.x;
+    objPos.y = 250.0f+playerPos.y;
+    objPos.z = playerPos.z-100.0f;
+    pts[0] = playerPosStart;
+    pts[0].y += 250.0f;
+    pts[1] = pts[0];
+    pts[1].y -= 200.0f;
+    pts[1].z += 500.0f;
+    pts[2] = pts[0];
+    pts[2].y += 300.0f;
+    pts[3] = pts[0];
+    pts[3].y += 200.0f;
+    pts[3].z -= 300.0f;
+    pts[4] = objPos;
+    mbCapEffUseCreate(work->playerNo, work->capNo);
+    omVibrate(work->playerNo, 20, 4, 4);
+    while(mbCapEffUseModeGet(work->playerNo) < 2) {
+        HuPrcVSleep();
+    }
+    mbObjDispSet(hanaObj, TRUE);
+    for(i=0; i<=90.0f; i++) {
+        t = i/90.0f;
+        mbObjRotSet(hanaObj, 45.0f-(405.0f*t), 0.0f, 0.0f);
+        if(t < 0.5f) {
+            t = HuSin(90.0f*(2.0f*t));
+            mbev_CapBezierGetV(t, &pts[0], &pts[1], &pts[2], &pos);
+        } else {
+            t = HuCos(90.0f-(90.0f*(2.0f*(t-0.5f))));
+            mbev_CapBezierGetV(t, &pts[2], &pts[3], &pts[4], &pos);
+        }
+        mbObjPosSetV(hanaObj, &pos);
+        HuPrcVSleep();
+    }
+    mbev_CapRandomBonusCoin(work->playerNo, work->capNo, 1);
+    mbPlayerRotateStart(work->playerNo, 180, 15);
+    while(!mbPlayerRotateCheck(work->playerNo)) {
+        HuPrcVSleep();
+    }
+    HuPrcSleep(15);
+    mbAudFXPlay(0x3BC);
+    mbWinCreate(2, 0x350003, 1);
+    mbWinTopWait();
+    missNo = 0;
+    if(missNo == 0) {
+        missF = FALSE;
+    } else {
+        missF = TRUE;
+    }
+    if(missF) {
+        mbAudFXPlay(0x40F);
+        mbAudFXPlay(0x3F6);
+        if(seNo != -1) {
+            mbAudFXStop(seNo);
+        }
+        if(!mbExitCheck()) {
+            obj->work[0]++;
+        }
+        effPos = objPos;
+        effPosP = &effPos;
+        mbev_CapEffDustExplodeAdd(work->effExplode, effPosP);
+        mbObjDispSet(hanaObj, FALSE);
+        do {
+            HuPrcVSleep();
+        } while(mbev_CapEffExplodeAnimGet(work->effExplode));
+        mbPlayerRotateStart(work->playerNo, 0, 15);
+        while(!mbPlayerRotateCheck(work->playerNo)) {
+            HuPrcVSleep();
+        }
+        mbCameraPlayerViewSet(work->playerNo, 0);
+        mbCameraMoveWait();
+        mbMusBoardPlay();
+    } else {
+        mbev_CapBubbleHookCall(3, hanaObj, 1, 0, 0);
+        mbWinCreate(2, 0x350004, 1);
+        mbWinTopWait();
+        bez0 = objPos;
+        PSVECSubtract(&objPos, &playerPos, &pos);
+        if(PSVECMag(&pos) > 0.0f) {
+            PSVECNormalize(&pos, &pos);
+        }
+        bez2.x = playerPos.x+(50.0f*pos.x);
+        bez2.y = 200.0f+playerPos.y;
+        bez2.z = (playerPos.z+(50.0f*pos.z))-100.0f;
+        bez1 = objPos;
+        bez1.y -= 200.0f;
+        bez1.z += 50.0f;
+        ofsZ = hanachanPlayerOfs[GwPlayer[work->playerNo].charNo].z;
+        ofsY = hanachanPlayerOfs[GwPlayer[work->playerNo].charNo].y;
+        ofsX = hanachanPlayerOfs[GwPlayer[work->playerNo].charNo].x;
+        angle = 0.0f;
+        mbPlayerMotionShiftSet(work->playerNo, 4, 0.0f, 8.0f, 0);
+        mbPlayerColSnapPlayerSet(work->playerNo, FALSE);
+        for(i=0; i<=30.0f; i++) {
+            t = i/30.0f;
+            mbev_CapBezierGetV(t, &bez0, &bez1, &bez2, &objPos);
+            mbObjPosSetV(hanaObj, &objPos);
+            pos = playerPosStart;
+            pos.y += 200.0*HuSin(90.0f*t);
+            mbPlayerPosSetV(work->playerNo, &pos);
+            mbPlayerRotSet(work->playerNo, 0.0f, 180.0f-(180.0f*t), 0.0f);
+            HuPrcVSleep();
+        }
+        objPos = bez2;
+        mbObjPosSetV(hanaObj, &objPos);
+        mbObjMotionShiftSet(hanaObj, 2, 0.0f, 8.0f, 0x40000001);
+        if(motId[1] != -1) {
+            mbPlayerMotionShiftSet(work->playerNo, motId[1], 0.0f, 15.0f, 0x40000001);
+        }
+        omVibrate(work->playerNo, 20, 7, 3);
+        mbPlayerPosGet(work->playerNo, &playerPos);
+        for(i=0; i<=24.0f; i++) {
+            t = i/24.0f;
+            Hu3DModelObjMtxGet(mbObjModelIDGet(hanaObj), "itemhook_C", hookMtx);
+            hookPos.x = hookMtx[0][3]+(ofsZ*HuSin(angle));
+            hookPos.y = hookMtx[1][3]+ofsY;
+            hookPos.z = hookMtx[2][3]+(ofsZ*HuCos(angle));
+            pos.x = playerPos.x+(t*(hookPos.x-playerPos.x));
+            pos.y = playerPos.y+(t*(hookPos.y-playerPos.y));
+            pos.z = playerPos.z+(t*(hookPos.z-playerPos.z));
+            pos.y -= 0.25*(100.0*HuSin(180.0f*t));
+            mbPlayerPosSetV(work->playerNo, &pos);
+            mbPlayerRotGet(work->playerNo, &pos);
+            pos.x = t*ofsX;
+            mbPlayerRotSetV(work->playerNo, &pos);
+            pos = objPos;
+            pos.y -= 0.25*(100.0*HuSin(180.0f*t));
+            mbObjPosSetV(hanaObj, &pos);
+            HuPrcVSleep();
+        }
+        omVibrate(work->playerNo, 180, 4, 4);
+        bez2 = objPos;
+        angleStart = angle;
+        for(i=0; i<90.0f; i++) {
+            t = i/90.0f;
+            angle = angleStart+(180.0f*t);
+            objPos.x = bez2.x+(300.0*(HuSin(angle)*HuSin(90.0f*t)));
+            objPos.z = bez2.z+(300.0*(HuCos(angle)*HuSin(90.0f*t)));
+            objPos.y = bez2.y+(550.0f*t);
+            mbObjPosSet(hanaObj, objPos.x, objPos.y, objPos.z);
+            mbObjRotSet(hanaObj, 0.0f, angle, 0.0f);
+            Hu3DModelObjMtxGet(mbObjModelIDGet(hanaObj), "itemhook_C", hookMtx);
+            hookMtx[1][3] += ofsY;
+            hookMtx[0][3] += ofsZ*HuSin(angle);
+            hookMtx[2][3] += ofsZ*HuCos(angle);
+            pos.x = hookMtx[0][3];
+            pos.y = hookMtx[1][3];
+            pos.z = hookMtx[2][3];
+            mbPlayerPosSetV(work->playerNo, &pos);
+            mbPlayerRotSet(work->playerNo, ofsX, angle, 0.0f);
+            HuPrcVSleep();
+        }
+        mbObjDispSet(hanaObj, FALSE);
+        mbPlayerDispSet(work->playerNo, FALSE);
+        mbWipeDissolveFadeOutTime(1);
+        mbev_PlayerColMasuSet(work->playerNo, masuId, TRUE);
+        GwPlayer[work->playerNo].masuId = masuId;
+        objPos = masuPos;
+        objPos.y += 750.0f;
+        mbObjPosSet(hanaObj, objPos.x, objPos.y, objPos.z);
+        mbObjRotSet(hanaObj, 0.0f, 0.0f, 0.0f);
+        playerPos = masuPos;
+        playerPos.y += 650.0f;
+        mbCameraMoveMasu(masuId, NULL, &capsuleCameraOfs, -1.0f, -1.0f, -1);
+        mbCameraMoveWait();
+        mbWipeDissolveFadeIn();
+        omVibrate(work->playerNo, 180, 4, 4);
+        bez2 = masuPos;
+        bez2.y += 100.0f;
+        bez2.z -= 50.0f;
+        mbObjDispSet(hanaObj, TRUE);
+        mbPlayerDispSet(work->playerNo, TRUE);
+        for(i=0; i<150.0f; i++) {
+            t = i/150.0f;
+            angle = 180.0f+(360.0f*t);
+            radius = 200.0*HuSin(180.0f*t);
+            objPos.x = bez2.x+(2.0*(radius*HuSin(angle)));
+            objPos.z = bez2.z+(radius*HuCos(angle));
+            objPos.y = bez2.y+(650.0f*(1.0f-t));
+            mbObjPosSet(hanaObj, objPos.x, objPos.y, objPos.z);
+            mbObjRotSet(hanaObj, 0.0f, 180.0f+angle, 0.0f);
+            playerPos.x = objPos.x+(50.0*HuSin(180.0f+angle));
+            playerPos.y = objPos.y-100.0f;
+            playerPos.z = objPos.z+(50.0*HuCos(180.0f+angle));
+            Hu3DModelObjMtxGet(mbObjModelIDGet(hanaObj), "itemhook_C", hookMtx);
+            hookMtx[1][3] += ofsY;
+            hookMtx[0][3] += ofsZ*HuSin(180.0f+angle);
+            hookMtx[2][3] += ofsZ*HuCos(180.0f+angle);
+            pos.x = hookMtx[0][3];
+            pos.y = hookMtx[1][3];
+            pos.z = hookMtx[2][3];
+            mbPlayerPosSetV(work->playerNo, &pos);
+            mbPlayerRotSet(work->playerNo, ofsX, 180.0f+angle, 0.0f);
+            HuPrcVSleep();
+        }
+        mbPlayerMotionShiftSet(work->playerNo, 1, 0.0f, 8.0f, 0x40000001);
+        mbMasuPosGet(masuId, &playerPos);
+        for(i=0; i<8; i++) {
+            t = 1.0f-(i/7.0f);
+            Hu3DModelObjMtxGet(mbObjModelIDGet(hanaObj), "itemhook_C", hookMtx);
+            hookMtx[1][3] += ofsY;
+            hookMtx[0][3] += ofsZ*HuSin(180.0f+angle);
+            hookMtx[2][3] += ofsZ*HuCos(180.0f+angle);
+            pos.x = playerPos.x+(t*(hookMtx[0][3]-playerPos.x));
+            pos.y = playerPos.y+(t*(hookMtx[1][3]-playerPos.y));
+            pos.z = playerPos.z+(t*(hookMtx[2][3]-playerPos.z));
+            mbPlayerPosSetV(work->playerNo, &pos);
+            mbPlayerRotSet(work->playerNo, t*ofsX, 180.0f+angle, 0.0f);
+            HuPrcVSleep();
+        }
+        mbPlayerPosSet(work->playerNo, playerPos.x, playerPos.y, playerPos.z);
+        mbPlayerRotSet(work->playerNo, 0.0f, 180.0f+angle, 0.0f);
+        mbPlayerColSnapPlayerSet(work->playerNo, TRUE);
+        mbObjMotionShiftSet(hanaObj, 1, 0.0f, 8.0f, 0x40000001);
+        for(i=0; i<30.0f; i++) {
+            HuPrcVSleep();
+        }
+        mbPlayerMotionShiftSet(work->playerNo, 1, 0.0f, 8.0f, 0x40000001);
+        mbev_CapBubbleHookCall(3, hanaObj, 1, 0, 0);
+        mbWinCreate(2, 0x350005, 1);
+        mbWinTopWait();
+        mbPlayerPosGet(work->playerNo, &pos);
+        bez2.x = pos.x;
+        bez2.y = objPos.y;
+        bez2.z = pos.z;
+        radius = fabs(pos.z-objPos.z);
+        for(i=0; i<120.0f; i++) {
+            t = i/120.0f;
+            speed = 650.0f;
+            angle = 180.0f+(360.0f*t);
+            if(t < 0.2f) {
+                s = 5.0f*t;
+            }
+            if(s > 1.0f) {
+                t = 1.0f;
+            }
+            objPos.x = bez2.x+((radius+(2.0f*(3.0f*(100.0f*t))))*HuSin(angle));
+            objPos.z = bez2.z+((radius+(3.0f*(100.0f*t)))*HuCos(angle));
+            objPos.y = bez2.y+(t*speed);
+            mbObjPosSet(hanaObj, objPos.x, objPos.y, objPos.z);
+            mbObjRotSet(hanaObj, 0.0f, (180.0f+angle)-(90.0f*s), 0.0f);
+            HuPrcVSleep();
+        }
+        mbObjDispSet(hanaObj, FALSE);
+        if(!mbExitCheck()) {
+            obj->work[0]++;
+        }
+        if(seNo != -1) {
+            mbAudFXStop(seNo);
+        }
+        mbPlayerRotateStart(work->playerNo, 0, 15);
+        while(!mbPlayerRotateCheck(work->playerNo)) {
+            HuPrcVSleep();
+        }
+        mbCameraMoveWait();
+        mbev_CapPlayerMotShiftWait(work->playerNo, 1, 0x40000001, 1);
+        mbCameraPlayerViewSet(work->playerNo, 0);
+        mbCameraMoveWait();
+        if(mbPlayerStarGet(work->playerNo) >= 999) {
+            if(!GwSystem.curTime) {
+                mbWinCreate(0, 0x27000A, mbGuideSpeakerNoGet());
+            } else {
+                mbWinCreate(0, 0x27000B, mbGuideSpeakerNoGet());
+            }
+            mbWinTopWait();
+        } else {
+            mbev_StarMasu(work->playerNo, GwPlayer[work->playerNo].masuId);
+        }
+    }
+    HuPrcEnd();
 }
 
 /* @@PART2@@ */
