@@ -14,7 +14,7 @@ s32 msmSeGetNumPlay(BOOL baseGrp);
 s32 msmSeGetStatus(int seNo);
 void msmSeSetMasterVolume(s32 arg0);
 s32 msmSeSetParam(int seNo, MSM_SEPARAM* param);
-s32 msmSePauseAll(BOOL pause, s32 speed);
+void msmSePauseAll(BOOL pause, s32 speed);
 s32 msmSePause(int seNo, BOOL pause, s32 speed);
 void msmSeStopAll(BOOL checkGrp, s32 speed);
 s32 msmSeStop(int seNo, s32 speed);

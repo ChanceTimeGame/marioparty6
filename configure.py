@@ -643,9 +643,9 @@ config.libs = [
         "host": False,
         "objects": [
             Object(NonMatching, "msm/msmsys.c"),
-            Object(NonMatching, "msm/msmmem.c"),
+            Object(Matching, "msm/msmmem.c"),
             Object(Matching, "msm/msmfio.c"),
-            Object(NonMatching, "msm/msmmus.c"),
+            Object(Matching, "msm/msmmus.c"),
             Object(Matching, "msm/msmse.c"),
             Object(NonMatching, "msm/msmstream.c"),
         ],

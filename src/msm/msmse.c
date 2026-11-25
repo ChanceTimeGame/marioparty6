@@ -2,10 +2,6 @@
 #include "msm/msmfio.h"
 #include "msm/msmmem.h"
 
-#define MSM_LISTENER_NO_UPDATA -34
-#define MSM_ERR_CHANLIMIT -110
-#define MSM_ERR_INVALIDSE -111
-#define MSM_SEPARAM_PAD (1 << 7)
 
 #define SE_PLAYER_EMIT (1 << 0)
 
@@ -394,7 +390,7 @@ s32 msmSeSetParam(int seNo, MSM_SEPARAM* param) {
     return 0;
 }
 
-s32 msmSePauseAll(BOOL pause, s32 speed) {
+void msmSePauseAll(BOOL pause, s32 speed) {
     s32 i;
     SE_PLAYER* player;
 

@@ -14,6 +14,15 @@
 #define MSM_AUXNO_NULL -2
 #define MSM_AUXNO_UNSET -1
 
+#define MSM_SEPARAM_PAD (1 << 7)
+#define MSM_LISTENER_NO_UPDATA -34
+#define MSM_ERR_GRP_FAILPUSH -32
+#define MSM_ERR_64 -100
+#define MSM_ERR_STACK_OVERFLOW -101
+#define MSM_ERR_CHANLIMIT -110
+#define MSM_ERR_INVALIDSE -111
+#define MSM_ERR_RANGE_STREAM -140
+
 typedef union {
     SND_AUX_REVERBHI revHi;
     SND_AUX_REVERBSTD revStd;
@@ -61,14 +70,10 @@ typedef struct MSMSys_s {
     s8 grpStackBOfs;
     void *grpBufB;
     MSM_GRP_STACK grpStackB[10];
-    // mp5 carries 16 bytes here that Mario Party 4 does not; contents still
-    // unidentified. Offsets confirmed against the target: every field from
-    // irqDepth on sits +0x10 versus mp4, and sys is 1292 bytes in both.
-    // mp5 keeps a running count of loaded groups here, decremented alongside
-    // both stack depths and zeroed in msmSysGroupInit. The remaining 15 bytes
-    // are still unidentified.
-    u8 grpLoadNum;
-    u8 unk4ed[15];
+    // Groups loaded by msmSysLoadGroupBase, in load order; msmSysDelGroupBase
+    // pops them from the end.
+    s8 grpLoadNum;
+    s8 grpLoadList[15];
     s32 irqDepth;
     BOOL irqState;
     AIDCallback oldAIDCallback;

@@ -2,8 +2,6 @@
 #include "msm/msmmem.h"
 #include "msm/msmsys.h"
 
-#define MSM_ERR_RANGE_STREAM -140
-#define MSM_ERR_CHANLIMIT -110
 #define MSM_ERR_STREAMSIZE -141
 
 typedef struct {
@@ -262,7 +260,7 @@ static inline void msmStreamSetPause(s32 streamNo, BOOL pause, s32 speed) {
     }
 }
 
-s32 msmStreamPauseAll(BOOL pause, s32 speed) {
+void msmStreamPauseAll(BOOL pause, s32 speed) {
     s32 i;
 
     msmSysIrqDisable();
