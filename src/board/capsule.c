@@ -2,6 +2,7 @@
 #include "game/board/capsule.h"
 #include "game/board/audio.h"
 #include "game/board/camera.h"
+#include "game/board/branch.h"
 #include "game/board/capselect.h"
 #include "game/board/exit.h"
 #include "game/board/masu.h"
@@ -10,18 +11,25 @@
 #include "game/board/pause.h"
 #include "game/board/player.h"
 #include "game/board/single.h"
+#include "game/board/telop.h"
 #include "game/board/tutorial.h"
 #include "game/board/window.h"
 #include "game/board/wipe.h"
 
 #include "game/charman.h"
+#include "game/data.h"
 #include "game/flag.h"
 #include "game/gamemes.h"
 #include "game/gamework.h"
+#include "game/hsfformat.h"
+#include "game/hsfload.h"
 #include "game/hu3d.h"
 #include "game/memory.h"
 #include "game/object.h"
+#include "game/pad.h"
+#include "game/printfunc.h"
 #include "game/process.h"
+#include "game/sprite.h"
 #include "math.h"
 #include "string.h"
 
@@ -29,6 +37,7 @@
 extern u32 mbCapEffNum;
 extern s16 *mbCapEffData;
 int mbev_CapCall(int playerNo, int capsuleNo, int arg2, int arg3);
+int mbev_CapMasuMoveCheck(int masuId);
 void mbev_CapBonusCoinCall(int playerNo, int capsuleNo, int coinNum, int arg3);
 void mbev_CapPlayerMotShiftWait(int playerNo, int motNo, u32 attr, BOOL waitF);
 void mbev_CapEffColorSet(GXColor *color, int no);
@@ -155,7 +164,7 @@ typedef struct CapObjColorData_s {
 static int CapUseDelete(int playerNo, int capsuleNo);
 static void CapSelectMasuPlayer(CAPSELMASU_WORK *work);
 static void CapSelectMasuCom(CAPSELMASU_WORK *work);
-static void CapSelectMasuListGet(s16 *list, s16 masuId, int frontNum, int backNum);
+static void CapSelectMasuListGet(s16 *list, s16 masuId, s16 frontNum, s16 backNum);
 static void CapThrowEndWin(int masuId, int capsuleNo);
 static void CapEffRemoveAddDestroy(void);
 static void CapEffHiliteKill(void);
