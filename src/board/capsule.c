@@ -1,49 +1,435 @@
 /* @@HEAD@@ */
-/* Part 4's provisional HEAD (wt-b404): only what part 4's functions need to compile and score
-   on their own. A splice replaces it with part 1's HEAD. */
 #include "game/board/capsule.h"
+#include "game/board/audio.h"
 #include "game/board/camera.h"
-#include "game/board/effect.h"
+#include "game/board/branch.h"
+#include "game/board/capselect.h"
 #include "game/board/exit.h"
+#include "game/board/masu.h"
 #include "game/board/math.h"
 #include "game/board/object.h"
+#include "game/board/pause.h"
 #include "game/board/player.h"
+#include "game/board/single.h"
+#include "game/board/telop.h"
+#include "game/board/tutorial.h"
 #include "game/board/window.h"
+#include "game/board/wipe.h"
+
+#include "game/charman.h"
 #include "game/data.h"
+#include "game/flag.h"
+#include "game/gamemes.h"
 #include "game/gamework.h"
 #include "game/hsfformat.h"
+#include "game/hsfload.h"
 #include "game/hu3d.h"
-#include "game/main.h"
 #include "game/memory.h"
 #include "game/object.h"
+#include "game/pad.h"
+#include "game/printfunc.h"
+#include "game/process.h"
 #include "game/sprite.h"
-#include "game/window.h"
-#include "humath.h"
 #include "math.h"
 #include "string.h"
 
-typedef struct CapsuleData_s {
-    int fileNum; /* 0x00 */
-    int objFileNum; /* 0x04 */
-    int unk08[3];
-    int colorNo; /* 0x14 */
-    int unk18[4];
-} CAPSULE_DATA; /* size 0x28 */
+/* capevent.c: declared here (not through capevent.h) with the types retail passes */
+extern u32 mbCapEffNum;
+extern s16 *mbCapEffData;
+int mbev_CapCall(int playerNo, int capsuleNo, int arg2, int arg3);
+int mbev_CapMasuMoveCheck(int masuId);
+void mbev_CapBonusCoinCall(int playerNo, int capsuleNo, int coinNum, int arg3);
+void mbev_CapPlayerMotShiftWait(int playerNo, int motNo, u32 attr, BOOL waitF);
+void mbev_CapEffColorSet(GXColor *color, int no);
+OMOBJ *mbev_CapEffGlowCreate(void);
+void mbev_CapEffGlowKill(OMOBJ *obj);
+BOOL mbev_CapEffGlowDispGet(OMOBJ *obj);
+int mbev_CapEffGlowAdd(OMOBJ *obj, HuVecF pos, HuVecF vel, int time, float size, float speed, float scale, GXColor color);
+OMOBJ *mbev_CapEffRingCreate(void);
+void mbev_CapEffRingKill(OMOBJ *obj);
+int mbev_CapEffRingAdd(OMOBJ *obj, HuVecF pos, HuVecF rot, HuVecF scale, int arg4, int time, int arg6, GXColor color);
+OMOBJ *mbev_CapEffRayCreate(float arg0, float arg1);
+void mbev_CapEffRayKill(OMOBJ *obj);
+int mbev_CapEffRayAdd(OMOBJ *obj, HuVecF *pos, HuVecF *rot, HuVecF *rotEnd, float scale, int time);
+void mbev_CapEffRayAlphaSet(OMOBJ *obj, float alpha);
+void mbev_CapEffRayTransformSet(OMOBJ *obj, HuVecF *pos, HuVecF *rot, HuVecF *scale);
+OMOBJ *mbev_CapEffMasuHitCreate(void);
+void mbev_CapEffMasuHitKill(OMOBJ *obj);
+int mbev_CapEffMasuHitAdd(OMOBJ *obj, HuVecF *pos, HuVecF *rot, HuVecF *rotEnd, float scale, float speed, int time);
+void mbev_CapEffMasuHitTransformSet(OMOBJ *obj, HuVecF *pos, HuVecF *rot, HuVecF *scale);
+OMOBJ *mbev_CapEffCoinCreate(void);
+void mbev_CapEffCoinKill(OMOBJ *obj);
+int mbev_CapEffCoinNumGet(OMOBJ *obj);
+void mbev_CapEffCoinMultiAdd(OMOBJ *obj, HuVecF *pos, int num);
 
-typedef struct CapsuleObjColor_s {
-    s16 useF; /* 0x00 */
-    s16 objId; /* 0x02 */
-    s16 unk04; /* 0x04 */
-    u8 layer; /* 0x06 */
-    HuVecF pos; /* 0x08 */
-    HuVecF rot; /* 0x14 */
-    HuVecF scale; /* 0x20 */
-} CAPSULE_OBJCOLOR; /* size 0x2C */
+#define CAP_RAND_F() ((1.0f/0x10000000)*mbRandMod(0x10000000))
 
-#define CAPSULE_OBJCOLOR_MAX 128
+typedef void (*CAPTHROWHOOK)(BOOL startF);
 
-typedef struct CapsuleEffect_s CAPSULE_EFFECT;
-typedef void (*CAPSULE_EFFHOOK)(HU3D_MODEL *modelP, CAPSULE_EFFECT *effP, Mtx *matrix);
+typedef struct CapUseWork_s {
+    int playerNo;
+    int capsuleNo;
+} CAPUSEWORK;
+
+typedef struct CapPlayerThrowWork_s {
+    int playerNo; //0x00
+    int masuId; //0x04
+    int capsuleNo; //0x08
+    int objId; //0x0C
+    int lineObjId; //0x10
+    int colorObjId; //0x14
+    int motId; //0x18
+    int time; //0x1C
+    int maxTime; //0x20
+    float height; //0x24
+    HuVecF pos; //0x28
+    HuVecF masuPos; //0x34
+    u8 unk40[0xC]; //0x40
+} CAPPLAYERTHROWWORK; //size=0x4C
+
+typedef struct CapEffThrowWork_s {
+    int mdlId; //0x00
+    int masuId; //0x04
+    int maxTime; //0x08
+    int endF; //0x0C
+    int unk10; //0x10
+    int frameNo; //0x14
+    int time; //0x18
+    HuVecF start; //0x1C
+    HuVecF end; //0x28
+    HuVecF pos; //0x34
+    float height; //0x40
+    u32 tick; //0x44
+    u32 delay; //0x48
+    float posX[3]; //0x4C
+    float posY[3]; //0x58
+    float posZ[3]; //0x64
+} CAPEFFTHROWWORK; //size=0x70
+
+typedef struct CapThrowFrame_s {
+    float rate;
+    float y;
+    float side;
+    int dir;
+} CAPTHROWFRAME;
+
+typedef struct CapAutoThrowWork_s {
+    int playerNo; //0x00
+    int capsuleNo; //0x04
+    int masuId; //0x08
+    int maxTime; //0x0C
+    float speed; //0x10
+    HuVecF pos[3]; //0x14
+} CAPAUTOTHROWWORK; //size=0x38
+
+typedef struct CapSelMasuWork_s {
+    int playerNo; //0x00
+    int unk4; //0x04
+    int capsuleNo; //0x08
+    int capObjId; //0x0C
+    int mdlId; //0x10
+    int winId; //0x14
+    int winId2; //0x18
+    int unk1C; //0x1C
+} CAPSELMASU_WORK; //size=0x20
+
+typedef struct CapListFile_s {
+    int boardNo;
+    u32 file;
+} CAPLISTFILE;
+
+typedef struct CapListDefine_s {
+    int capsuleNo;
+    char *name;
+} CAPLISTDEFINE;
+
+typedef struct CapObjData_s {
+    int capsuleNo; //0x00
+    int unk4; //0x04
+    s16 objId; //0x08
+    s16 unkA; //0x0A
+} CAPOBJDATA; //size=0xC
+
+typedef struct CapObjColorData_s {
+    s16 objId; //0x00
+    s16 mdlId; //0x02
+    u8 unk4[2]; //0x04
+    u8 layer; //0x06
+    HuVecF pos; //0x08
+    HuVecF rot; //0x14
+    HuVecF scale; //0x20
+} CAPOBJCOLORDATA; //size=0x2C
+
+/* Statics defined in later parts (forward declarations for the calls part 1 makes). */
+static int CapUseDelete(int playerNo, int capsuleNo);
+static void CapSelectMasuPlayer(CAPSELMASU_WORK *work);
+static void CapSelectMasuCom(CAPSELMASU_WORK *work);
+static void CapSelectMasuListGet(s16 *list, s16 masuId, s16 frontNum, s16 backNum);
+static void CapThrowEndWin(int masuId, int capsuleNo);
+static void CapEffRemoveAddDestroy(void);
+static void CapEffHiliteKill(void);
+static void CapEffCrackCreate(void);
+static void CapEffCrackKill(void);
+static void CapEffCrackAdd(HuVecF *pos, HuVecF *rot);
+static void CapEffTrailCreate(int capsuleNo);
+static void CapEffTrailKill(void);
+static void CapEffTrailAdd(HuVecF *pos, int capsuleNo);
+static void CapEffTrailPosSet(HuVecF *pos);
+static void CapComChoiceSet(int choice);
+static void CapThrowCameraSet(float *posX, float *posY, float *posZ, int num);
+static void CapThrowCameraCalc(float t, float *posX, float *posY, float *posZ, HuVecF *out, int num);
+static void CapColMdlIdGet(void);
+static int CapColCheck(HuVecF *pos, HuVecF *next, HuVecF *out);
+static void CapColKill(void);
+static int CapColExec(int masuId, HuVecF *pos, HuVecF *next, HuVecF *out);
+
+static HUPROCESS *capsuleUseEffProc[4];
+static int capsuleUseEffMode[4];
+static HuVecF capsuleUseEffPos[4];
+static CAPSULE_LIST capsuleList[33];
+static s32 capsuleNum[33];
+static CAPOBJCOLORDATA capsuleObjColorData[128];
+static s16 capsuleObjBorderId[6];
+static CAPOBJDATA capsuleObjData[8];
+
+static CAPTHROWHOOK capsuleThrowHook;
+static int capsuleBorderObjId;
+static OMOBJ *capsuleThrowGlowOMObj;
+static OMOBJ *capsuleThrowRingOMObj;
+static OMOBJ *capsuleThrowRayOMObj;
+static OMOBJ *capsuleThrowMasuHitOMObj;
+static OMOBJ *capsuleThrowMasuCoinOMObj;
+static int capsuleUseRemoveOnF;
+static int capsuleMasuSelectEndF;
+static int capsuleComChoice;
+static OMOBJ *capEffTrailOMObj;
+static OMOBJ *capEffCrackOMObj;
+static OMOBJ *capEffHiliteOMObj;
+static OMOBJ *capEffRemoveAddOMObj;
+static OMOBJ *capEffRemoveOMObj;
+static int capsuleSelectComBack;
+static OMOBJ *capEffMasuOkOMObj;
+static OMOBJ *capsuleGuideOMObj;
+static int capsuleComSearchF;
+static HUPROCESS *capsulePlayerThrowProc;
+
+static int capsuleMasuSelectComF[4] = { 0, 0, 0, 0 };
+static int capsuleMasuSelectResult = -1;
+static int capsuleObjId = -1;
+static int capsuleColObjId = -1;
+static int capsuleColMdlId = -1;
+static int capEffThrowMdlId = -1;
+
+static CAPSULE_DATA capsuleData[60] = {
+    { 0xC0000, 0xC001C, 0x370000, 0x380000, 0, 0, 5, 'A', 0, "KINOKO", 1 },
+    { 0xC0001, 0xC001C, 0x370001, 0x380001, 0, 0, 10, 'B', 0, "S KINOKO", 1 },
+    { 0xC0002, 0xC001C, 0x370002, 0x380002, 0, 0, 10, 'A', 0, "P KINOKO", 1 },
+    { 0xC0003, 0xC001C, 0x370003, 0x380003, 0, 0, 20, 'A', 0, "M KINOKO", 1 },
+    { 0xC0004, 0xC001C, 0x370004, 0x380004, 0, 0, 20, 'B', 0, "KILLER", 1 },
+    { 0xC0005, 0xC001C, 0x370005, 0x380005, 0, 0, 15, 'C', 0, "DOKAN", 1 },
+    { 0xC0006, 0xC001C, 0x370006, 0x380006, 0, 0, 30, 'E', 0, "HANACHAN", 1 },
+    { 0xC0007, 0xC001C, 0x370007, 0x380007, 0, 0, 30, 'E', 0, "N KINOKO", 1 },
+    { 0, 0, 0, 0x380022, 10, 0, 0, 'Z', 1, "NULL", 0 },
+    { 0, 0, 0, 0x380022, 10, 0, 0, 'Z', 1, "NASI", 0 },
+    { 0xC0008, 0xC001D, 0x370008, 0x380008, 1, 1, 10, 'A', 1, "TOGEZO", 1 },
+    { 0xC0009, 0xC001D, 0x370009, 0x380009, 1, 1, 15, 'A', 1, "KURIBO", 1 },
+    { 0xC000A, 0xC001D, 0x37000A, 0x38000A, 1, 1, 20, 'B', 1, "PAKKUN", 1 },
+    { 0xC000B, 0xC001D, 0x37000B, 0x38000B, 1, 1, 5, 'D', 1, "JANGO", 1 },
+    { 0, 0, 0, 0x380022, 10, 0, 0, 'Z', 0, "HANUKE", 0 },
+    { 0xC000C, 0xC001D, 0x37000D, 0x38000D, 1, 1, 10, 'C', 1, "KOKAMEKKU", 1 },
+    { 0xC000D, 0xC001D, 0x37000E, 0x38000E, 1, 1, 5, 'B', 1, "KAMEKKU", 1 },
+    { 0xC000E, 0xC001D, 0x37000F, 0x38000F, 1, 1, 10, 'A', 1, "THROWMAN", 1 },
+    { 0, 0, 0, 0x380022, 10, 0, 0, 'Z', 0, "SUKA", 0 },
+    { 0, 0, 0, 0x380022, 10, 0, 0, 'Z', 0, "KARA", 0 },
+    { 0xC000F, 0xC001E, 0x370010, 0x380010, 2, 2, 10, 'B', 2, "BOBLE", 1 },
+    { 0xC0010, 0xC001E, 0x370011, 0x380011, 2, 2, 15, 'C', 2, "BIRIQ", 1 },
+    { 0xC0011, 0xC001E, 0x370012, 0x380012, 2, 2, 15, 'B', 2, "TUMUJIKUN", 1 },
+    { 0xC0012, 0xC001E, 0x370013, 0x380013, 2, 2, 15, 'C', 2, "DOSSUN", 1 },
+    { 0xC0013, 0xC001E, 0x370014, 0x380014, 2, 2, 10, 'C', 2, "BOMUHEI", 1 },
+    { 0xC0014, 0xC001E, 0x37000C, 0x38000C, 2, 2, 10, 'E', 2, "PATAPATA", 1 },
+    { 0, 0, 0, 0x380022, 10, 0, 0, 'Z', 1, "NETA", 0 },
+    { 0, 0, 0, 0x380022, 10, 0, 0, 'Z', 1, "GA  ", 0 },
+    { 0, 0, 0, 0x380022, 10, 0, 0, 'Z', 1, "TUKI", 0 },
+    { 0, 0, 0, 0x380022, 10, 0, 0, 'Z', 1, "TA  ", 0 },
+    { 0xC0015, 0xC001F, 0x370015, 0x380015, 3, 3, 20, 'D', 3, "HONE", 1 },
+    { 0xC0016, 0xC001F, 0x370016, 0x380016, 3, 3, 10, 'D', 3, "LIGHT", 1 },
+    { 0xC0021, 0xC001F, 0x370017, 0x380017, 3, 3, 15, 'D', 3, "TARU", 1 },
+    { 0, 0, 0, 0x380022, 10, 0, 0, 'Z', 1, "0000", 0 },
+    { 0, 0, 0, 0x380022, 10, 0, 0, 'Z', 1, "0000", 0 },
+    { 0, 0, 0, 0x380022, 10, 0, 0, 'Z', 1, "0000", 0 },
+    { 0, 0, 0, 0x380022, 10, 0, 0, 'Z', 1, "0000", 0 },
+    { 0, 0, 0, 0x380022, 10, 0, 0, 'Z', 1, "0000", 0 },
+    { 0, 0, 0, 0x380022, 10, 0, 0, 'Z', 1, "0000", 0 },
+    { 0, 0, 0, 0x380022, 10, 0, 0, 'Z', 1, "0000", 0 },
+    { 0xC0021, 0xC001F, 0x370018, 0x380018, 10, 3, 1, 'C', 3, "KILLER MOVE", 0 },
+    { 0xC0021, 0xC001F, 0x370019, 0x380019, 10, 3, 1, 'C', 3, "KETTOU", 0 },
+    { 0xC0021, 0xC0020, 0x37001A, 0x38001A, 10, 3, 1, 'C', 3, "MIRACLE", 0 },
+    { 0xC0021, 0xC001F, 0x37001B, 0x38001B, 9, 3, 1, 'E', 3, "KOOPA", 0 },
+    { 0xC0021, 0xC001F, 0x37001C, 0x38001C, 10, 3, 1, 'E', 3, "DONKEY", 0 },
+    { 0xC0021, 0xC001F, 0x37001D, 0x38001D, 10, 3, 1, 'Z', 3, "VS", 0 },
+    { 0xC0021, 0xC001F, 0x37001E, 0x38001E, 10, 3, 1, 'Z', 3, "R_TERESA", 0 },
+    { 0x50017, 0xC001F, 0x37001F, 0x380022, 10, 0, 0, 'Z', 0, "DICE", 1 },
+    { 0xC0022, 0xC001F, 0x370020, 0x380022, 10, 0, 0, 'Z', 0, "YAMERU", 1 },
+    { 0, 0, 0, 0x380022, 10, 0, 0, 'Z', 1, "0000", 0 },
+    { 0xC0021, 0xC001F, 0x370021, 0x38001F, 10, 0, 1, 'Z', 0, "DEBUG CAM TEST", 0 },
+    { 0xC0021, 0xC001F, 0x370022, 0x380020, 10, 0, 1, 'Z', 0, "DEBUG WARP TEST", 0 },
+    { 0xC0021, 0xC001F, 0x370023, 0x380021, 10, 0, 1, 'Z', 0, "DEBUG SETPOS TEST", 0 },
+    { 0, 0, 0, 0x380022, 10, 0, 0, 'Z', 1, "0000", 0 },
+    { 0, 0, 0, 0x380022, 10, 0, 0, 'Z', 1, "0000", 0 },
+    { 0, 0, 0, 0x380022, 10, 0, 0, 'Z', 1, "0000", 0 },
+    { 0, 0, 0, 0x380022, 10, 0, 0, 'Z', 1, "0000", 0 },
+    { 0, 0, 0, 0x380022, 10, 0, 0, 'Z', 1, "0000", 0 },
+    { 0, 0, 0, 0x380022, 10, 0, 0, 'Z', 1, "0000", 0 },
+    { 0, 0, 0, 0x380022, 10, 0, 0, 'Z', 1, "0000", 0 },
+};
+
+static CAPSULE_CHANCE_TBL capsuleChanceTbl[23] = {
+    { 0, { { 50, " " }, { 50, " " }, { 30, " " }, { 50, " " }, { 10, " " }, { 30, " " }, { 30, " " }, { 30, " " }, { 10, " " }, { 50, " " }, { 50, " " } } },
+    { 1, { { 50, "*" }, { 50, "*" }, { 10, "*" }, { 30, "*" }, { 30, " " }, { 30, "*" }, { 10, " " }, { 30, "*" }, { 30, " " }, { 30, " " }, { 30, "*" } } },
+    { 2, { { 5, "b" }, { 5, "b" }, { 10, "b" }, { 10, "b" }, { 10, " " }, { 5, "a" }, { 10, " " }, { 5, "a" }, { 30, " " }, { 10, " " }, { 5, "a" } } },
+    { 3, { { 0, "*" }, { 0, "*" }, { 0, "*" }, { 0, "*" }, { 0, "*" }, { 0, "*" }, { 30, " " }, { 0, "*" }, { 0, "*" }, { 30, " " }, { 0, "*" } } },
+    { 4, { { 10, " " }, { 30, "*" }, { 30, "*" }, { 10, " " }, { 50, " " }, { 10, "*" }, { 50, " " }, { 50, "*" }, { 30, "*" }, { 50, " " }, { 30, "*" } } },
+    { 5, { { 30, " " }, { 30, "*" }, { 10, " " }, { 50, " " }, { 10, " " }, { 30, " " }, { 10, " " }, { 10, "*" }, { 50, " " }, { 10, " " }, { 10, "*" } } },
+    { 6, { { 30, "*" }, { 50, "*" }, { 30, "*" }, { 50, "*" }, { 30, "*" }, { 30, "*" }, { 10, " " }, { 50, "*" }, { 10, "*" }, { 10, "*" }, { 30, "*" } } },
+    { 10, { { 10, " " }, { 30, " " }, { 50, " " }, { 10, " " }, { 30, " " }, { 10, " " }, { 30, " " }, { 50, " " }, { 10, " " }, { 30, " " }, { 30, " " } } },
+    { 11, { { 10, " " }, { 30, "*" }, { 30, "*" }, { 30, "*" }, { 10, " " }, { 10, " " }, { 50, " " }, { 30, "*" }, { 50, " " }, { 50, " " }, { 50, "*" } } },
+    { 12, { { 10, " " }, { 30, " " }, { 50, " " }, { 10, " " }, { 30, " " }, { 10, " " }, { 30, " " }, { 30, " " }, { 10, " " }, { 50, " " }, { 30, " " } } },
+    { 13, { { 30, " " }, { 10, " " }, { 10, " " }, { 50, " " }, { 10, " " }, { 30, " " }, { 50, " " }, { 10, " " }, { 30, " " }, { 10, " " }, { 10, " " } } },
+    { 15, { { 10, " " }, { 10, " " }, { 30, " " }, { 10, " " }, { 10, " " }, { 50, " " }, { 50, " " }, { 10, " " }, { 10, " " }, { 30, " " }, { 10, " " } } },
+    { 16, { { 10, " " }, { 10, " " }, { 10, " " }, { 10, " " }, { 30, " " }, { 50, " " }, { 30, " " }, { 10, " " }, { 50, " " }, { 10, " " }, { 10, " " } } },
+    { 17, { { 30, " " }, { 10, " " }, { 10, " " }, { 30, " " }, { 10, " " }, { 50, " " }, { 30, " " }, { 30, " " }, { 10, " " }, { 10, " " }, { 30, " " } } },
+    { 20, { { 50, " " }, { 30, " " }, { 50, " " }, { 10, " " }, { 50, " " }, { 10, " " }, { 10, " " }, { 10, " " }, { 10, " " }, { 50, " " }, { 50, " " } } },
+    { 21, { { 10, " " }, { 30, " " }, { 50, " " }, { 10, " " }, { 30, " " }, { 50, " " }, { 30, " " }, { 10, " " }, { 10, " " }, { 50, " " }, { 50, " " } } },
+    { 22, { { 50, " " }, { 10, "*" }, { 10, " " }, { 30, " " }, { 50, " " }, { 30, "*" }, { 10, " " }, { 10, "*" }, { 50, " " }, { 30, " " }, { 10, "*" } } },
+    { 23, { { 30, " " }, { 50, "*" }, { 10, "*" }, { 30, " " }, { 50, " " }, { 10, " " }, { 10, " " }, { 10, "*" }, { 30, " " }, { 30, " " }, { 10, "*" } } },
+    { 24, { { 30, " " }, { 30, " " }, { 10, " " }, { 30, " " }, { 50, " " }, { 10, " " }, { 10, " " }, { 30, " " }, { 30, " " }, { 10, " " }, { 10, " " } } },
+    { 25, { { 30, " " }, { 10, " " }, { 10, " " }, { 50, " " }, { 10, " " }, { 10, " " }, { 50, " " }, { 10, " " }, { 30, " " }, { 10, " " }, { 10, " " } } },
+    { 30, { { 30, "*" }, { 50, " " }, { 30, "*" }, { 30, " " }, { 30, "*" }, { 50, "*" }, { 10, " " }, { 50, " " }, { 30, " " }, { 10, " " }, { 50, " " } } },
+    { 31, { { 10, "*" }, { 50, " " }, { 30, "*" }, { 30, " " }, { 10, "*" }, { 30, "*" }, { 10, " " }, { 50, " " }, { 0, " " }, { 10, " " }, { 50, " " } } },
+    { -1, { { 0, " " }, { 0, " " }, { 0, " " }, { 0, " " }, { 0, " " }, { 0, " " }, { 0, " " }, { 0, " " }, { 0, " " }, { 0, " " }, { 0, " " } } },
+};
+
+static GXColor capsuleMasuSelectColorTbl[8] = {
+    { 192, 255, 192, 255 }, { 255, 255, 192, 255 }, { 255, 192, 192, 255 }, { 192, 255, 255, 255 },
+    { 192, 255, 192, 255 }, { 255, 255, 192, 255 }, { 255, 192, 192, 255 }, { 192, 255, 255, 255 }
+};
+
+static HuVecF capsulePlayerThrowRot[3] = {
+    { -90.0f, 0.0f, 20.0f },
+    { -90.0f, 0.0f, 0.0f },
+    { 0.0f, 10.0f, 60.0f }
+};
+
+static GXColor capsulePlayerThrowColorTbl[4] = {
+    { 192, 255, 192, 255 }, { 255, 255, 192, 255 }, { 255, 192, 192, 255 }, { 192, 255, 255, 255 }
+};
+
+static u32 capsulePlayerThrowDelayTbl[11] = {
+    100000, 100000, 100000, 100000, 100000, 100000, 100000, 100000, 100000, 100000, 100000
+};
+
+static CAPTHROWFRAME capsulePlayerThrowFrameTbl[48] = {
+    { 0.5f, 0.0f, 0.0f, 0 }, { 0.2f, 0.0f, 0.0f, 0 }, { 0.8f, 0.0f, 0.0f, 0 }, { 0.5f, 500.0f, 0.0f, 0 },
+    { 0.2f, 500.0f, 0.0f, 0 }, { 0.8f, 500.0f, 0.0f, 0 }, { 1.0f, 500.0f, 0.0f, 0 }, { 1.2f, 500.0f, 0.0f, 0 },
+    { 0.2f, 0.0f, 300.0f, 0 }, { 0.2f, 0.0f, -300.0f, 0 }, { 0.0f, 0.0f, 300.0f, 0 }, { 0.0f, 0.0f, -300.0f, 0 },
+    { 0.8f, 0.0f, 300.0f, 0 }, { 0.8f, 0.0f, -300.0f, 0 }, { 1.0f, 0.0f, 300.0f, 0 }, { 1.0f, 0.0f, -300.0f, 0 },
+    { 0.2f, 0.0f, 800.0f, 0 }, { 0.2f, 0.0f, -800.0f, 0 }, { 0.0f, 0.0f, 800.0f, 0 }, { 0.0f, 0.0f, -800.0f, 0 },
+    { 0.8f, 0.0f, 800.0f, 0 }, { 0.8f, 0.0f, -800.0f, 0 }, { 1.0f, 0.0f, 800.0f, 0 }, { 1.0f, 0.0f, -800.0f, 0 },
+    { 0.2f, 500.0f, 300.0f, 0 }, { 0.2f, 500.0f, -300.0f, 0 }, { 0.0f, 500.0f, 300.0f, 0 }, { 0.0f, 500.0f, -300.0f, 0 },
+    { 0.8f, 500.0f, 300.0f, 0 }, { 0.8f, 500.0f, -300.0f, 0 }, { 1.0f, 500.0f, 300.0f, 0 }, { 1.0f, 500.0f, -300.0f, 0 },
+    { 0.2f, 500.0f, 800.0f, 0 }, { 0.2f, 500.0f, -800.0f, 0 }, { 0.0f, 500.0f, 800.0f, 0 }, { 0.0f, 500.0f, -800.0f, 0 },
+    { 0.8f, 500.0f, 800.0f, 0 }, { 0.8f, 500.0f, -800.0f, 0 }, { 1.0f, 500.0f, 800.0f, 0 }, { 1.0f, 500.0f, -800.0f, 0 },
+    { 0.5f, 500.0f, 0.0f, 1 }, { 0.5f, 500.0f, 0.0f, -1 }, { 0.7f, 500.0f, 0.0f, 1 }, { 0.7f, 500.0f, 0.0f, -1 },
+    { 0.3f, 500.0f, 0.0f, 1 }, { 0.3f, 500.0f, 0.0f, -1 }, { 0.7f, 500.0f, 0.0f, 1 }, { 0.7f, 500.0f, 0.0f, -1 },
+};
+
+static HuVecF capsuleAutoThrowRot[2] = {
+    { -90.0f, 0.0f, 0.0f },
+    { 0.0f, 10.0f, 60.0f }
+};
+
+static GXColor capsuleAutoThrowColorTbl[4] = {
+    { 192, 255, 192, 255 }, { 255, 255, 192, 255 }, { 255, 192, 192, 255 }, { 192, 255, 255, 255 }
+};
+
+static HuVecF capsuleMasuSelectRotTbl[2] = {
+    { -90.0f, 0.0f, 0.0f },
+    { 0.0f, 10.0f, 50.0f }
+};
+
+static CAPLISTFILE capsuleListFileTbl[12] = {
+    { 0, 0xC004A }, { 1, 0xC004B }, { 2, 0xC004C }, { 3, 0xC004D },
+    { 4, 0xC004E }, { 5, 0xC004F }, { 6, 0xC0050 }, { 7, 0xC0051 },
+    { 8, 0xC0052 }, { 9, 0xC0053 }, { 10, 0xC0054 }, { -1, 0xFFFFFFFF }
+};
+
+static CAPLISTDEFINE capsuleListDefineTbl[24] = {
+    { 0, "CAPSULE_KINOKO" },
+    { 1, "CAPSULE_SKINOKO" },
+    { 2, "CAPSULE_PKINOKO" },
+    { 3, "CAPSULE_MKINOKO" },
+    { 4, "CAPSULE_KILLER" },
+    { 5, "CAPSULE_DOKAN" },
+    { 6, "CAPSULE_HANACHAN" },
+    { 10, "CAPSULE_TOGEZO" },
+    { 11, "CAPSULE_KURIBO" },
+    { 12, "CAPSULE_PAKKUN" },
+    { 13, "CAPSULE_JANGO" },
+    { 25, "CAPSULE_PATAPATA" },
+    { 15, "CAPSULE_KOKAMEKKU" },
+    { 16, "CAPSULE_KAMEKKU" },
+    { 17, "CAPSULE_THROWMAN" },
+    { 20, "CAPSULE_BOBLE" },
+    { 21, "CAPSULE_BIRIQ" },
+    { 22, "CAPSULE_TUMUJIKUN" },
+    { 23, "CAPSULE_DOSSUN" },
+    { 24, "CAPSULE_BOMHEI" },
+    { 30, "CAPSULE_HONE" },
+    { 31, "CAPSULE_LIGHT" },
+    { 32, "CAPSULE_TARU" },
+    { -1, "CAPSULE_NULL" },
+};
+
+static int capsuleListColW[16] = {
+    108, 32, 32, 48, 32, 32, 32, 32, 32, 32, 32, 48, 32, 32, 32, 48
+};
+
+/* CapEffThrowMasu's random numbers come from capevent.c's table. */
+static inline s16 CapEffRandGet(void)
+{
+    if(++mbCapEffNum >= 1024) {
+        mbCapEffNum = 0;
+    }
+    return mbCapEffData[mbCapEffNum];
+}
+
+static inline float CapEffRandF(void)
+{
+    return (1.0f/32767.0f)*CapEffRandGet();
+}
+
+static inline float CapEffRandSF(void)
+{
+    return CapEffRandF()-0.5f;
+}
+
+#define CapHookNameGet(playerNo) CharModelItemHookGet(GwPlayer[playerNo].charNo, 4, 0)
+
+static inline void *CapMalloc(int size)
+{
+    return HuMemDirectMallocNum(HEAP_HEAP, size, HU_MEMNUM_OVL);
+}
+
+/* @@PART1@@ */
+/* @@PART2@@ */
+/* @@PART3@@ */
+/* @@PART4@@ */
+/* Part 4 (wt-b404): CapEffHiliteOMExec .. CapColExec.
+   Uses part 1's HEAD and part 3's CAPSULE_EFFECT / CAPSULE_EFFDATA / CAPEFFHILITE_WORK. */
+#include "game/board/effect.h"
+#include "game/main.h"
+#include "game/window.h"
+#include "humath.h"
 
 #define CAPSULE_EFF_ATTR_NONE 0
 #define CAPSULE_EFF_ATTR_COUNTER_RESET (1 << 0)
@@ -55,56 +441,7 @@ typedef void (*CAPSULE_EFFHOOK)(HU3D_MODEL *modelP, CAPSULE_EFFECT *effP, Mtx *m
 #define CAPSULE_EFF_DISPATTR_CAMERA_ROT (1 << 2)
 #define CAPSULE_EFF_DISPATTR_ROT3D (1 << 3)
 
-typedef struct CapsuleEffData_s {
-    s16 time; /* 0x00 */
-    s16 work; /* 0x02 */
-    s16 mode; /* 0x04 */
-    s16 cameraBit; /* 0x06 */
-    HuVecF vel; /* 0x08 */
-    float baseAlpha; /* 0x14 */
-    float tpLvl; /* 0x18 */
-    float speed; /* 0x1C */
-    float unk20; /* 0x20 */
-    float gravity; /* 0x24 */
-    float rotSpeed; /* 0x28 */
-    float animTime; /* 0x2C */
-    float animSpeed; /* 0x30 */
-    float scale; /* 0x34 */
-    HuVecF rot; /* 0x38 */
-    HuVecF pos; /* 0x44 */
-    GXColor color; /* 0x50 */
-    int no; /* 0x54 */
-} CAPSULE_EFFDATA; /* size 0x58 */
-
-struct CapsuleEffect_s {
-    s16 mode; /* 0x00 */
-    s16 time; /* 0x02 */
-    HuVecF vel; /* 0x04 */
-    s16 work[8]; /* 0x10 */
-    u8 blendMode; /* 0x20 */
-    u8 attr; /* 0x21 */
-    u8 dispAttr; /* 0x22 */
-    u8 unk23; /* 0x23 */
-    HU3D_MODELID modelId; /* 0x24 */
-    s16 num; /* 0x26 */
-    u32 count; /* 0x28 */
-    u32 prevCounter; /* 0x2C */
-    u32 prevCount; /* 0x30 */
-    u32 dlSize; /* 0x34 */
-    ANIMDATA *anim; /* 0x38 */
-    CAPSULE_EFFDATA *data; /* 0x3C */
-    HuVecF *vertex; /* 0x40 */
-    HuVec2f *st; /* 0x44 */
-    void *dl; /* 0x48 */
-    CAPSULE_EFFHOOK hook; /* 0x4C */
-    HU3D_MODEL *hookMdlP; /* 0x50 */
-}; /* size 0x54 */
-
-typedef struct CapEffHiliteWork_s {
-    int mdlId[3]; /* 0x00 */
-    int num; /* 0x0C */
-    ANIMDATA *anim[3]; /* 0x10 */
-} CAPEFF_HILITE_WORK; /* size 0x1C */
+typedef void (*CAPSULE_EFFHOOK)(HU3D_MODEL *modelP, CAPSULE_EFFECT *effP, Mtx *matrix);
 
 typedef struct CapEffCrackData_s {
     int dispF; /* 0x00 */
@@ -147,104 +484,15 @@ typedef struct CapEffTrailSeg_s {
     float ofs; /* 0x1C */
 } CAPEFF_TRAIL_SEG; /* size 0x20 */
 
-static CAPSULE_DATA capsuleData[60] = { { 1 } }; /* placeholder: part 1 owns the table */
-static int capsuleColObjId = -1;
-static int capsuleColMdlId = -1;
-static int capsuleComChoice;
-static OMOBJ *capEffHiliteOMObj;
-static OMOBJ *capEffCrackOMObj;
-static OMOBJ *capEffTrailOMObj;
-static CAPSULE_OBJCOLOR capsuleObjColorData[CAPSULE_OBJCOLOR_MAX];
+static GXColor capsuleCrackEffColor = { 0xFF, 0xFF, 0x80, 0x40 };
+static GXColor capsuleCrackEffAmbColor = { 0xFF, 0xFF, 0xFF, 0xFF };
+static GXColor capsuleCrackEffMatColor = { 0xFF, 0xFF, 0xFF, 0xFF };
+
 static float capsuleTime[8];
 static float capsuleBezierX[8];
 static float capsuleBezierY[8];
 static float capsuleBezierZ[8];
 
-static HuVecF capsuleCrackScaleTbl[2][3] = {
-    { { 0, 0, 0 }, { 1, 0, 0 }, { 0, 0, 1 } },
-    { { 0, 0, 1 }, { 1, 0, 0 }, { 1, 0, 1 } }
-};
-static GXColor capsuleTrailColorTbl[4][2] = {
-    { { 0x80, 0xFF, 0x80, 0xFF }, { 0xC0, 0xFF, 0xC0, 0xFF } },
-    { { 0xFF, 0xFF, 0x80, 0xFF }, { 0xFF, 0xFF, 0xC0, 0xFF } },
-    { { 0xFF, 0x80, 0x80, 0xFF }, { 0xFF, 0xC0, 0xC0, 0xFF } },
-    { { 0x80, 0xFF, 0xFF, 0xFF }, { 0xC0, 0xFF, 0xFF, 0xFF } }
-};
-static GXColor capsuleCrackEffColor = { 0xFF, 0xFF, 0x80, 0x40 };
-static GXColor capsuleCrackEffAmbColor = { 0xFF, 0xFF, 0xFF, 0xFF };
-static GXColor capsuleCrackEffMatColor = { 0xFF, 0xFF, 0xFF, 0xFF };
-
-/* Stand-ins for earlier parts' globals that part 4's functions inline (bodies follow the asm). */
-static inline int CapNoGet(s16 capsuleNo)
-{
-    return (s16)(u8)capsuleNo;
-}
-
-int mbCapColorGet(int capsuleNo)
-{
-    capsuleNo = CapNoGet(capsuleNo);
-    return capsuleData[capsuleNo].colorNo;
-}
-
-static inline int CapObjColorNoGet(int id)
-{
-    CAPSULE_OBJCOLOR *objColorP = capsuleObjColorData;
-    int i;
-    for(i=0; i<CAPSULE_OBJCOLOR_MAX; i++, objColorP++) {
-        if(objColorP->useF != 0 && objColorP->objId == id) {
-            break;
-        }
-    }
-    if(i < CAPSULE_OBJCOLOR_MAX) {
-        return i;
-    } else {
-        return -1;
-    }
-}
-
-void mbCapObjColorKill(int id)
-{
-    CAPSULE_OBJCOLOR *objColorP;
-    int no;
-    if((no = CapObjColorNoGet(id)) != -1) {
-        objColorP = &capsuleObjColorData[no];
-        if(objColorP->useF != 0) {
-            mbObjKill(objColorP->objId);
-            objColorP->objId = -1;
-            objColorP->unk04 = -1;
-            objColorP->useF = 0;
-        }
-    }
-}
-
-void mbCapObjColorPosSet(int id, float x, float y, float z)
-{
-    CAPSULE_OBJCOLOR *objColorP;
-    int no;
-    if((no = CapObjColorNoGet(id)) != -1) {
-        objColorP = &capsuleObjColorData[no];
-        objColorP->pos.x = x;
-        objColorP->pos.y = y;
-        objColorP->pos.z = z;
-        mbObjPosSetV(objColorP->objId, &objColorP->pos);
-    }
-}
-
-void mbCapObjColorPosSetV(int id, HuVecF *pos)
-{
-    CAPSULE_OBJCOLOR *objColorP;
-    int no;
-    if((no = CapObjColorNoGet(id)) != -1) {
-        objColorP = &capsuleObjColorData[no];
-        mbCapObjColorPosSet(id, pos->x, pos->y, pos->z);
-    }
-}
-
-/* @@PART1@@ */
-/* @@PART2@@ */
-/* @@PART3@@ */
-/* @@PART4@@ */
-/* Part 4 (wt-b404): CapEffHiliteOMExec .. CapColExec. */
 
 int abs(int x);
 
@@ -253,11 +501,6 @@ static void CapEffCrackDraw(HU3D_MODEL *modelP, Mtx *mtx);
 static void CapEffTrailOMExec(OMOBJ *obj);
 static void CapEffDraw(HU3D_MODEL *modelP, Mtx *mtx);
 static void CapComKeyHook(void);
-
-static inline void *CapEffHeapMalloc(u32 size)
-{
-    return HuMemDirectMallocNum(HEAP_HEAP, size, HU_MEMNUM_OVL);
-}
 
 static inline void *CapEffModelMalloc(u32 size, u32 num)
 {
@@ -290,11 +533,10 @@ static inline float CapEffCosDeg(float deg)
     return mbCosDeg(deg);
 }
 
-#define CAPEFF_RANDF() ((1.0f/268435456.0f)*mbRandMod(0x10000000))
 
 static void CapEffHiliteOMExec(OMOBJ *obj)
 {
-    CAPEFF_HILITE_WORK *work;
+    CAPEFFHILITE_WORK *work;
     HU3D_MODEL *modelP;
     CAPSULE_EFFECT *effP;
     CAPSULE_EFFDATA *effDataP;
@@ -317,7 +559,7 @@ static void CapEffHiliteOMExec(OMOBJ *obj)
         return;
     }
     for(i=0; i<3; i++) {
-        if(work->num <= 0) {
+        if(work->effNum <= 0) {
             Hu3DModelAttrSet(work->mdlId[i], HU3D_ATTR_DISPOFF);
         } else {
             Hu3DModelAttrReset(work->mdlId[i], HU3D_ATTR_DISPOFF);
@@ -378,7 +620,7 @@ static void CapEffHiliteOMExec(OMOBJ *obj)
                         effDataP->color.a = effDataP->speed*(1.0f-t);
                         if(t >= 1.0f) {
                             effDataP->scale = 0.0f;
-                            work->num--;
+                            work->effNum--;
                         }
                         break;
                 }
@@ -395,7 +637,7 @@ static void CapEffHiliteKill(void)
 static int CapEffHiliteAdd(HuVecF *pos, HuVecF *rot, HuVecF *scale, int inTime, int outTime, int no, int mode, GXColor *color)
 {
     OMOBJ *obj;
-    CAPEFF_HILITE_WORK *work;
+    CAPEFFHILITE_WORK *work;
     HU3D_MODEL *modelP;
     CAPSULE_EFFECT *effP;
     CAPSULE_EFFDATA *effDataP;
@@ -437,7 +679,7 @@ static int CapEffHiliteAdd(HuVecF *pos, HuVecF *rot, HuVecF *scale, int inTime, 
     effDataP->no = 0;
     effDataP->time = 0;
     effDataP->mode = (s16)mode;
-    work->num++;
+    work->effNum++;
     return i;
 }
 
@@ -464,7 +706,7 @@ static void CapEffCrackCreate(void)
     float vtxScale[3];
 
     obj = capEffCrackOMObj = omAddObjEx(mbObjMan, 32768, 0, 0, -1, CapEffCrackOMExec);
-    obj->data = work = CapEffHeapMalloc(sizeof(CAPEFF_CRACK_WORK));
+    obj->data = work = CapMalloc(sizeof(CAPEFF_CRACK_WORK));
     memset(work, 0, sizeof(CAPEFF_CRACK_WORK));
     work->mdlId = Hu3DHookFuncCreate(CapEffCrackDraw);
     Hu3DModelCameraSet(work->mdlId, HU3D_CAM0);
@@ -497,11 +739,11 @@ static void CapEffCrackCreate(void)
                 dataP->scale = 1.0f;
                 dataP->rot = 0.0f;
                 if(mbRandMod(0x8000) & 1) {
-                    dataP->rotSpeed = 5.0f+(2.0f*CAPEFF_RANDF());
+                    dataP->rotSpeed = 5.0f+(2.0f*CAP_RAND_F());
                 } else {
-                    dataP->rotSpeed = -(5.0f+(2.0f*CAPEFF_RANDF()));
+                    dataP->rotSpeed = -(5.0f+(2.0f*CAP_RAND_F()));
                 }
-                dataP->fadeSpeed = 0.035f+(0.035f*CAPEFF_RANDF());
+                dataP->fadeSpeed = 0.035f+(0.035f*CAP_RAND_F());
                 dataP->delay = mbRandMod(0x8000) & 0xF;
                 for(l=0; l<3; l++) {
                     dataP->vtx[l].x = x+(stepX*capsuleCrackScaleTbl[k][l].x);
@@ -532,7 +774,7 @@ static void CapEffCrackCreate(void)
                 if(VECMag(&dataP->pos) > 0.0f) {
                     VECNormalize(&dataP->pos, &dataP->vel);
                 }
-                VECScale(&dataP->vel, &dataP->vel, 10.0f*(0.5f+(0.5f*CAPEFF_RANDF())));
+                VECScale(&dataP->vel, &dataP->vel, 10.0f*(0.5f+(0.5f*CAP_RAND_F())));
                 dataP->basePos = dataP->pos;
                 for(l=0; l<3; l++) {
                     VECSubtract(&dataP->vtx[l], &dataP->pos, &dataP->vtx[l]);
@@ -808,7 +1050,7 @@ static void CapEffTrailCreate(int capsuleNo)
 
     capsuleNo = CapNoGet(capsuleNo);
     obj = capEffTrailOMObj = omAddObjEx(mbObjMan, 32768, CAPEFF_TRAIL_MAX+1, 0, -1, CapEffTrailOMExec);
-    posBuf = obj->data = CapEffHeapMalloc(CAPEFF_TRAIL_MAX*sizeof(HuVecF));
+    posBuf = obj->data = CapMalloc(CAPEFF_TRAIL_MAX*sizeof(HuVecF));
     memset(posBuf, 0, CAPEFF_TRAIL_MAX*sizeof(HuVecF));
     for(i=0; i<CAPEFF_TRAIL_MAX; i++) {
         obj->mdlId[i] = HU3D_MODELID_NONE;
@@ -1565,31 +1807,7 @@ static void CapColKill(void)
     capsuleColMdlId = HU3D_MODELID_NONE;
 }
 
-static HuVecF colScaleTbl[6*3] = {
-    { -0.5f, 0.0f, 0.5f }, { -0.5f, 1.0f, 0.5f }, { 0.5f, 1.0f, 0.5f },
-    { -0.5f, 0.0f, 0.5f }, { 0.5f, 1.0f, 0.5f }, { 0.5f, 0.0f, 0.5f },
-    { 0.5f, 0.0f, 0.5f }, { 0.5f, 1.0f, 0.5f }, { 0.0f, 1.0f, -0.5f },
-    { 0.5f, 0.0f, 0.5f }, { 0.0f, 1.0f, -0.5f }, { 0.0f, 0.0f, -0.5f },
-    { 0.0f, 0.0f, -0.5f }, { 0.0f, 1.0f, -0.5f }, { -0.5f, 1.0f, 0.5f },
-    { 0.0f, 0.0f, -0.5f }, { -0.5f, 1.0f, 0.5f }, { -0.5f, 0.0f, 0.5f },
-};
 
-static HuVec2f charSizeTbl[14] = {
-    { 100.0f, 175.0f },
-    { 100.0f, 200.0f },
-    { 110.0f, 220.0f },
-    { 100.0f, 175.0f },
-    { 175.0f, 175.0f },
-    { 110.0f, 220.0f },
-    { 200.0f, 260.0f },
-    { 100.0f, 150.0f },
-    { 175.0f, 175.0f },
-    { 150.0f, 125.0f },
-    { 100.0f, 150.0f },
-    { 150.0f, 125.0f },
-    { 150.0f, 125.0f },
-    { 150.0f, 125.0f }
-};
 
 static BOOL CapColExec(int playerNo, HuVecF *posA, HuVecF *posB, HuVecF *out)
 {
