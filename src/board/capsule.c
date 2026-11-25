@@ -424,6 +424,44 @@ static inline void *CapMalloc(int size)
 /* @@PART2@@ */
 /* @@PART3@@ */
 /* @@PART4@@ */
+static HuVecF capsuleCrackScaleTbl[2][3] = {
+    { { 0, 0, 0 }, { 1, 0, 0 }, { 0, 0, 1 } },
+    { { 0, 0, 1 }, { 1, 0, 0 }, { 1, 0, 1 } }
+};
+
+static GXColor capsuleTrailColorTbl[4][2] = {
+    { { 0x80, 0xFF, 0x80, 0xFF }, { 0xC0, 0xFF, 0xC0, 0xFF } },
+    { { 0xFF, 0xFF, 0x80, 0xFF }, { 0xFF, 0xFF, 0xC0, 0xFF } },
+    { { 0xFF, 0x80, 0x80, 0xFF }, { 0xFF, 0xC0, 0xC0, 0xFF } },
+    { { 0x80, 0xFF, 0xFF, 0xFF }, { 0xC0, 0xFF, 0xFF, 0xFF } }
+};
+
+static HuVecF colScaleTbl[6*3] = {
+    { -0.5f, 0.0f, 0.5f }, { -0.5f, 1.0f, 0.5f }, { 0.5f, 1.0f, 0.5f },
+    { -0.5f, 0.0f, 0.5f }, { 0.5f, 1.0f, 0.5f }, { 0.5f, 0.0f, 0.5f },
+    { 0.5f, 0.0f, 0.5f }, { 0.5f, 1.0f, 0.5f }, { 0.0f, 1.0f, -0.5f },
+    { 0.5f, 0.0f, 0.5f }, { 0.0f, 1.0f, -0.5f }, { 0.0f, 0.0f, -0.5f },
+    { 0.0f, 0.0f, -0.5f }, { 0.0f, 1.0f, -0.5f }, { -0.5f, 1.0f, 0.5f },
+    { 0.0f, 0.0f, -0.5f }, { -0.5f, 1.0f, 0.5f }, { -0.5f, 0.0f, 0.5f },
+};
+
+static HuVec2f charSizeTbl[14] = {
+    { 100.0f, 175.0f },
+    { 100.0f, 200.0f },
+    { 110.0f, 220.0f },
+    { 100.0f, 175.0f },
+    { 175.0f, 175.0f },
+    { 110.0f, 220.0f },
+    { 200.0f, 260.0f },
+    { 100.0f, 150.0f },
+    { 175.0f, 175.0f },
+    { 150.0f, 125.0f },
+    { 100.0f, 150.0f },
+    { 150.0f, 125.0f },
+    { 150.0f, 125.0f },
+    { 150.0f, 125.0f }
+};
+
 /* Part 4 (wt-b404): CapEffHiliteOMExec .. CapColExec.
    Uses part 1's HEAD and part 3's CAPSULE_EFFECT / CAPSULE_EFFDATA / CAPEFFHILITE_WORK. */
 #include "game/board/effect.h"
