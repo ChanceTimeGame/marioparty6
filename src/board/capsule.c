@@ -113,12 +113,16 @@ typedef struct CapAutoThrowWork_s {
     HuVecF pos[3]; //0x14
 } CAPAUTOTHROWWORK; //size=0x38
 
-typedef struct CapSelectMasuWork_s {
+typedef struct CapSelMasuWork_s {
     int playerNo; //0x00
-    int masuId; //0x04
+    int unk4; //0x04
     int capsuleNo; //0x08
-    u8 unk0C[0x14]; //0x0C
-} CAPSELECTMASUWORK; //size=0x20
+    int capObjId; //0x0C
+    int mdlId; //0x10
+    int winId; //0x14
+    int winId2; //0x18
+    int unk1C; //0x1C
+} CAPSELMASU_WORK; //size=0x20
 
 typedef struct CapListFile_s {
     int boardNo;
@@ -149,8 +153,8 @@ typedef struct CapObjColorData_s {
 
 /* Statics defined in later parts (forward declarations for the calls part 1 makes). */
 static int CapUseDelete(int playerNo, int capsuleNo);
-static void CapSelectMasuPlayer(CAPSELECTMASUWORK *work);
-static void CapSelectMasuCom(CAPSELECTMASUWORK *work);
+static void CapSelectMasuPlayer(CAPSELMASU_WORK *work);
+static void CapSelectMasuCom(CAPSELMASU_WORK *work);
 static void CapSelectMasuListGet(s16 *list, s16 masuId, int frontNum, int backNum);
 static void CapThrowEndWin(int masuId, int capsuleNo);
 static void CapEffRemoveAddDestroy(void);
@@ -1621,7 +1625,7 @@ void mbCapAutoThrowEnd(void *work)
 
 int mbCapSelectMasu(int playerNo, int capsuleNo)
 {
-    CAPSELECTMASUWORK *work;
+    CAPSELMASU_WORK *work;
     capsuleNo = (u8)capsuleNo;
     switch(mbCapUseModeGet(capsuleNo)) {
         case 0:
@@ -1634,9 +1638,9 @@ int mbCapSelectMasu(int playerNo, int capsuleNo)
     }
     capsuleMasuSelectResult = -1;
     capsuleMasuSelectComF[playerNo] = FALSE;
-    work = CapMalloc(sizeof(CAPSELECTMASUWORK));
+    work = CapMalloc(sizeof(CAPSELMASU_WORK));
     work->playerNo = playerNo;
-    work->masuId = -1;
+    work->unk4 = -1;
     work->capsuleNo = capsuleNo;
     if(!GwPlayer[playerNo].comF) {
         CapSelectMasuPlayer(work);
