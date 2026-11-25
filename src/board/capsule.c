@@ -1565,13 +1565,13 @@ static void CapColKill(void)
     capsuleColMdlId = HU3D_MODELID_NONE;
 }
 
-static HuVecF colScaleTbl[6][3] = {
-    { { -0.5f, 0.0f, 0.5f }, { -0.5f, 1.0f, 0.5f }, { 0.5f, 1.0f, 0.5f } },
-    { { -0.5f, 0.0f, 0.5f }, { 0.5f, 1.0f, 0.5f }, { 0.5f, 0.0f, 0.5f } },
-    { { 0.5f, 0.0f, 0.5f }, { 0.5f, 1.0f, 0.5f }, { 0.0f, 1.0f, -0.5f } },
-    { { 0.5f, 0.0f, 0.5f }, { 0.0f, 1.0f, -0.5f }, { 0.0f, 0.0f, -0.5f } },
-    { { 0.0f, 0.0f, -0.5f }, { 0.0f, 1.0f, -0.5f }, { -0.5f, 1.0f, 0.5f } },
-    { { 0.0f, 0.0f, -0.5f }, { -0.5f, 1.0f, 0.5f }, { -0.5f, 0.0f, 0.5f } }
+static HuVecF colScaleTbl[6*3] = {
+    { -0.5f, 0.0f, 0.5f }, { -0.5f, 1.0f, 0.5f }, { 0.5f, 1.0f, 0.5f },
+    { -0.5f, 0.0f, 0.5f }, { 0.5f, 1.0f, 0.5f }, { 0.5f, 0.0f, 0.5f },
+    { 0.5f, 0.0f, 0.5f }, { 0.5f, 1.0f, 0.5f }, { 0.0f, 1.0f, -0.5f },
+    { 0.5f, 0.0f, 0.5f }, { 0.0f, 1.0f, -0.5f }, { 0.0f, 0.0f, -0.5f },
+    { 0.0f, 0.0f, -0.5f }, { 0.0f, 1.0f, -0.5f }, { -0.5f, 1.0f, 0.5f },
+    { 0.0f, 0.0f, -0.5f }, { -0.5f, 1.0f, 0.5f }, { -0.5f, 0.0f, 0.5f },
 };
 
 static HuVec2f charSizeTbl[14] = {
@@ -1593,7 +1593,6 @@ static HuVec2f charSizeTbl[14] = {
 
 static BOOL CapColExec(int playerNo, HuVecF *posA, HuVecF *posB, HuVecF *out)
 {
-    BOOL quadF;
     int i;
     int j;
 
@@ -1604,7 +1603,7 @@ static BOOL CapColExec(int playerNo, HuVecF *posA, HuVecF *posB, HuVecF *out)
     float invDotA;
     float scale;
 
-    HuVecF faceVtx[3];
+    HuVecF faceVtx[4];
     HuVecF faceNorm;
     HuVecF faceCA;
     HuVecF faceBA;
@@ -1617,7 +1616,7 @@ static BOOL CapColExec(int playerNo, HuVecF *posA, HuVecF *posB, HuVecF *out)
     HuVecF dotVec;
 
     float mag;
-    int temp2;
+    BOOL quadF;
     int temp;
 
     quadF = FALSE;
@@ -1629,7 +1628,7 @@ static BOOL CapColExec(int playerNo, HuVecF *posA, HuVecF *posB, HuVecF *out)
     VECNormalize(&dir, &dir);
     mag = VECMag(&dir);
     for(i=0; i<GW_PLAYER_MAX; i++) {
-        if(!GWPartyGet() && i != 0) {
+        if(GWPartyGet() == FALSE && i != 0) {
             continue;
         }
         if(i == playerNo) {
@@ -1640,15 +1639,15 @@ static BOOL CapColExec(int playerNo, HuVecF *posA, HuVecF *posB, HuVecF *out)
         }
         mbPlayerPosGet(i, &playerPos);
         for(j=0; j<6; j++) {
-            faceVtx[0].x = colScaleTbl[j][0].x*charSizeTbl[GwPlayer[i].charNo].x;
-            faceVtx[0].y = colScaleTbl[j][0].y*charSizeTbl[GwPlayer[i].charNo].y;
-            faceVtx[0].z = colScaleTbl[j][0].z*charSizeTbl[GwPlayer[i].charNo].x;
-            faceVtx[1].x = colScaleTbl[j][1].x*charSizeTbl[GwPlayer[i].charNo].x;
-            faceVtx[1].y = colScaleTbl[j][1].y*charSizeTbl[GwPlayer[i].charNo].y;
-            faceVtx[1].z = colScaleTbl[j][1].z*charSizeTbl[GwPlayer[i].charNo].x;
-            faceVtx[2].x = colScaleTbl[j][2].x*charSizeTbl[GwPlayer[i].charNo].x;
-            faceVtx[2].y = colScaleTbl[j][2].y*charSizeTbl[GwPlayer[i].charNo].y;
-            faceVtx[2].z = colScaleTbl[j][2].z*charSizeTbl[GwPlayer[i].charNo].x;
+            faceVtx[0].x = colScaleTbl[j*3].x*charSizeTbl[GwPlayer[i].charNo].x;
+            faceVtx[0].y = colScaleTbl[j*3].y*charSizeTbl[GwPlayer[i].charNo].y;
+            faceVtx[0].z = colScaleTbl[j*3].z*charSizeTbl[GwPlayer[i].charNo].x;
+            faceVtx[1].x = colScaleTbl[(j*3)+1].x*charSizeTbl[GwPlayer[i].charNo].x;
+            faceVtx[1].y = colScaleTbl[(j*3)+1].y*charSizeTbl[GwPlayer[i].charNo].y;
+            faceVtx[1].z = colScaleTbl[(j*3)+1].z*charSizeTbl[GwPlayer[i].charNo].x;
+            faceVtx[2].x = colScaleTbl[(j*3)+2].x*charSizeTbl[GwPlayer[i].charNo].x;
+            faceVtx[2].y = colScaleTbl[(j*3)+2].y*charSizeTbl[GwPlayer[i].charNo].y;
+            faceVtx[2].z = colScaleTbl[(j*3)+2].z*charSizeTbl[GwPlayer[i].charNo].x;
             VECAdd(&faceVtx[0], &playerPos, &faceVtx[0]);
             VECAdd(&faceVtx[1], &playerPos, &faceVtx[1]);
             VECAdd(&faceVtx[2], &playerPos, &faceVtx[2]);
