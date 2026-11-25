@@ -3,25 +3,56 @@
 
 #include "game/board/board.h"
 
+typedef struct CapsuleData_s {
+    u32 file; //0x00
+    u32 iconFile; //0x04
+    u32 descMes; //0x08
+    u32 useMes; //0x0C
+    s32 masuPat; //0x10
+    s32 color; //0x14
+    s32 cost; //0x18
+    s8 rank; //0x1C
+    u16 useMode; //0x1E
+    char *debugName; //0x20
+    u8 listF; //0x24
+} CAPSULE_DATA; //size=0x28
+
+typedef struct CapsuleChance_s {
+    s16 chance;
+    char mark[2];
+} CAPSULE_CHANCE;
+
+typedef struct CapsuleChanceTbl_s {
+    s16 capsuleNo;
+    CAPSULE_CHANCE chance[11];
+} CAPSULE_CHANCE_TBL; //size=0x2E
+
+typedef struct CapsuleList_s {
+    s8 capsuleNo;
+    s8 rate[3];
+    s8 boardRate[8];
+    s8 turnRate[4];
+} CAPSULE_LIST; //size=0x10
+
 /* Prototypes from the MP6 asm: argument/return classes from register use, names after MP5 where
    the function exists there; argN/fN are placeholder names. */
-int mbCapUse(int arg0, s16 arg1);
+int mbCapUse(int playerNo, int capsuleNo);
 void MBCapsuleStub1(void);
 int MBCapsuleStub2(void);
-int mbCapEffUseCreate(int arg0, s16 arg1);
-int mbCapEffUseModeGet(int arg0);
-int mbCapEffUsePosGet(int arg0, HuVecF *arg1);
-int mbCapEffUseWanWanCreate(int arg0, s16 arg1, HuVecF *arg2);
-void mbCapPlayerThrow(int arg0, int arg1, s16 arg2);
+int mbCapEffUseCreate(int playerNo, int capsuleNo);
+int mbCapEffUseModeGet(int playerNo);
+int mbCapEffUsePosGet(int playerNo, HuVecF *pos);
+int mbCapEffUseWanWanCreate(int playerNo, int capsuleNo, HuVecF *pos);
+void mbCapPlayerThrow(int playerNo, int masuId, int capsuleNo);
 int mbCapPlayerThrowCheck(void);
-int mbCapThrowColCreate(int arg0);
-int mbCapThrowColCheck(int arg0, int arg1, int arg2);
-void mbCapThrowHookSet(void *arg0);
-void mbCapEffThrowCreate(HuVecF *arg0, HuVecF *arg1);
-int mbCapEffThrowCheck(HuVecF *arg0, void *arg1);
-void mbCapAutoThrow(HuVecF *arg0, HuVecF *arg1, HuVecF *arg2, int arg3, int arg4, int arg5, int arg6, float f0);
-void mbCapAutoThrowEnd(void);
-int mbCapSelectMasu(int arg0, u8 arg1);
+int mbCapThrowColCreate(int dataNum);
+int mbCapThrowColCheck(HuVecF *pos, HuVecF *next, HuVecF *out);
+void mbCapThrowHookSet(void (*hook)(BOOL startF));
+void mbCapEffThrowCreate(HuVecF *start, HuVecF *end);
+int mbCapEffThrowCheck(HuVecF *pos, int *maxTime);
+void mbCapAutoThrow(HuVecF *start, HuVecF *mid, HuVecF *end, int playerNo, int masuId, int capsuleNo, int maxTime, float speed);
+void mbCapAutoThrowEnd(void *work);
+int mbCapSelectMasu(int playerNo, int capsuleNo);
 void mbCapSelectMasuInit(void);
 void mbCapListInit(int arg0);
 void mbCapListRead(void);
@@ -44,8 +75,8 @@ int mbCapCostGet(u8 arg0);
 u8 mbCapListExcludeCheck(u8 arg0);
 int mbCapThrowMasuCheck(int arg0);
 int mbCapComChanceGet(int arg0, int arg1, int arg2);
-int mbCapSelectComGet(int arg0, void *arg1, int arg2);
-int mbCapSelectDeleteComGet(int arg0, void *arg1, int arg2);
+int mbCapSelectComGet(int arg0, int *arg1, int arg2);
+int mbCapSelectDeleteComGet(int arg0, int *arg1, int arg2);
 void mbCapRandomThrowAdd(int capsuleNo, int playerNo, BOOL overwriteF);
 void mbCapRandomTrapAdd(int capsuleNo, int playerNo, BOOL overwriteF);
 void mbCapMasuCapsuleSet(int masuId, int capsuleNo, int playerNo);
@@ -58,7 +89,7 @@ int mbCapColorGet(int capsuleNo);
 int mbCapUseCostGet(void);
 BOOL mbCapUseCheck(int capsuleNo);
 BOOL mbCapValidCheck(int capsuleNo);
-int mbCapMasuDispTypeGet(s16 masuId);
+s16 mbCapMasuDispTypeGet(s16 masuId);
 int mbCapSelectMasuNum(int masuId);
 int mbCapSelectMasuFrontNum(int masuId);
 int mbCapSelectMasuBackNum(int masuId);
@@ -70,11 +101,11 @@ int mbCapRandomListGet(int *out, int max);
 int mbCapBonusCoinNumGet(int playerNo, int capsuleNo);
 int mbCapDescWinCreate(int capsuleNo);
 void mbCapInit(void);
-int mbCapObjCreate(int capsuleNo);
+int mbCapObjCreate(int capsuleNo, int arg1);
 s16 mbCapObjBorderCreate(int objId, int capsuleNo);
 void mbCapObjKill(int objId);
 void mbCapObjBorderKill(int objId);
-s16 mbCapObjColorCreate(int capsuleNo, BOOL linkF);
+int mbCapObjColorCreate(int capsuleNo, BOOL linkF);
 void mbCapObjColorKill(int objId);
 void mbCapObjColorPosSet(int objId, float x, float y, float z);
 void mbCapObjColorRotSet(int objId, float x, float y, float z);
