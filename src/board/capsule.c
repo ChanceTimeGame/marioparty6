@@ -615,8 +615,7 @@ int mbCapEffUseCreate(int playerNo, int capsuleNo)
     CAPUSEWORK *work;
     capsuleNo = mbCapValueTypeGet(capsuleNo);
     capsuleUseEffProc[playerNo] = HuPrcChildCreate(CapEffUse, 0x2004, 0x6000, 0, mbMainProc);
-    work = CapMalloc(sizeof(CAPUSEWORK));
-    capsuleUseEffProc[playerNo]->property = work;
+    capsuleUseEffProc[playerNo]->property = work = CapMalloc(sizeof(CAPUSEWORK));
     memset(work, 0, sizeof(CAPUSEWORK));
     work->playerNo = playerNo;
     work->capsuleNo = capsuleNo;
