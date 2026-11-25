@@ -808,20 +808,22 @@ void mbev_CapKillerMove(void)
     int masuAttr;
     s32 statId;
     int playerNo;
-    int masuId;
+    int diceNum;
     int coinTotal;
     int i;
     int j;
     int objId;
-    int diceNum;
+    int time;
     int vibTime;
     int coin;
     int masuNext;
-    int time;
+    int masuId;
     int boostTime;
     float t;
     float s;
     float scale;
+    float len;
+    float len2;
 
     statId = mbBGRead(0xD0000);
     if(statId != -1) {
@@ -876,7 +878,6 @@ void mbev_CapKillerMove(void)
     mbPlayerColSnapPlayerSet(playerNo, FALSE);
     mbPlayerMotionShiftSet(playerNo, 4, 0.0f, 8.0f, 0);
     for(i=0; i<30.0f; i++) {
-        float len;
         t = i/30.0f;
         PSVECSubtract(&hermStart, &startPos, &tmp);
         len = PSVECMag(&tmp);
@@ -1004,7 +1005,6 @@ void mbev_CapKillerMove(void)
     mbAudFXPlay(0x422);
     vibTime = 0;
     do {
-        float len2;
         masuId = masuTbl[1];
         masuNext = masuTbl[2];
         if(++vibTime%20 == 1) {
