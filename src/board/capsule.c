@@ -1048,7 +1048,7 @@ static void CapEffTrailCreate(int capsuleNo)
     MBPARTICLEDATA *particleDataP;
     int i;
 
-    capsuleNo = CapNoGet(capsuleNo);
+    capsuleNo = mbCapValueTypeGet(capsuleNo);
     obj = capEffTrailOMObj = omAddObjEx(mbObjMan, 32768, CAPEFF_TRAIL_MAX+1, 0, -1, CapEffTrailOMExec);
     posBuf = obj->data = CapMalloc(CAPEFF_TRAIL_MAX*sizeof(HuVecF));
     memset(posBuf, 0, CAPEFF_TRAIL_MAX*sizeof(HuVecF));
