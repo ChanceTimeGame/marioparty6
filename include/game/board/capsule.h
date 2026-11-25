@@ -61,7 +61,7 @@ int mbCapValidCheck(s16 arg0);
 s16 mbCapMasuDispTypeGet(s16 arg0);
 int mbCapSelectMasuNum(int arg0);
 s16 mbCapSelectMasuFrontNum(s16 arg0);
-s16 mbCapSelectMasuBackNum(s16 arg0);
+int mbCapSelectMasuBackNum(s16 masuId);
 int mbCapValidListGet(int arg0);
 int mbCapNextGet(int arg0);
 int mbCapMasuNextGet(int arg0);

@@ -139,71 +139,67 @@ static inline void CapObjAttrLoopSet(MBOBJID objId)
     mbObjAttrSet(objId, 0x40000001);
 }
 
+static inline double CapAbsF(float x)
+{
+    return fabs(x);
+}
+
 static void CapSelectMasuPlayer(CAPSELMASU_WORK *work)
 {
-    int autoF;
+    int i;
+    int masuId;
+    s16 *list;
+    int time;
     int frontLinkNum;
+    s16 angle;
+    int linkNum;
+    int padNo;
     int winType;
     int okF;
-    int padNo;
-    int linkNum;
-    s16 angle;
     int frontNum;
-    int time;
-    s16 *list;
-    int masuId;
-    int i;
-    float stkY;
-    float absZ2;
-    float absZ;
-    float absX;
-    float stkZ;
-    float stkAngle;
-    float angleF;
-    float zoom;
-    float minDiff;
-    float diff;
-    float scale;
+    int autoF;
     float t;
-    float absDiff1;
-    float absDiff2;
-    s16 angleS;
+    float scale;
+    float diff;
+    float minDiff;
+    float zoom;
+    float angleF;
+    float stkAngle;
+    float angleFTbl[10];
+    float angleCamTbl[10];
+    s16 angleTbl[10];
+    s16 linkTbl[10];
+    s16 linkTmp[10];
+    HuVecF pos;
+    HuVecF newPos;
+    HuVecF delta;
+    HuVecF linkPos;
+    HuVecF camOfs;
+    HuVecF rot;
+    HuVecF stick;
+    HuVecF dirVec;
+    HuVecF masuPos;
+    HuVec2f winPos;
+    int prevMasu;
+    int maxTime;
+    int hiliteTime;
+    int prevWinType;
+    int firstF;
+    GXColor color;
+    int moveF;
+    int nextMasu;
+    int objId;
+    int mdlId;
     s16 dir;
     void *buf;
-    GXColor colorCopy;
-    int mdlId;
-    int objId;
-    int nextMasu;
-    int moveF;
-    GXColor color;
-    int firstF;
-    int prevWinType;
-    int hiliteTime;
-    int maxTime;
-    int prevMasu;
-    HuVec2f winPos;
-    HuVecF masuPos;
-    HuVecF dirVec;
-    HuVecF stick;
-    HuVecF rot;
-    HuVecF camOfs;
-    HuVecF linkPos;
-    HuVecF delta;
-    HuVecF newPos;
-    HuVecF pos;
-    s16 linkTmp[10];
-    s16 linkTbl[10];
-    s16 angleTbl[10];
-    float angleCamTbl[10];
-    float angleFTbl[10];
 
     moveF = -1;
     memset(angleTbl, 0, sizeof(angleTbl));
     memset(linkTbl, 0, sizeof(linkTbl));
     padNo = GwPlayer[work->playerNo].padNo;
     masuId = prevMasu = GwPlayer[work->playerNo].masuId;
-    frontNum = 0;
     frontLinkNum = 0;
+    frontNum = 0;
     dir = 1;
     hiliteTime = 0;
     CapEffHiliteCreate();
@@ -239,8 +235,7 @@ static void CapSelectMasuPlayer(CAPSELMASU_WORK *work)
     mbWinTopPosSet(winPos.x, 284);
     mbWinAttrSet(work->winId, 0x800);
     work->winId2 = -1;
-    winType = -1;
-    prevWinType = winType;
+    prevWinType = winType = -1;
     CapGuideCreate();
     CapEffMasuOkCreate();
     CapEffMasuOkAddAll(masuId, list);
@@ -256,7 +251,8 @@ static void CapSelectMasuPlayer(CAPSELMASU_WORK *work)
         linkNum = mbMasuLinkTblGet(masuId, linkTmp);
         for(i = 0, frontLinkNum = 0; i < linkNum; i++) {
             if(list[linkTmp[i]] != 0) {
-                linkTbl[frontLinkNum++] = linkTmp[i];
+                linkTbl[frontLinkNum] = linkTmp[i];
+                frontLinkNum++;
             }
         }
         linkNum = frontLinkNum;
@@ -295,8 +291,7 @@ static void CapSelectMasuPlayer(CAPSELMASU_WORK *work)
                 mbMasuPosGet(linkTbl[i], &linkPos);
                 PSVECSubtract(&linkPos, &masuPos, &dirVec);
                 angleF = 90.0 - HuAtan(dirVec.z, dirVec.x);
-                OSf32tos16(&angleF, &angleS);
-                angle = angleS;
+                OSf32tos16(&angleF, &angle);
                 if(angle < 0) {
                     angle += 360;
                 }
@@ -388,7 +383,7 @@ static void CapSelectMasuPlayer(CAPSELMASU_WORK *work)
             } else if(HuPadBtnDown[padNo] & PAD_BUTTON_B) {
                 capsuleMasuSelectResult = -1;
                 goto end;
-            } else if(fabs(stick.x) >= 8.0 || fabsf(stick.z) >= 8.0) {
+            } else if(fabs(stick.x) >= 8.0 || CapAbsF(stick.z) >= 8.0) {
                 stkAngle = HuAtan(mbPadStkXGet(padNo), -mbPadStkYGet(padNo));
                 diff = 180.0f;
                 minDiff = 180.0f;
@@ -470,41 +465,48 @@ static inline GW_PLAYER *CapPlayerGet(int playerNo)
 
 static void CapSelectMasuCom(CAPSELMASU_WORK *work)
 {
-    int firstF;
-    int winType;
-    int unk19;
-    int unk20;
-    int prevWinType;
-    int unk22;
-    int unk23;
-    s16 *candList;
-    s16 *pathList;
-    s16 target;
-    s16 *list;
-    int masuId;
-    s16 i;
     s16 num;
-    float unkF30;
+    s16 i;
+    int masuId;
+    s16 *list;
+    s16 target;
+    s16 *pathList;
+    s16 *candList;
+    int unk23;
+    int unk22;
+    int prevWinType;
+    int unk20;
+    int unk19;
+    int winType;
+    int firstF;
     float unkF31;
-    s16 dir;
-    void *pathBuf;
-    void *candBuf;
-    void *listBuf;
-    int mdlId;
-    int objId;
-    int padNo;
-    int masuNum;
-    GW_PLAYER *player;
-    int moveF;
-    float zoom;
-    int hiliteTime;
-    int unk44;
-    int prevMasu;
-    HuVecF camOfs;
-    HuVecF pos;
-    s16 linkTbl[10];
+    float unkF30;
     s16 angleTbl[10];
+    s16 linkTbl[10];
+    HuVecF pos;
+    HuVecF camOfs;
+    int prevMasu;
+    int unk44;
+    int hiliteTime;
+    float zoom;
+    int moveF;
+    GW_PLAYER *player;
+    int masuNum;
+    int padNo;
+    int objId;
+    int mdlId;
+    void *listBuf;
+    void *candBuf;
+    void *pathBuf;
+    s16 dir;
 
+    if(0) {
+        unkF31 = unkF30;
+        unkF30 = unkF31;
+        unk19 = unk20;
+        unk20 = unk23;
+        unk23 = unk19;
+    }
     moveF = -1;
     memset(angleTbl, 0, sizeof(angleTbl));
     memset(linkTbl, 0, sizeof(linkTbl));
@@ -1084,30 +1086,34 @@ int mbCapListCopy(CAPSULE_LIST *list)
 void mbCapListDebug(void)
 {
     static GXColor winColor = { 0, 0, 0x90, 0xC0 };
-    CAPSULE_LIST_DEFINE *def = capsuleListDefineTbl;
-    void *buf = HuMemDirectMallocNum(HEAP_HEAP, 0x210, HU_MEMNUM_OVL);
-    CAPSULE_LIST *list = buf;
-    CAPSULE_LIST *p = list;
     s8 *q;
-    int mode;
-    int unk20;
-    int row;
     int col;
+    CAPSULE_LIST *p;
     int i;
     int k;
-    int j;
-    int x;
-    int y;
+    int row;
     int color;
+    CAPSULE_LIST *list;
+    int x;
+    CAPSULE_LIST_DEFINE *def;
+    int mode;
+    int dy;
+    int y;
+    int j;
+    s8 unkB0[120];
+    s8 unk38[120];
+    CAPSULE_LIST backup;
+    int num;
+    int unk20;
     int prevColor;
     int dx;
-    int dy;
-    int num;
+    void *buf;
     s16 sum;
-    CAPSULE_LIST backup;
-    s8 unk38[120];
-    s8 unkB0[120];
 
+    def = capsuleListDefineTbl;
+    buf = HuMemDirectMallocNum(HEAP_HEAP, 0x210, HU_MEMNUM_OVL);
+    list = buf;
+    p = list;
     memset(list, 0, 0x210);
     for(i = 0, p = list; i < 33; i++, p++) {
         p->capsuleNo = -1;
@@ -1195,8 +1201,7 @@ void mbCapListDebug(void)
             }
             x += capsuleListColW[k];
         }
-        dy = 0;
-        dx = 0;
+        dx = dy = 0;
         if(HuPadDStkRep[0] & PAD_BUTTON_RIGHT) {
             dx = 1;
         } else if(HuPadDStkRep[0] & PAD_BUTTON_LEFT) {
@@ -1367,8 +1372,7 @@ s16 mbCapValueTypeGet(s16 value)
 
 s16 mbCapMasuTypeGet(s16 masuId)
 {
-    s16 value = mbMasuCapsuleGet(masuId);
-    return mbCapValueTypeGet(value);
+    return mbCapValueTypeGet(mbMasuCapsuleGet(masuId));
 }
 
 s16 mbCapValuePlayerGet(s16 value)
@@ -1669,17 +1673,17 @@ int mbCapComChanceGet(int capsuleNo, int playerNo, int mode)
 
 static BOOL CapCheckComPath(int playerNo, int maxStep, int mode)
 {
-    int startMasu;
     int masuId;
-    int step;
-    int unk10;
-    int endF;
-    s16 stackNum;
-    s16 linkNum;
     int i;
-    s16 linkMasu;
-    s16 stackStep[32];
+    int step;
+    s16 stackNum;
+    int linkMasu;
+    int linkNum;
+    int endF;
+    int unk10;
+    int startMasu;
     s16 stackMasu[32];
+    s16 stackStep[32];
     s8 visit[256];
 
     startMasu = GwPlayer[playerNo].masuId;
@@ -1702,7 +1706,7 @@ static BOOL CapCheckComPath(int playerNo, int maxStep, int mode)
             if(startMasu != masuId) {
                 switch(mode) {
                     case 0:
-                        if(mbCapMasuDispTypeGet(masuId) == 2 && mbCapMasuTypeGet(masuId) == 23 && playerNo != mbCapMasuPlayerGet(masuId)) {
+                        if(mbCapMasuDispTypeGet(masuId) == 2 && mbCapValueTypeGet(mbMasuCapsuleGet(masuId)) == 23 && playerNo != mbCapMasuPlayerGet(masuId)) {
                             return TRUE;
                         }
                         break;
@@ -1772,7 +1776,6 @@ int mbCapSelectComGet(int playerNo, int *capsuleTbl, int num)
     CAP_COMSEL *e;
     int j;
     int total;
-    int max;
     float rnd;
     CAP_COMSEL tmp;
     CAP_COMSEL list[10];
@@ -1823,10 +1826,10 @@ int mbCapSelectComGet(int playerNo, int *capsuleTbl, int num)
             }
         }
     }
-    max = num;
+    j = num;
     num = 0;
     total = 0;
-    for(i = 0; i < max; i++) {
+    for(i = 0; i < j; i++) {
         if(list[i].chance > 0) {
             total += list[i].chance;
             num++;
