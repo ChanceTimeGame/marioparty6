@@ -9,7 +9,7 @@ MSM_SE* msmSeGetIndexPtr(s32 arg0);
 void msmSeDelListener(void);
 s32 msmSeUpdataListener(Vec* pos, Vec* heading);
 s32 msmSeSetListener(Vec* pos, Vec* heading, float sndDist, float sndSpeed, MSM_SELISTENER* listener);
-s32 msmSeGetEntryID(s32 seId, int* seNo);
+s32 msmSeGetEntryID(s16 seId, int* seNo);
 s32 msmSeGetNumPlay(BOOL baseGrp);
 s32 msmSeGetStatus(int seNo);
 void msmSeSetMasterVolume(s32 arg0);
