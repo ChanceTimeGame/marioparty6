@@ -1132,7 +1132,8 @@ static void CapEffThrowCreate(int playerNo, float *posX, float *posY, float *pos
     work->masuId = -2;
     work->maxTime = 0;
     work->endF = FALSE;
-    work->frameNo = work->unk10 = 0;
+    work->unk10 = 0;
+    work->frameNo = work->unk10;
     work->time = 0;
     work->start.x = posX[0];
     work->start.y = posY[0];
@@ -1340,7 +1341,6 @@ static int CapEffThrowMasu(int masuId, int capsuleNo, int playerNo, BOOL coinF)
     int coinLeft;
     int coinNum;
     int coinWait;
-    int unused;
     float alpha;
     HuVecF pos;
     HuVecF rot;
@@ -1349,9 +1349,10 @@ static int CapEffThrowMasu(int masuId, int capsuleNo, int playerNo, BOOL coinF)
     HuVecF ofs;
     HuVecF scale;
     GXColor color;
+    int unused;
     unused = 0;
     coinNum = 0;
-    if(!GWPartyGet() || _CheckFlag(FLAG_BOARD_TUTORIAL) || !coinF) {
+    if(GWPartyGet() == FALSE || _CheckFlag(FLAG_BOARD_TUTORIAL) || !coinF) {
         coinNum = -1;
     } else {
         coinNum = mbCapBonusCoinNumGet(playerNo, capsuleNo);
