@@ -11,15 +11,15 @@ typedef struct CapsuleData_s {
     s32 masuPat; //0x10
     s32 color; //0x14
     s32 cost; //0x18
-    char rank; //0x1C
-    s16 useMode; //0x1E
+    s8 rank; //0x1C
+    u16 useMode; //0x1E
     char *debugName; //0x20
     u8 listF; //0x24
 } CAPSULE_DATA; //size=0x28
 
 typedef struct CapsuleChance_s {
     s16 chance;
-    char mark[2];
+    s8 mark[2];
 } CAPSULE_CHANCE;
 
 typedef struct CapsuleChanceTbl_s {
@@ -65,7 +65,7 @@ s16 mbCapMasuTypeGet(s16 masuId);
 s16 mbCapValuePlayerGet(s16 value);
 s16 mbCapMasuPlayerGet2(s16 masuId);
 void mbCapMasuPlayerSet(s16 masuId, s16 playerNo);
-void mbCapMasuPlayerTypeSet(s16 masuId, s16 type, s16 playerNo);
+void mbCapMasuPlayerTypeSet(s16 masuId, s16 capsuleNo, s16 playerNo);
 s16 mbCapMasuPlayerGet(s16 masuId);
 s16 mbCapUseModeGet(s16 capsuleNo);
 BOOL mbCapUseTrapCheck(s16 capsuleNo);
@@ -77,52 +77,52 @@ BOOL mbCapThrowMasuCheck(int masuId);
 int mbCapComChanceGet(int capsuleNo, int playerNo, int mode);
 int mbCapSelectComGet(int playerNo, int *capsuleTbl, int num);
 int mbCapSelectDeleteComGet(int playerNo, int *capsuleTbl, int num);
-void mbCapRandomThrowAdd(int arg0, int arg1, int arg2);
-void mbCapRandomTrapAdd(int arg0, int arg1, int arg2);
+void mbCapRandomThrowAdd(int capsuleNo, int playerNo, BOOL overwriteF);
+void mbCapRandomTrapAdd(int capsuleNo, int playerNo, BOOL overwriteF);
 void mbCapMasuCapsuleSet(int masuId, int capsuleNo, int playerNo);
 int mbCapFileGet(int capsuleNo);
-int mbCapDescMesGet(s16 arg0);
-int mbCapUseMesGet(int capsuleNo);
-int mbCapDebugNameGet(s16 arg0);
-int mbCapMasuPatGet(s16 arg0);
-int mbCapColorGet(int arg0);
+u32 mbCapDescMesGet(int capsuleNo);
+u32 mbCapUseMesGet(int capsuleNo);
+char *mbCapDebugNameGet(int capsuleNo);
+int mbCapMasuPatGet(int capsuleNo);
+int mbCapColorGet(int capsuleNo);
 int mbCapUseCostGet(void);
-int mbCapUseCheck(s16 arg0);
-int mbCapValidCheck(s16 arg0);
-s16 mbCapMasuDispTypeGet(s16 arg0);
-int mbCapSelectMasuNum(int arg0);
-s16 mbCapSelectMasuFrontNum(s16 arg0);
-int mbCapSelectMasuBackNum(s16 masuId);
-int mbCapValidListGet(int arg0);
-int mbCapNextGet(int arg0);
-int mbCapMasuNextGet(int arg0);
-int mbCapShopListGet(int arg0, void *arg1);
-int mbCapRandomListGet(void *arg0, int arg1);
+BOOL mbCapUseCheck(int capsuleNo);
+BOOL mbCapValidCheck(int capsuleNo);
+s16 mbCapMasuDispTypeGet(s16 masuId);
+int mbCapSelectMasuNum(int masuId);
+int mbCapSelectMasuFrontNum(int masuId);
+int mbCapSelectMasuBackNum(int masuId);
+int mbCapValidListGet(int *list);
+int mbCapNextGet(int chanceNo);
+int mbCapMasuNextGet(int playerNo);
+int mbCapShopListGet(int playerNo, struct CapsuleList_s *out);
+int mbCapRandomListGet(int *out, int max);
 int mbCapBonusCoinNumGet(int playerNo, int capsuleNo);
-int mbCapDescWinCreate(s16 capsuleNo);
+int mbCapDescWinCreate(int capsuleNo);
 void mbCapInit(void);
 int mbCapObjCreate(int capsuleNo, int arg1);
-s16 mbCapObjBorderCreate(s16 arg0, int arg1);
-void mbCapObjKill(int arg0);
-void mbCapObjBorderKill(int arg0);
-int mbCapObjColorCreate(int capsuleNo, int arg1);
-void mbCapObjColorKill(int arg0);
-void mbCapObjColorPosSet(int arg0, float f0, float f1, float f2);
-void mbCapObjColorRotSet(int arg0, float f0, float f1, float f2);
-void mbCapObjColorScaleSet(int arg0, float f0, float f1, float f2);
-void mbCapObjColorPosSetV(int arg0, HuVecF *arg1);
-void mbCapObjColorRotSetV(int arg0, HuVecF *arg1);
-void mbCapObjColorScaleSetV(int arg0, HuVecF *arg1);
-void mbCapObjColorPosGet(int arg0, HuVecF *arg1);
-void mbCapObjColorRotGet(int arg0, HuVecF *arg1);
-void mbCapObjColorScaleGet(int arg0, HuVecF *arg1);
-void mbCapObjColorLayerSet(int arg0, int arg1);
-u8 mbCapObjColorLayerGet(int arg0);
-void mbCapObjColorAttrSet(int arg0, int arg1);
-void mbCapObjColorAttrReset(int arg0, int arg1);
-void mbCapObjColorDispSet(int arg0, int arg1);
-void mbCapObjColorAlphaSet(int arg0, int arg1);
-void mbCapObjColorMtxSet(int arg0, void *arg1);
-void mbCapObjColorMtxGet(int arg0, void *arg1);
+s16 mbCapObjBorderCreate(int objId, int capsuleNo);
+void mbCapObjKill(int objId);
+void mbCapObjBorderKill(int objId);
+int mbCapObjColorCreate(int capsuleNo, BOOL linkF);
+void mbCapObjColorKill(int objId);
+void mbCapObjColorPosSet(int objId, float x, float y, float z);
+void mbCapObjColorRotSet(int objId, float x, float y, float z);
+void mbCapObjColorScaleSet(int objId, float x, float y, float z);
+void mbCapObjColorPosSetV(int objId, HuVecF *pos);
+void mbCapObjColorRotSetV(int objId, HuVecF *rot);
+void mbCapObjColorScaleSetV(int objId, HuVecF *scale);
+void mbCapObjColorPosGet(int objId, HuVecF *pos);
+void mbCapObjColorRotGet(int objId, HuVecF *rot);
+void mbCapObjColorScaleGet(int objId, HuVecF *scale);
+void mbCapObjColorLayerSet(int objId, u8 layer);
+u8 mbCapObjColorLayerGet(int objId);
+void mbCapObjColorAttrSet(int objId, u32 attr);
+void mbCapObjColorAttrReset(int objId, u32 attr);
+void mbCapObjColorDispSet(int objId, BOOL dispF);
+void mbCapObjColorAlphaSet(int objId, u8 alpha);
+void mbCapObjColorMtxSet(int objId, Mtx mtx);
+void mbCapObjColorMtxGet(int objId, Mtx mtx);
 
 #endif

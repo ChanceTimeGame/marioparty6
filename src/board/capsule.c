@@ -1274,7 +1274,7 @@ void mbCapListDebug(void)
     HuMemDirectFree(list);
 }
 
-static int capsuleNumColW[16] = { 1 };
+static int capsuleNumColW[16] = { 108, 32, 32, 48, 32, 32, 32, 32, 32, 32, 32, 48, 32, 32, 32, 48 };
 
 void mbCapNumInc(int capsuleNo, int type)
 {
