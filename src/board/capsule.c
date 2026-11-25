@@ -1,7 +1,11 @@
 /* @@HEAD@@ */
 /* Placeholder HEAD from part 3 (wt-b403); the splice replaces it with part 1's. */
 #include "game/board/capsule.h"
+/* Retail calls mbMasuCapsuleGet as returning int (no extsh of its result). */
+#define mbMasuCapsuleGet mbMasuCapsuleGet_s16
 #include "game/board/masu.h"
+#undef mbMasuCapsuleGet
+int mbMasuCapsuleGet(s16 id);
 #include "game/board/math.h"
 #include "game/board/window.h"
 #include "game/board/object.h"
@@ -203,6 +207,15 @@ s16 mbCapUseModeGet(s16 capsuleNo)
     return capsuleData[capsuleNo].useMode;
 }
 
+void mbCapMasuPlayerTypeSet(s16 masuId, s16 capsuleNo, s16 playerNo)
+{
+    s16 value;
+    mbMasuCapsuleSet(masuId, capsuleNo);
+    value = mbMasuCapsuleGet(masuId);
+    value = value | ((u8)playerNo << 8);
+    mbMasuCapsuleSet(masuId, value);
+}
+
 static void CapSelectMasuAddFront(s16 *list, s16 masuId, int depth);
 static void CapSelectMasuAddBack(s16 *list, s16 masuId, int depth);
 /* @@PART3@@ */
@@ -279,9 +292,8 @@ void mbCapRandomTrapAdd(int capsuleNo, int playerNo, BOOL overwriteF)
     }
 }
 
-void mbCapMasuCapsuleSet(s16 masuId, s16 capsuleNo, s16 playerNo)
+void mbCapMasuCapsuleSet(int masuId, int capsuleNo, int playerNo)
 {
-    s16 value;
     capsuleNo = mbCapValueTypeGet(capsuleNo);
     if(capsuleNo > 0x29) {
         return;
@@ -292,17 +304,14 @@ void mbCapMasuCapsuleSet(s16 masuId, s16 capsuleNo, s16 playerNo)
         case 0x2B:
             return;
     }
-    mbMasuCapsuleSet(masuId, capsuleNo);
-    value = mbMasuCapsuleGet(masuId);
-    value = value | ((u8)playerNo << 8);
-    mbMasuCapsuleSet(masuId, value);
+    mbCapMasuPlayerTypeSet(masuId, capsuleNo, playerNo);
     switch(capsuleNo) {
         case 0x18:
             break;
     }
 }
 
-static void CapThrowEndWin(int playerNo, s16 capsuleNo)
+static void CapThrowEndWin(int playerNo, int capsuleNo)
 {
     capsuleNo = mbCapValueTypeGet(capsuleNo);
     switch(capsuleNo) {
