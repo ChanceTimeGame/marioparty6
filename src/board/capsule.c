@@ -577,7 +577,6 @@ int mbCapMasuNextGet(int playerNo)
     int b;
     int num;
     int sum;
-    int chance;
     int result;
     int idx;
     if(GwSystem.turnNo <= GwSystem.turnMax/2) {
@@ -585,7 +584,7 @@ int mbCapMasuNextGet(int playerNo)
     } else {
         idx = GwPlayer[playerNo].rank+4;
     }
-    list = HuMemDirectMallocNum(HEAP_HEAP, 0x210, HU_MEMNUM_OVL);
+    list = CapMalloc(0x210);
     listP = list;
     for(i=0, num=0, sum=0; i<0x21; i++) {
         if(capsuleList[i].capsuleNo == -1) {
@@ -630,9 +629,9 @@ int mbCapMasuNextGet(int playerNo)
             }
         }
     }
-    chance = CapRandF()*sum;
+    result = CapRandF()*sum;
     for(i=0; i<num; i++) {
-        if((chance -= list[i].masuChance[idx]) <= 0) {
+        if((result -= list[i].masuChance[idx]) <= 0) {
             break;
         }
     }
@@ -657,11 +656,10 @@ static int CapShopNextGet(int playerNo, int exclude1, int exclude2)
     int b;
     int num;
     int sum;
-    int chance;
     int result;
     int idx;
     idx = GwPlayer[playerNo].rank;
-    list = HuMemDirectMallocNum(HEAP_HEAP, 0x210, HU_MEMNUM_OVL);
+    list = CapMalloc(0x210);
     listP = list;
     for(i=0, num=0, sum=0; i<0x21; i++) {
         if(capsuleList[i].capsuleNo == -1) {
@@ -706,9 +704,9 @@ static int CapShopNextGet(int playerNo, int exclude1, int exclude2)
             }
         }
     }
-    chance = CapRandF()*sum;
+    result = CapRandF()*sum;
     for(i=0; i<num; i++) {
-        if((chance -= list[i].shopChance[idx]) <= 0) {
+        if((result -= list[i].shopChance[idx]) <= 0) {
             break;
         }
     }
