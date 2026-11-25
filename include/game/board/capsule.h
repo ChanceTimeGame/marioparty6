@@ -71,7 +71,7 @@ int mbCapBonusCoinNumGet(int playerNo, int capsuleNo);
 int mbCapDescWinCreate(int capsuleNo);
 void mbCapInit(void);
 int mbCapObjCreate(int capsuleNo);
-s16 mbCapObjBorderCreate(s16 objId, int capsuleNo);
+s16 mbCapObjBorderCreate(int objId, int capsuleNo);
 void mbCapObjKill(int objId);
 void mbCapObjBorderKill(int objId);
 s16 mbCapObjColorCreate(int capsuleNo, BOOL linkF);

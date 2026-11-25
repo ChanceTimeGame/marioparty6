@@ -887,7 +887,7 @@ void mbCapInit(void)
 int mbCapObjCreate(int capsuleNo)
 {
     int i;
-    MBOBJID objId;
+    int objId;
     ANIMDATA *anim;
     Mtx mtx;
     if(capsuleNo == 0x30) {
@@ -915,15 +915,16 @@ int mbCapObjCreate(int capsuleNo)
 
 static int capsuleBorderFileTbl[6] = { 0xC0018, 0xC0019, 0xC001A, 0xC001B, 0, 0 };
 
-s16 mbCapObjBorderCreate(s16 objId, int capsuleNo)
+s16 mbCapObjBorderCreate(int objId, int capsuleNo)
 {
-    HU3D_MODELID mdlId;
-    HSF_DATA *hsf;
-    HSF_OBJECT *object;
-    HSF_OBJECT *objectP;
-    s16 *idP;
-    int i;
     int borderNo;
+    HSF_DATA *hsf;
+    s16 *idP;
+    HSF_OBJECT *objectP;
+    int i;
+    HSF_OBJECT *object;
+    int j;
+    int mdlId;
     char name[256];
     mdlId = mbObjModelIDGet(objId);
     hsf = Hu3DData[mdlId].hsf;
@@ -945,7 +946,7 @@ s16 mbCapObjBorderCreate(s16 objId, int capsuleNo)
     if(capsuleObjBorderId[borderNo] >= 0) {
         mbObjHookSet(objId, "center", capsuleObjBorderId[borderNo]);
         idP = &capsuleBorderObjId[borderNo*64];
-        for(i=0; i<64; i++, idP++) {
+        for(j=0; j<64; j++, idP++) {
             if(*idP == -1) {
                 *idP = objId;
                 break;
