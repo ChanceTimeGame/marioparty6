@@ -458,11 +458,10 @@ static void CapEffCrackCreate(void)
     float scale;
     float radius;
     float height;
-    float dist;
     void *dlBuf;
     void *dlBegin;
-    float vtxScale[3];
     HuVecF center;
+    float vtxScale[3];
 
     obj = capEffCrackOMObj = omAddObjEx(mbObjMan, 32768, 0, 0, -1, CapEffCrackOMExec);
     obj->data = work = CapEffHeapMalloc(sizeof(CAPEFF_CRACK_WORK));
@@ -518,16 +517,17 @@ static void CapEffCrackCreate(void)
                         VECScale(&dataP->vtx[l], &dataP->vtx[l], 100.0f);
                     }
                     radius = 100.0f;
-                    height = radius*scale;
+                    height = 100.0f*scale;
                     dataP->vtx[l].y = CapEffSqrtf((radius*radius)-(height*height));
-                    dataP->st[l].x = (dataP->vtx[l].x+100.0f)/200.0f;
-                    dataP->st[l].y = (dataP->vtx[l].z+100.0f)/200.0f;
+                    radius = 100.0f;
+                    dataP->st[l].x = (dataP->vtx[l].x+radius)/200.0f;
+                    dataP->st[l].y = (dataP->vtx[l].z+radius)/200.0f;
                 }
                 center = dataP->vtx[0];
                 VECAdd(&center, &dataP->vtx[1], &center);
                 VECAdd(&center, &dataP->vtx[2], &center);
                 VECScale(&center, &dataP->pos, 0.333333f);
-                dist = CapEffSqrtf((dataP->pos.x*dataP->pos.x)+(dataP->pos.z*dataP->pos.z))/100.0f;
+                radius = CapEffSqrtf((dataP->pos.x*dataP->pos.x)+(dataP->pos.z*dataP->pos.z))/100.0f;
                 dataP->delay = mbRandMod(0x8000) & 0x7;
                 if(VECMag(&dataP->pos) > 0.0f) {
                     VECNormalize(&dataP->pos, &dataP->vel);
@@ -538,10 +538,7 @@ static void CapEffCrackCreate(void)
                     VECSubtract(&dataP->vtx[l], &dataP->pos, &dataP->vtx[l]);
                     dataP->baseVtx[l] = dataP->vtx[l];
                 }
-                dataP->color.r = capsuleCrackEffColor.r;
-                dataP->color.g = capsuleCrackEffColor.g;
-                dataP->color.b = capsuleCrackEffColor.b;
-                dataP->color.a = capsuleCrackEffColor.a;
+                dataP->color = capsuleCrackEffColor;
                 if(vtxScale[0] > 1.0f && vtxScale[1] > 1.0f && vtxScale[2] > 1.0f) {
                     dataP->dispF = FALSE;
                     dataP->scale = 0.0f;
