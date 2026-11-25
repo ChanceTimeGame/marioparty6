@@ -147,7 +147,7 @@ typedef struct CapEffTrailSeg_s {
     float ofs; /* 0x1C */
 } CAPEFF_TRAIL_SEG; /* size 0x20 */
 
-static CAPSULE_DATA capsuleData[60];
+static CAPSULE_DATA capsuleData[60] = { { 1 } }; /* placeholder: part 1 owns the table */
 static int capsuleColObjId = -1;
 static int capsuleColMdlId = -1;
 static int capsuleComChoice;
@@ -175,9 +175,9 @@ static GXColor capsuleCrackEffAmbColor = { 0xFF, 0xFF, 0xFF, 0xFF };
 static GXColor capsuleCrackEffMatColor = { 0xFF, 0xFF, 0xFF, 0xFF };
 
 /* Stand-ins for earlier parts' globals that part 4's functions inline (bodies follow the asm). */
-static inline s16 CapNoGet(s16 capsuleNo)
+static inline int CapNoGet(s16 capsuleNo)
 {
-    return (u8)capsuleNo;
+    return (s16)(u8)capsuleNo;
 }
 
 int mbCapColorGet(int capsuleNo)
@@ -204,9 +204,9 @@ static inline int CapObjColorNoGet(int id)
 
 void mbCapObjColorKill(int id)
 {
-    int no = CapObjColorNoGet(id);
     CAPSULE_OBJCOLOR *objColorP;
-    if(no != -1) {
+    int no;
+    if((no = CapObjColorNoGet(id)) != -1) {
         objColorP = &capsuleObjColorData[no];
         if(objColorP->useF != 0) {
             mbObjKill(objColorP->objId);
@@ -219,9 +219,9 @@ void mbCapObjColorKill(int id)
 
 void mbCapObjColorPosSet(int id, float x, float y, float z)
 {
-    int no = CapObjColorNoGet(id);
     CAPSULE_OBJCOLOR *objColorP;
-    if(no != -1) {
+    int no;
+    if((no = CapObjColorNoGet(id)) != -1) {
         objColorP = &capsuleObjColorData[no];
         objColorP->pos.x = x;
         objColorP->pos.y = y;
@@ -232,9 +232,9 @@ void mbCapObjColorPosSet(int id, float x, float y, float z)
 
 void mbCapObjColorPosSetV(int id, HuVecF *pos)
 {
-    int no = CapObjColorNoGet(id);
     CAPSULE_OBJCOLOR *objColorP;
-    if(no != -1) {
+    int no;
+    if((no = CapObjColorNoGet(id)) != -1) {
         objColorP = &capsuleObjColorData[no];
         mbCapObjColorPosSet(id, pos->x, pos->y, pos->z);
     }
@@ -341,6 +341,7 @@ static void CapEffHiliteOMExec(OMOBJ *obj)
                         }
                         switch(effDataP->mode) {
                             case 0:
+                                t = t;
                                 break;
                             case 1:
                                 t = HuSin(90.0f*t);
@@ -367,6 +368,7 @@ static void CapEffHiliteOMExec(OMOBJ *obj)
                         }
                         switch(effDataP->mode) {
                             case 0:
+                                t = t;
                                 break;
                             case 1:
                                 t = HuSin(90.0f*t);
@@ -393,7 +395,7 @@ static void CapEffHiliteKill(void)
     capEffHiliteOMObj = NULL;
 }
 
-static int CapEffHiliteAdd(HuVecF *pos, HuVecF *rot, HuVecF *scale, int inTime, int outTime, int no, s16 mode, GXColor *color)
+static int CapEffHiliteAdd(HuVecF *pos, HuVecF *rot, HuVecF *scale, int inTime, int outTime, int no, int mode, GXColor *color)
 {
     OMOBJ *obj;
     CAPEFF_HILITE_WORK *work;
@@ -417,7 +419,7 @@ static int CapEffHiliteAdd(HuVecF *pos, HuVecF *rot, HuVecF *scale, int inTime, 
     if(i >= effP->num) {
         return -1;
     }
-    effDataP->work = effDataP->time = 0;
+    effDataP->time = effDataP->work = 0;
     effDataP->pos.x = pos->x;
     effDataP->pos.y = pos->y;
     effDataP->pos.z = pos->z;
@@ -437,7 +439,7 @@ static int CapEffHiliteAdd(HuVecF *pos, HuVecF *rot, HuVecF *scale, int inTime, 
     effDataP->rot.z = rot->z;
     effDataP->no = 0;
     effDataP->time = 0;
-    effDataP->mode = mode;
+    effDataP->mode = (s16)mode;
     work->num++;
     return i;
 }
@@ -662,8 +664,7 @@ static void CapEffCrackOMExec(OMOBJ *obj)
                 }
                 VECAdd(&dataP->pos, &dataP->vel, &dataP->pos);
                 dataP->rot += dataP->rotSpeed;
-                dataP->scale -= dataP->fadeSpeed;
-                if(dataP->scale <= 0.0f) {
+                if((dataP->scale -= dataP->fadeSpeed) <= 0.0f) {
                     dataP->dispF = FALSE;
                 } else if(dataP->scale > 1.0f) {
                     dataP->color.a = 255;
@@ -806,7 +807,7 @@ static void CapEffCrackDraw(HU3D_MODEL *modelP, Mtx *mtx)
     GXCallDisplayList(work->dl, work->dlSize);
 }
 
-static void CapEffTrailCreate(s16 capsuleNo)
+static void CapEffTrailCreate(int capsuleNo)
 {
     OMOBJ *obj;
     HuVecF *posBuf;
@@ -817,7 +818,7 @@ static void CapEffTrailCreate(s16 capsuleNo)
 
     capsuleNo = CapNoGet(capsuleNo);
     obj = capEffTrailOMObj = omAddObjEx(mbObjMan, 32768, CAPEFF_TRAIL_MAX+1, 0, -1, CapEffTrailOMExec);
-    obj->data = posBuf = CapEffHeapMalloc(CAPEFF_TRAIL_MAX*sizeof(HuVecF));
+    posBuf = obj->data = CapEffHeapMalloc(CAPEFF_TRAIL_MAX*sizeof(HuVecF));
     memset(posBuf, 0, CAPEFF_TRAIL_MAX*sizeof(HuVecF));
     for(i=0; i<CAPEFF_TRAIL_MAX; i++) {
         obj->mdlId[i] = HU3D_MODELID_NONE;
@@ -856,7 +857,7 @@ static void CapEffTrailOMExec(OMOBJ *obj)
     float t;
     HuVecF dir;
     HuVecF trailPos[CAPEFF_TRAIL_MAX];
-    CAPEFF_TRAIL_SEG seg[CAPEFF_TRAIL_MAX-1];
+    CAPEFF_TRAIL_SEG seg[CAPEFF_TRAIL_MAX];
 
     posBuf = obj->data;
     if(mbExitCheck() || capEffTrailOMObj == NULL) {
@@ -955,7 +956,7 @@ static void CapEffTrailKill(void)
     capEffTrailOMObj = NULL;
 }
 
-static void CapEffTrailAdd(HuVecF *pos, s16 capsuleNo)
+static void CapEffTrailAdd(HuVecF *pos, int capsuleNo)
 {
     OMOBJ *obj = capEffTrailOMObj;
     HuVecF *posBuf;
