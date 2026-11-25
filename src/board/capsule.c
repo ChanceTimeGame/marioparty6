@@ -1269,7 +1269,7 @@ static void CapGuideCreate(void)
 {
     CAPGUIDE_WORK *work;
     int i;
-    work = HuMemDirectMallocNum(HEAP_HEAP, 10*sizeof(CAPGUIDE_WORK), HU_MEMNUM_OVL);
+    work = CapMalloc(10*sizeof(CAPGUIDE_WORK));
     memset(work, 0, 10*sizeof(CAPGUIDE_WORK));
     capsuleGuideOMObj = omAddObjEx(mbObjMan, 32768, 0, 0, -1, CapGuideOMExec);
     capsuleGuideOMObj->work[0] = 0;
@@ -1320,6 +1320,7 @@ static void CapGuideOMExec(OMOBJ *obj)
 {
     CAPGUIDE_WORK *work = obj->data;
     int i;
+    int angle;
     if(mbExitCheck() || capsuleGuideOMObj == NULL) {
         for(i=0; i<10; i++, work++) {
             mbObjKill(work->objId);
@@ -1350,7 +1351,8 @@ static void CapGuideOMExec(OMOBJ *obj)
                     if((work->angle += 20) > 360) {
                         work->angle -= 360;
                     }
-                    work->scale = 1.0+(0.2f*HuSin(work->angle));
+                    angle = work->angle;
+                    work->scale = 1.0+(0.2f*HuSin(angle));
                     break;
             }
         } else {
@@ -1552,7 +1554,7 @@ static void CapEffRemoveCreate(void)
     ANIMDATA *anim;
     int mdlId;
     obj = capEffRemoveOMObj = omAddObjEx(mbObjMan, 32768, 0, 0, -1, CapEffRemoveOMExec);
-    work = obj->data = HuMemDirectMallocNum(HEAP_HEAP, sizeof(CAPEFFREMOVE_WORK), HU_MEMNUM_OVL);
+    work = obj->data = CapMalloc(sizeof(CAPEFFREMOVE_WORK));
     memset(work, 0, sizeof(CAPEFFREMOVE_WORK));
     work->anim = anim = HuSprAnimRead(HuDataReadNum(0xC0028, HU_MEMNUM_OVL));
     work->mdlId = mdlId = CapEffCreate(anim, 64);
@@ -1739,10 +1741,10 @@ static void CapEffHiliteCreate(void)
     CAPSULE_EFFECT *effP;
     HU3D_MODEL *modelP;
     ANIMDATA *anim;
-    s16 mdlId;
+    int mdlId;
     int i;
     obj = capEffHiliteOMObj = omAddObjEx(mbObjMan, 32768, 0, 0, -1, CapEffHiliteOMExec);
-    work = obj->data = HuMemDirectMallocNum(HEAP_HEAP, sizeof(CAPEFFHILITE_WORK), HU_MEMNUM_OVL);
+    work = obj->data = CapMalloc(sizeof(CAPEFFHILITE_WORK));
     memset(work, 0, sizeof(CAPEFFHILITE_WORK));
     for(i=0; i<3; i++) {
         work->anim[i] = anim = HuSprAnimRead(HuDataReadNum(capsuleHiliteFileTbl[i], HU_MEMNUM_OVL));
