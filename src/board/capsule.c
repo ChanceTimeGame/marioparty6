@@ -634,7 +634,7 @@ static void CapEffHiliteKill(void)
     capEffHiliteOMObj = NULL;
 }
 
-static int CapEffHiliteAdd(HuVecF *pos, HuVecF *rot, HuVecF *scale, int inTime, int outTime, int no, int mode, GXColor *color)
+static int CapEffHiliteAdd(HuVecF pos, HuVecF rot, HuVecF scale, int inTime, int outTime, int no, int mode, GXColor color)
 {
     OMOBJ *obj;
     CAPEFFHILITE_WORK *work;
@@ -659,23 +659,23 @@ static int CapEffHiliteAdd(HuVecF *pos, HuVecF *rot, HuVecF *scale, int inTime, 
         return -1;
     }
     effDataP->time = effDataP->work = 0;
-    effDataP->pos.x = pos->x;
-    effDataP->pos.y = pos->y;
-    effDataP->pos.z = pos->z;
-    effDataP->vel.x = scale->x;
-    effDataP->vel.y = scale->y;
-    effDataP->vel.z = scale->z;
+    effDataP->pos.x = pos.x;
+    effDataP->pos.y = pos.y;
+    effDataP->pos.z = pos.z;
+    effDataP->vel.x = scale.x;
+    effDataP->vel.y = scale.y;
+    effDataP->vel.z = scale.z;
     effDataP->baseAlpha = inTime;
     effDataP->tpLvl = outTime;
-    effDataP->speed = color->a;
-    effDataP->scale = scale->z;
-    effDataP->color.r = color->r;
-    effDataP->color.g = color->g;
-    effDataP->color.b = color->b;
-    effDataP->color.a = color->a;
-    effDataP->rot.x = rot->x;
-    effDataP->rot.y = rot->y;
-    effDataP->rot.z = rot->z;
+    effDataP->speed = color.a;
+    effDataP->scale = scale.z;
+    effDataP->color.r = color.r;
+    effDataP->color.g = color.g;
+    effDataP->color.b = color.b;
+    effDataP->color.a = color.a;
+    effDataP->rot.x = rot.x;
+    effDataP->rot.y = rot.y;
+    effDataP->rot.z = rot.z;
     effDataP->no = 0;
     effDataP->time = 0;
     effDataP->mode = (s16)mode;
