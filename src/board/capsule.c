@@ -396,7 +396,8 @@ BOOL mbCapValidCheck(int capsuleNo)
 
 int mbCapMasuDispTypeGet(s16 masuId)
 {
-    s16 capsuleNo = mbCapValueTypeGet(mbMasuCapsuleGet(masuId));
+    s16 capsuleNo = mbMasuCapsuleGet(masuId);
+    capsuleNo = mbCapValueTypeGet(capsuleNo);
     if(capsuleNo == 0xFF) {
         return 0;
     }
@@ -472,21 +473,20 @@ typedef struct CapsuleChance_s {
 int mbCapNextGet(int chanceNo)
 {
     int i;
-    int num;
+    int n;
     int a;
     int b;
+    int num;
+    int *tbl;
+    int phase;
+    int sum;
     int temp;
     int turnNo;
-    int phase;
-    int *tbl;
-    int sum;
-    int chanceNum;
-    int chance;
     int type;
-    int listNum;
-    CAPSULE_CHANCE chanceList[5];
-    int list[33];
+    int chance;
     int validList[34];
+    int list[33];
+    CAPSULE_CHANCE chanceList[5];
     num = mbCapValidListGet(validList);
     if(chanceNo < 0) {
         for(i=0; i<num*5; i++) {
@@ -526,42 +526,43 @@ int mbCapNextGet(int chanceNo)
         chanceNo = 3;
     }
     tbl = capsuleChanceTbl[phase][chanceNo];
-    for(i=0, sum=0, chanceNum=0; i<5; i++) {
+    for(i=0, sum=0, n=0; i<5; i++) {
         if(tbl[i] > 0) {
-            chanceList[chanceNum].type = i+'A';
+            chanceList[n].type = i+'A';
             sum += tbl[i];
-            chanceList[chanceNum].sum = sum;
-            chanceNum++;
+            chanceList[n].sum = sum;
+            n++;
         }
     }
     chance = CapRandF()*sum;
-    for(i=0; i<chanceNum; i++) {
+    for(i=0; i<n; i++) {
         if(chance < chanceList[i].sum) {
             break;
         }
     }
-    if(i >= chanceNum) {
+    if(i >= n) {
         i = 0;
     }
     type = chanceList[i].type;
-    for(i=0, listNum=0; i<num; i++) {
+    for(i=0, n=0; i<num; i++) {
         if(type == capsuleData[validList[i]].chanceType) {
-            list[listNum++] = validList[i];
+            list[n] = validList[i];
+            n++;
         }
     }
-    if(listNum <= 0) {
+    if(n <= 0) {
         return mbCapNextGet(-1);
     }
-    for(i=0; i<listNum*5; i++) {
-        a = i%listNum;
-        b = mbRandMod(listNum);
+    for(i=0; i<n*5; i++) {
+        a = i%n;
+        b = mbRandMod(n);
         if(a != b) {
             temp = list[a];
             list[a] = list[b];
             list[b] = temp;
         }
     }
-    i = mbRandMod(listNum);
+    i = mbRandMod(n);
     return list[i];
 }
 
