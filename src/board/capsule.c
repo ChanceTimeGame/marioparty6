@@ -1032,9 +1032,9 @@ static inline void CapObjAttrReset(s16 objId, u32 attr)
 
 void mbCapObjColorKill(int objId)
 {
-    int no = CapObjColorNoGet(objId);
     CAPSULE_OBJCOLOR *objP;
-    if(no != -1) {
+    int no;
+    if((no = CapObjColorNoGet(objId)) != -1) {
         objP = &capsuleObjColorData[no];
         if(objP->useF != 0) {
             mbObjKill(objP->objId);
@@ -1047,9 +1047,9 @@ void mbCapObjColorKill(int objId)
 
 void mbCapObjColorPosSet(int objId, float x, float y, float z)
 {
-    int no = CapObjColorNoGet(objId);
     CAPSULE_OBJCOLOR *objP;
-    if(no != -1) {
+    int no;
+    if((no = CapObjColorNoGet(objId)) != -1) {
         objP = &capsuleObjColorData[no];
         objP->pos.x = x;
         objP->pos.y = y;
@@ -1060,9 +1060,9 @@ void mbCapObjColorPosSet(int objId, float x, float y, float z)
 
 void mbCapObjColorRotSet(int objId, float x, float y, float z)
 {
-    int no = CapObjColorNoGet(objId);
     CAPSULE_OBJCOLOR *objP;
-    if(no != -1) {
+    int no;
+    if((no = CapObjColorNoGet(objId)) != -1) {
         objP = &capsuleObjColorData[no];
         objP->rot.x = x;
         objP->rot.y = y;
@@ -1073,9 +1073,9 @@ void mbCapObjColorRotSet(int objId, float x, float y, float z)
 
 void mbCapObjColorScaleSet(int objId, float x, float y, float z)
 {
-    int no = CapObjColorNoGet(objId);
     CAPSULE_OBJCOLOR *objP;
-    if(no != -1) {
+    int no;
+    if((no = CapObjColorNoGet(objId)) != -1) {
         objP = &capsuleObjColorData[no];
         objP->scale.x = x;
         objP->scale.y = y;
@@ -1086,9 +1086,9 @@ void mbCapObjColorScaleSet(int objId, float x, float y, float z)
 
 void mbCapObjColorPosSetV(int objId, HuVecF *pos)
 {
-    int no = CapObjColorNoGet(objId);
     CAPSULE_OBJCOLOR *objP;
-    if(no != -1) {
+    int no;
+    if((no = CapObjColorNoGet(objId)) != -1) {
         objP = &capsuleObjColorData[no];
         mbCapObjColorPosSet(objId, pos->x, pos->y, pos->z);
     }
@@ -1096,9 +1096,9 @@ void mbCapObjColorPosSetV(int objId, HuVecF *pos)
 
 void mbCapObjColorRotSetV(int objId, HuVecF *rot)
 {
-    int no = CapObjColorNoGet(objId);
     CAPSULE_OBJCOLOR *objP;
-    if(no != -1) {
+    int no;
+    if((no = CapObjColorNoGet(objId)) != -1) {
         objP = &capsuleObjColorData[no];
         mbCapObjColorRotSet(objId, rot->x, rot->y, rot->z);
     }
@@ -1106,9 +1106,9 @@ void mbCapObjColorRotSetV(int objId, HuVecF *rot)
 
 void mbCapObjColorScaleSetV(int objId, HuVecF *scale)
 {
-    int no = CapObjColorNoGet(objId);
     CAPSULE_OBJCOLOR *objP;
-    if(no != -1) {
+    int no;
+    if((no = CapObjColorNoGet(objId)) != -1) {
         objP = &capsuleObjColorData[no];
         mbCapObjColorScaleSet(objId, scale->x, scale->y, scale->z);
     }
@@ -1116,9 +1116,9 @@ void mbCapObjColorScaleSetV(int objId, HuVecF *scale)
 
 void mbCapObjColorPosGet(int objId, HuVecF *pos)
 {
-    int no = CapObjColorNoGet(objId);
     CAPSULE_OBJCOLOR *objP;
-    if(no != -1) {
+    int no;
+    if((no = CapObjColorNoGet(objId)) != -1) {
         objP = &capsuleObjColorData[no];
         *pos = objP->pos;
     }
@@ -1126,9 +1126,9 @@ void mbCapObjColorPosGet(int objId, HuVecF *pos)
 
 void mbCapObjColorRotGet(int objId, HuVecF *rot)
 {
-    int no = CapObjColorNoGet(objId);
     CAPSULE_OBJCOLOR *objP;
-    if(no != -1) {
+    int no;
+    if((no = CapObjColorNoGet(objId)) != -1) {
         objP = &capsuleObjColorData[no];
         *rot = objP->rot;
     }
@@ -1136,9 +1136,9 @@ void mbCapObjColorRotGet(int objId, HuVecF *rot)
 
 void mbCapObjColorScaleGet(int objId, HuVecF *scale)
 {
-    int no = CapObjColorNoGet(objId);
     CAPSULE_OBJCOLOR *objP;
-    if(no != -1) {
+    int no;
+    if((no = CapObjColorNoGet(objId)) != -1) {
         objP = &capsuleObjColorData[no];
         *scale = objP->scale;
     }
@@ -1146,9 +1146,9 @@ void mbCapObjColorScaleGet(int objId, HuVecF *scale)
 
 void mbCapObjColorLayerSet(int objId, u8 layer)
 {
-    int no = CapObjColorNoGet(objId);
     CAPSULE_OBJCOLOR *objP;
-    if(no != -1) {
+    int no;
+    if((no = CapObjColorNoGet(objId)) != -1) {
         objP = &capsuleObjColorData[no];
         objP->layer = layer;
         mbObjLayerSet(objP->objId, objP->layer);
@@ -1157,9 +1157,9 @@ void mbCapObjColorLayerSet(int objId, u8 layer)
 
 u8 mbCapObjColorLayerGet(int objId)
 {
-    int no = CapObjColorNoGet(objId);
     CAPSULE_OBJCOLOR *objP;
-    if(no == -1) {
+    int no;
+    if((no = CapObjColorNoGet(objId)) == -1) {
         return 0;
     }
     objP = &capsuleObjColorData[no];
@@ -1168,9 +1168,9 @@ u8 mbCapObjColorLayerGet(int objId)
 
 void mbCapObjColorAttrSet(int objId, u32 attr)
 {
-    int no = CapObjColorNoGet(objId);
     CAPSULE_OBJCOLOR *objP;
-    if(no != -1) {
+    int no;
+    if((no = CapObjColorNoGet(objId)) != -1) {
         objP = &capsuleObjColorData[no];
         CapObjAttrSet(objP->objId, attr);
     }
@@ -1178,9 +1178,9 @@ void mbCapObjColorAttrSet(int objId, u32 attr)
 
 void mbCapObjColorAttrReset(int objId, u32 attr)
 {
-    int no = CapObjColorNoGet(objId);
     CAPSULE_OBJCOLOR *objP;
-    if(no != -1) {
+    int no;
+    if((no = CapObjColorNoGet(objId)) != -1) {
         objP = &capsuleObjColorData[no];
         CapObjAttrReset(objP->objId, attr);
     }
@@ -1188,9 +1188,9 @@ void mbCapObjColorAttrReset(int objId, u32 attr)
 
 void mbCapObjColorDispSet(int objId, BOOL dispF)
 {
-    int no = CapObjColorNoGet(objId);
     CAPSULE_OBJCOLOR *objP;
-    if(no != -1) {
+    int no;
+    if((no = CapObjColorNoGet(objId)) != -1) {
         objP = &capsuleObjColorData[no];
         mbObjDispSet(objP->objId, dispF);
     }
@@ -1198,9 +1198,9 @@ void mbCapObjColorDispSet(int objId, BOOL dispF)
 
 void mbCapObjColorAlphaSet(int objId, u8 alpha)
 {
-    int no = CapObjColorNoGet(objId);
     CAPSULE_OBJCOLOR *objP;
-    if(no != -1) {
+    int no;
+    if((no = CapObjColorNoGet(objId)) != -1) {
         objP = &capsuleObjColorData[no];
         mbObjAlphaSet(objP->objId, alpha);
     }
@@ -1208,9 +1208,9 @@ void mbCapObjColorAlphaSet(int objId, u8 alpha)
 
 void mbCapObjColorMtxSet(int objId, Mtx mtx)
 {
-    int no = CapObjColorNoGet(objId);
     CAPSULE_OBJCOLOR *objP;
-    if(no != -1) {
+    int no;
+    if((no = CapObjColorNoGet(objId)) != -1) {
         objP = &capsuleObjColorData[no];
         mbObjMtxSet(objP->objId, mtx);
     }
@@ -1218,9 +1218,9 @@ void mbCapObjColorMtxSet(int objId, Mtx mtx)
 
 void mbCapObjColorMtxGet(int objId, Mtx mtx)
 {
-    int no = CapObjColorNoGet(objId);
     CAPSULE_OBJCOLOR *objP;
-    if(no != -1) {
+    int no;
+    if((no = CapObjColorNoGet(objId)) != -1) {
         objP = &capsuleObjColorData[no];
         mbObjMtxGet(objP->objId, mtx);
     }
