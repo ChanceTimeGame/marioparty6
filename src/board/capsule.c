@@ -1847,6 +1847,18 @@ int mbCapSelectDeleteComGet(int playerNo, int *capsuleTbl, int num)
     }
     return list[0].idx;
 }
+
+/* Data retail places after mbCapComChanceGet's jump table (used by parts 3 and 4). The second
+   chance table shares retail's local name capsuleChanceTbl with part 1's; renamed here. */
+static int capsuleThrowTbl[8] = { 10, 11, 12, 13, 25, 15, 16, 17 };
+static int capsuleTrapTbl[5] = { 20, 21, 22, 23, 24 };
+static int capsuleChanceTbl2[3][4][5] = {
+    { { 70, 15, 15, 0, 0 }, { 70, 20, 10, 0, 0 }, { 70, 20, 0, 10, 0 }, { 50, 30, 0, 20, 0 } },
+    { { 40, 30, 30, 0, 0 }, { 30, 30, 20, 20, 0 }, { 10, 40, 10, 30, 10 }, { 10, 40, 0, 30, 20 } },
+    { { 30, 30, 30, 10, 0 }, { 20, 20, 20, 30, 10 }, { 10, 30, 0, 40, 20 }, { 10, 20, 0, 40, 30 } },
+};
+static int capsuleMaxTurnTbl[9] = { 10, 15, 20, 25, 30, 35, 40, 45, 50 };
+static int capsuleTurnTbl[9][2] = { { 3, 6 }, { 5, 10 }, { 5, 15 }, { 8, 16 }, { 10, 20 }, { 10, 20 }, { 13, 26 }, { 15, 30 }, { 15, 35 } };
 /* @@PART3@@ */
 /* Part 2 local stubs for later parts' statics (dropped by the splice). */
 static void CapGuideCreate(void) {}
