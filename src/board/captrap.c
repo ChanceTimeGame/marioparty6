@@ -1,7 +1,20 @@
 /* @@HEAD@@ */
-#include "game/board/captrap.h"
+/* Retail calls mbPlayerObjIDGet, mbObjMotionShiftIDGet and mbObjMotionEndCheck without
+   prototypes (an extsh where an int result meets an s16 parameter, none where it meets these
+   two): hide the header prototypes and declare them without one. */
+#define mbObjMotionShiftIDGet mbObjMotionShiftIDGet_proto
+#define mbObjMotionEndCheck mbObjMotionEndCheck_proto
+#define mbPlayerObjIDGet mbPlayerObjIDGet_s16
 #include "game/board/object.h"
 #include "game/board/player.h"
+#undef mbObjMotionShiftIDGet
+#undef mbObjMotionEndCheck
+#undef mbPlayerObjIDGet
+int mbObjMotionShiftIDGet();
+int mbObjMotionEndCheck();
+int mbPlayerObjIDGet();
+
+#include "game/board/captrap.h"
 #include "game/board/masu.h"
 #include "game/board/camera.h"
 #include "game/board/audio.h"
@@ -66,7 +79,7 @@ void mbev_CapEffElectricKill(void *eff);
 void *mbev_CapEffExplodeCreate(void);
 int mbev_CapEffExplodeAnimGet(void *eff);
 void mbev_CapEffDustHeavyAdd(void *eff, HuVecF pos);
-void mbev_CapEffColorSet(GXColor *color, s16 no);
+void mbev_CapEffColorSet(GXColor *color, int no);
 void mbev_CapBiriQShockCreate(int playerNo);
 int mbev_CapBiriQShockDelayGet(int playerNo);
 void mbev_CapBiriQMetalShockCreate(int playerNo);
@@ -98,24 +111,22 @@ static inline void CapObjAttrSet(s16 objId, u32 attr)
     mbObjAttrSet(objId, attr);
 }
 
+static inline int CapMasuNextGet(int playerNo)
+{
+    return mbPlayerWorkGet(playerNo)->masuNext;
+}
+
 static inline s16 CapEffRand(void)
 {
-    s16 value;
     if(++mbCapEffNum >= 1024) {
         mbCapEffNum = 0;
     }
-    value = mbCapEffData[mbCapEffNum];
-    return value;
+    return mbCapEffData[mbCapEffNum];
 }
 
 static inline float CapEffRandF(void)
 {
-    s16 value;
-    if(++mbCapEffNum >= 1024) {
-        mbCapEffNum = 0;
-    }
-    value = mbCapEffData[mbCapEffNum];
-    return (1.0f/32767.0f)*value;
+    return (1.0f/32767.0f)*CapEffRand();
 }
 
 static inline float CapEffRandHalfF(void)
@@ -215,7 +226,7 @@ void mbev_CapBoble(void)
     for(i=0; i<128; i++) {
         rot.x = 45.0f*CAP_RANDF();
         rot.y = 360.0f*CAP_RANDF();
-        speed = 100.0f*(0.21f*CAP_RANDF());
+        speed = 100.0f*(0.21000001f*CAP_RANDF());
         glowPos.x = masuPos.x+(0.5f*(100.0f*(-0.5f+CAP_RANDF())));
         glowPos.y = 100.0f+(masuPos.y+(0.5f*(100.0f*(-0.5f+CAP_RANDF()))));
         glowPos.z = masuPos.z+(0.5f*(100.0f*(-0.5f+CAP_RANDF())));
@@ -561,7 +572,7 @@ void mbev_CapBiriQ(void)
             a = angle[i];
             rot.x = 20.0f+(15.0f*CAP_RANDF());
             rot.y = a;
-            speed = 100.0f*(0.16f*CAP_RANDF());
+            speed = 100.0f*(0.16000001f*CAP_RANDF());
             if(GwPlayer[work->playerNo].metalF) {
                 2.0f*speed;
             }
@@ -616,15 +627,14 @@ void mbev_CapBiriQMetalShock(void *arg)
     HuVecF rot;
     GXColor color;
     float speed;
-    int motId;
-    int metalF;
-    int coinNum;
-    int id;
     int i;
-    s16 dispId;
+    void *electricEff;
+    int id;
+    int coinNum;
+    int motId;
     void *ringEff;
     void *glowEff;
-    void *electricEff;
+    int metalF;
 
     motId = -1;
     metalF = GwPlayer[work->playerNo].metalF;
@@ -663,7 +673,7 @@ void mbev_CapBiriQMetalShock(void *arg)
     for(i=0; i<128; i++) {
         rot.x = (180.0f*CapEffRandF())-90.0f;
         rot.y = 360.0f*CapEffRandF();
-        speed = 100.0f*(0.21f*CapEffRandF());
+        speed = 100.0f*(0.21000001f*CapEffRandF());
         scale.x = playerPos.x+(0.5f*(100.0f*CapEffRandHalfF()));
         scale.y = 100.0f+(playerPos.y+(0.5f*(100.0f*CapEffRandHalfF())));
         scale.z = playerPos.z+(0.5f*(100.0f*CapEffRandHalfF()));
@@ -691,7 +701,7 @@ void mbev_CapBiriQMetalShock(void *arg)
         mbPlayerPosGet(work->playerNo, &scale);
         scale.y += 250.0f;
         mbCoinAddDispExec(work->playerNo, -coinNum, FALSE, TRUE);
-        dispId = mbCoinDispCreate(&scale, -coinNum, -1, TRUE);
+        mbCoinDispCreate(&scale, -coinNum, -1, TRUE);
         HuPrcVSleep();
         motId = mbPlayerMotionCreate(work->playerNo, 0x93001E);
         mbPlayerMotionShiftSet(work->playerNo, motId, 50.0f, 8.0f, HU3D_MOTATTR_NONE);
@@ -728,8 +738,7 @@ void mbev_CapBiriQMetalShock(void *arg)
 
 static int ev_CapMasuNumGet(int playerNo)
 {
-    int masuNext = mbPlayerWorkGet(playerNo)->masuNext;
-    return mbev_CapBiriQShockDelayGet(playerNo)+masuNext;
+    return mbev_CapBiriQShockDelayGet(playerNo)+CapMasuNextGet(playerNo);
 }
 
 void mbev_CapTumujikun(void)
