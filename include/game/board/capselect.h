@@ -3,27 +3,25 @@
 
 #include "game/board/board.h"
 
-/* Prototypes from the MP6 asm: argument/return classes from register use, names after MP5 where
-   the function exists there; argN/fN are placeholder names. */
-s8 mbCapSelect(void);
-s8 mbCapDelete(int arg0, int arg1);
-float mbCapSelectGrow(HuVecF *arg0, HuVecF *arg1, s16 arg2, float f0, float f1);
-void mbCapSelectResultSet(int arg0, int arg1, int arg2);
-void mbCapSelectResultGet(int arg0, void *arg1, void *arg2);
-void mbCapSelectResultReset(int arg0);
-int mbCapSelectShrinkCheck(int arg0);
+int mbCapSelect(void);
+int mbCapDelete(int extraCapsule, BOOL loopF);
+float mbCapSelectGrow(HuVecF *posStart, HuVecF *posEnd, s16 objId, float weight, float scaleBase);
+void mbCapSelectResultSet(int playerNo, int objId, int selNo);
+void mbCapSelectResultGet(int playerNo, int *objId, int *selNo);
+void mbCapSelectResultReset(int playerNo);
+BOOL mbCapSelectShrinkCheck(int playerNo);
 void fn_8019A618(void);
 void fn_8019A61C(void);
 void fn_8019A620(void);
 void fn_8019A624(void);
 void fn_8019A628(void);
 void fn_8019A62C(void);
-void mbCapMasuExec(int arg0, int arg1);
+void mbCapMasuExec(int playerNo, int masuId);
 void mbCapMasuObjInit(void);
 void mbCapMasuObjClose(void);
 void mbCapMasuObjCreateAll(void);
-void mbCapMasuObjCreate(int arg0);
-void mbCapCapsuleGet(int arg0, int arg1);
-void mbCapMasuDispSet(int arg0);
+void mbCapMasuObjCreate(int masuId);
+void mbCapCapsuleGet(int playerNo, int capsuleNo);
+void mbCapMasuDispSet(BOOL dispF);
 
 #endif
