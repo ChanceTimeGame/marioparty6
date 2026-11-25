@@ -41,6 +41,7 @@ typedef struct CapWork_s {
     /* 0xBD0 */ void *explodeEff;
     /* 0xBD4 */ u8 unkBD4[8];
     /* 0xBDC */ void *glowEff;
+    /* 0xBE0 */ void *ringHitEff;
 } CAPWORK;
 
 typedef struct CapBobleWork_s {
@@ -93,7 +94,7 @@ static void ev_CapBobleOMExec(OMOBJ *obj);
 static HuVecF biriQEffectOfs = { 0.0f, 100.0f, 0.0f };
 char lbl_80248E80[] = "itemhook_c";
 
-static s16 bomheiMode[8];
+static s32 bomheiMode[4];
 static float bomheiRotY[4];
 
 static inline float CapSinDeg(float deg)
