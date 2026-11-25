@@ -1,19 +1,6 @@
 /* @@HEAD@@ */
-/* Retail calls mbPlayerObjIDGet, mbObjMotionShiftIDGet and mbObjMotionEndCheck without
-   prototypes (an extsh where an int result meets an s16 parameter, none where it meets these
-   two): hide the header prototypes and declare them without one. */
-#define mbObjMotionShiftIDGet mbObjMotionShiftIDGet_proto
-#define mbObjMotionEndCheck mbObjMotionEndCheck_proto
-#define mbPlayerObjIDGet mbPlayerObjIDGet_s16
 #include "game/board/object.h"
 #include "game/board/player.h"
-#undef mbObjMotionShiftIDGet
-#undef mbObjMotionEndCheck
-#undef mbPlayerObjIDGet
-int mbObjMotionShiftIDGet();
-int mbObjMotionEndCheck();
-int mbPlayerObjIDGet();
-
 #include "game/board/captrap.h"
 #include "game/board/masu.h"
 #include "game/board/camera.h"
@@ -75,7 +62,7 @@ int mbev_CapEffRingDispGet(void *eff);
 void mbev_CapEffRingKill(void *eff);
 void *mbev_CapEffElectricCreate(void);
 int mbev_CapEffElectricAdd(void *eff, HuVecF pos, int arg2, int arg3);
-void mbev_CapEffElectricModelSet(void *eff, s16 objId, int no, HuVecF *ofs);
+void mbev_CapEffElectricModelSet(void *eff, int objId, int no, HuVecF *ofs);
 void mbev_CapEffElectricKill(void *eff);
 void *mbev_CapEffExplodeCreate(void);
 int mbev_CapEffExplodeAnimGet(void *eff);
