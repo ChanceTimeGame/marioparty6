@@ -724,7 +724,7 @@ int mbCapShopListGet(int playerNo, CAPSULE_LIST *out)
 {
     int i;
     int j;
-    int shop[3];
+    int shop[33];
     shop[0] = CapShopNextGet(playerNo, -1, -1);
     shop[1] = CapShopNextGet(playerNo, shop[0], -1);
     shop[2] = CapShopNextGet(playerNo, shop[0], shop[1]);
@@ -737,7 +737,8 @@ int mbCapShopListGet(int playerNo, CAPSULE_LIST *out)
                 break;
             }
             if(capsuleList[j].capsuleNo == shop[i]) {
-                *out++ = capsuleList[j];
+                *out = capsuleList[j];
+                out++;
                 break;
             }
         }
@@ -758,7 +759,7 @@ int mbCapRandomListGet(int *out, int max)
     int b;
     int num;
     int outNum;
-    list = HuMemDirectMallocNum(HEAP_HEAP, 0x210, HU_MEMNUM_OVL);
+    list = CapMalloc(0x210);
     listP = list;
     memset(list, 0, 0x210);
     for(i=0, num=0; i<0x21; i++, listP++) {
