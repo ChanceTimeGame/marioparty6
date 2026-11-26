@@ -210,7 +210,7 @@ void OpeningExec(BOOL skipF)
     Hu3DModelAttrReset(OpeningMdlId[2], HU3D_ATTR_DISPOFF);
     Hu3DCameraLayerHookSet(1, 0, PreDrawHook);
     Hu3DCameraLayerHookSet(1, 8, PostDrawHook);
-    Hu3DModelRotSet(OpeningMdlId[4], 0.0f, 0.0f, 0.0f);
+    Hu3DModelRotSet(OpeningMdlId[5], 0.0f, 0.0f, 0.0f);
     FbCopyMode = 0;
     CharFocusCancelF = FALSE;
     CharLightFocusF = FALSE;
@@ -588,8 +588,8 @@ static void BlinkGuide(u32 time)
 static void GuideCharFocus(u32 no, s32 time)
 {
     HSF_OBJECT *obj;
-    u32 flag;
     s16 frame;
+    s32 flag;
     s16 i;
     s16 cnt;
     float scale;
