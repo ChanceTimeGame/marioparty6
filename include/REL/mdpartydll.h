@@ -26,8 +26,8 @@ typedef struct MdPartySprData_s {
 typedef struct MdPartyPlayer_s {
     s16 state; //0x00
     s16 unk2; //0x02
-    s16 comF; //0x04 (part 10: enable)
-    s16 comDif; //0x06 (part 10: select)
+    s16 com; //0x04
+    s16 comDif; //0x06
     s16 charNo; //0x08
     s16 padNo; //0x0A
     s16 handicap; //0x0C
@@ -65,20 +65,32 @@ struct MdPartyCamera_s {
 }; //size 0x50
 
 /* layouts not known yet: owners of the functions that use them report fields */
-typedef struct MdPartyWork108_s {
-    s16 unk0; //0x00
-    u8 unk2[0x2E];
-} MDPARTY_WORK108; //size 0x30
-/* lbl_1_bss_288: models (layout from part 10) */
-typedef struct MdPartyMdl_s {
-    s16 mdlId; //0x00
-    s16 animId[4]; //0x02
+/* lbl_1_bss_108 (part 3) */
+typedef struct MdPartyJump_s {
+    s16 mode; //0x00
+    HuVecF start; //0x04
+    HuVecF mid; //0x10
+    HuVecF end; //0x1C
+    float time; //0x28
+    float maxTime; //0x2C
+} MDPARTY_JUMP; //size 0x30
+
+/* lbl_1_data_E12 (part 6) */
+typedef struct MdPartyCharSlot_s {
+    s16 link[8]; //0x00
+    s16 owner; //0x10
+} MDPARTY_CHARSLOT; //size 0x12
+/* lbl_1_bss_288: models (parts 4, 6, 7, 9, 10) */
+typedef struct MdPartyModel_s {
+    HU3D_MODELID mdlId; //0x00
+    HU3D_ANIMID animId[4]; //0x02
+    s16 unkA; //0x0A
     HuVecF pos; //0x0C
     HuVecF rot; //0x18
     HuVecF scale; //0x24
-    s16 unk30; //0x30
-    u8 unk32[6];
-} MDPARTY_MDL; //size 0x38
+    s16 time; //0x30
+    s16 unk32[3]; //0x32
+} MDPARTY_MODEL; //size 0x38
 typedef struct MdPartyWorkA96_s {
     s16 unk0[5]; //0x00
 } MDPARTY_WORKA96; //size 0xA
@@ -109,10 +121,10 @@ extern ANIMDATA *lbl_1_bss_93C[32];
 extern HUSPR_GROUPID lbl_1_bss_918[18];
 extern HUSPRID lbl_1_bss_8A4[58];
 extern ANIMDATA *lbl_1_bss_800[41];
-extern MDPARTY_MDL lbl_1_bss_288[25];
+extern MDPARTY_MODEL lbl_1_bss_288[25];
 extern float lbl_1_bss_228[24];
 extern float lbl_1_bss_1C8[24];
-extern MDPARTY_WORK108 lbl_1_bss_108[4];
+extern MDPARTY_JUMP lbl_1_bss_108[4];
 extern HUWINID lbl_1_bss_104[2];
 extern HuVecF lbl_1_bss_D4[4];
 extern HuVecF lbl_1_bss_A4[4];
@@ -153,7 +165,7 @@ extern s16 lbl_1_data_DA2[3];
 extern s32 lbl_1_data_DA8[3];
 /* .data defined by later parts, in this order between their string literals:
    lbl_1_data_DE6 (s16[6], after the strings of fn_1_9218, before fn_1_A970),
-   lbl_1_data_E12 (0xC6 bytes, after the string table of fn_1_D748, before fn_1_12364),
+   lbl_1_data_E12 (MDPARTY_CHARSLOT[11], after the string table of fn_1_D748, before fn_1_12364),
    lbl_1_data_F10 (s32[9], after the strings of fn_1_2DD58, before fn_1_44DCC) */
 
 /* mdparty.c part 1 */
@@ -183,7 +195,7 @@ void MdPartyPlayerComSet(void);
 void MdPartyCameraJump(MDPARTY_CAMERA *camera);
 void MdPartyCameraStop(MDPARTY_CAMERA *camera);
 void MdPartyCameraSmooth(MDPARTY_CAMERA *camera, float speed);
-void MdPartyCameraFuncSet(MDPARTY_CAMERA_FUNC func, MDPARTY_CAMERA *camera);
+void MdPartyCameraFuncSet(MDPARTY_CAMERA_FUNC func);
 void MdPartyCameraDebug(OMOBJ *obj, MDPARTY_CAMERA *camera);
 void MdPartyCameraFuncCall(OMOBJ *obj, MDPARTY_CAMERA *camera);
 void MdPartyCameraUpdate(OMOBJ *obj);

@@ -16,7 +16,11 @@ s32 HuAudFXVolSet();
 int HuAudFXPlayPan();
 int HuAudFXPlayVolPan();
 #include "game/board/board.h"
+#define CharMotionAMemPGet CharMotionAMemPGet_proto
 #include "game/charman.h"
+#undef CharMotionAMemPGet
+/* compared with li 0 + cmplw: retail sees a pointer result */
+void *CharMotionAMemPGet(s16 charNo);
 #include "game/data.h"
 #include "game/flag.h"
 #include "game/gamework.h"
@@ -63,10 +67,10 @@ ANIMDATA *lbl_1_bss_93C[32];
 HUSPR_GROUPID lbl_1_bss_918[18];
 HUSPRID lbl_1_bss_8A4[58];
 ANIMDATA *lbl_1_bss_800[41];
-MDPARTY_MDL lbl_1_bss_288[25];
+MDPARTY_MODEL lbl_1_bss_288[25];
 float lbl_1_bss_228[24];
 float lbl_1_bss_1C8[24];
-MDPARTY_WORK108 lbl_1_bss_108[4];
+MDPARTY_JUMP lbl_1_bss_108[4];
 HUWINID lbl_1_bss_104[2];
 HuVecF lbl_1_bss_D4[4];
 HuVecF lbl_1_bss_A4[4];
@@ -308,7 +312,7 @@ void MdPartyCharDataLoad(void)
     s16 i;
     s32 statId;
     for (i = 0; i < 4; i++) {
-        if (CharMotionAMemPGet(GwPlayer[i].charNo) == 0) {
+        if (CharMotionAMemPGet(GwPlayer[i].charNo) == NULL) {
             break;
         }
     }
@@ -398,7 +402,7 @@ void MdPartyGameWorkSet(void)
     GwCommon.confBonusStar = lbl_1_bss_9F4.bonusStarF;
     GwCommon.lastBoard = lbl_1_bss_9F4.boardNo;
     for (i = 0; i < 4; i++) {
-        GwPlayer[i].comF = lbl_1_bss_9BC[i].comF;
+        GwPlayer[i].comF = lbl_1_bss_9BC[i].com;
         GwPlayer[i].comDif = lbl_1_bss_9BC[i].comDif;
         GwPlayer[i].charNo = lbl_1_bss_9BC[i].charNo;
         GwPlayer[i].padNo = lbl_1_bss_9BC[i].padNo;
@@ -456,6 +460,7 @@ void MdPartyOvlGoto(s16 mode)
 {
     s32 ovlTbl[6] = { DLL_w01dll, DLL_w02dll, DLL_w03dll, DLL_w04dll, DLL_w05dll, DLL_w06dll };
     OMOVLHIS *his;
+    OMOVLHIS *his2;
     do {
         HuPrcVSleep();
     } while (lbl_1_bss_2E == 0);
@@ -473,8 +478,8 @@ void MdPartyOvlGoto(s16 mode)
             omOvlGoto(ovlTbl[GwSystem.boardNo], 0, 0);
             break;
         case 1:
-            his = omOvlHisGet(0);
-            omOvlHisChg(0, his->ovl, 1, 0);
+            his2 = omOvlHisGet(0);
+            omOvlHisChg(0, his2->ovl, 1, 0);
             omOvlCall(DLL_w10dll, 0, 0);
             break;
     }
@@ -661,14 +666,14 @@ void MdPartyPlayerComSet(void)
     s16 num = lbl_1_bss_9F4.playerNum;
     s16 i;
     MDPARTY_PLAYER *player;
-    lbl_1_bss_9BC[0].comF = 0;
+    lbl_1_bss_9BC[0].com = 0;
     num--;
     for (i = 1, player = &lbl_1_bss_9BC[1]; i < 4; i++, player++) {
         if (num > 0 && HuPadStatGet(i) == 0) {
-            player->comF = 0;
+            player->com = 0;
             num--;
         } else {
-            player->comF = 1;
+            player->com = 1;
         }
     }
 }
@@ -694,9 +699,9 @@ void MdPartyCameraSmooth(MDPARTY_CAMERA *camera, float speed)
     camera->zoom = MdPartySmooth(camera->zoom, camera->zoomEnd, speed);
 }
 
-void MdPartyCameraFuncSet(MDPARTY_CAMERA_FUNC func, MDPARTY_CAMERA *camera)
+void MdPartyCameraFuncSet(MDPARTY_CAMERA_FUNC func)
 {
-    camera->func = func;
+    lbl_1_bss_A10.func = func;
 }
 
 void MdPartyCameraDebug(OMOBJ *obj, MDPARTY_CAMERA *camera)
@@ -723,8 +728,8 @@ void MdPartyCameraDebug(OMOBJ *obj, MDPARTY_CAMERA *camera)
             camera->zoomEnd = 5.0f;
         }
     } else {
-        dx = stkY * HuSin(camera->rot.y) + stkX * HuSin(90.0f + camera->rot.y);
-        dz = stkY * HuCos(camera->rot.y) + stkX * HuCos(90.0f + camera->rot.y);
+        dx = stkX * HuSin(90.0f + camera->rot.y) + stkY * HuSin(camera->rot.y);
+        dz = stkX * HuCos(90.0f + camera->rot.y) + stkY * HuCos(camera->rot.y);
         camera->centerEnd.x += 0.25f * dx;
         camera->centerEnd.z += 0.25f * dz;
     }
