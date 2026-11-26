@@ -733,7 +733,7 @@ config.libs = [
         objects={
             Object(Matching, "REL/bootDll/boot.c"),
             Object(Matching, "REL/bootDll/data.c"),
-            Object(NonMatching, "REL/bootDll/opening.c"),
+            Object(Matching, "REL/bootDll/opening.c"),
         },
     ),
     Rel(

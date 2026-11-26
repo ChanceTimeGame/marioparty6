@@ -741,29 +741,476 @@ static void CharObjLightEnd(u32 time)
 }
 
 /* @@PART2@@ */
-#pragma dont_inline on
-static void CharObjStarStart(u32 time) { }
-static void CharObjStarEnd(u32 time) { }
-static void ObjStarExec(void) { }
-static void ObjStarStart(u32 time) { }
-static void ObjStarEnd(void) { }
-static void CharWaitEvent(u32 time) { }
-static void CharFocusLeft(void) { }
-static void CharFocusRight(void) { }
-static void CharFocusRandom(u32 time) { }
-static void CharHappyEvent(u32 time) { }
-static void SetStarDist(s16 no, float dist) { }
-static void SetCharAnimFrame(s16 no, s16 frame) { }
-static void SwapAnimFrame(s16 no, s16 frame) { }
-static void SwapAnimFrameEvent(int charNo, int frame) { }
-static void MessStart(s16 winNo, u32 mess, s16 time) { }
-static void BookOpen(void) { }
-static void BookOpenEvent(void) { }
-static void BookExec(void) { }
-static void EventExec(void) { }
-static void EventDestroy(void) { }
-static void EventCreate(EVENT_FUNC func, int arg1, int arg2) { }
-static void OpeningCameraSet(HuVecF *pos, HuVecF *target, float zoom) { }
-static void FilterDraw(float tpLvl) { }
-#pragma dont_inline reset
+static void CharObjStarStart(u32 time)
+{
+    HuVecF pos;
+    s16 i;
+    s16 maxTime;
+    s16 len;
+    s16 ofs;
+    float scaleY;
+    float scaleXZ;
+
+    Hu3DModelDispOn(OpeningMdlId[4]);
+    Hu3DModelDispOn(OpeningMdlId[5]);
+    Hu3DModelDispOn(OpeningMdlId[6]);
+    Hu3DModelPosGet(OpeningMdlId[1], &pos);
+    pos.x += 30.0f;
+    pos.y -= 45.0f;
+    pos.z += 50.0f;
+    Hu3DModelPosSetV(OpeningMdlId[4], &pos);
+    Hu3DModelScaleSet(OpeningMdlId[4], 0.0f, 0.0f, 0.0f);
+    pos.x = 0.0f;
+    pos.y += 90.0f;
+    pos.z += 50.0f;
+    StarPos = pos;
+    Hu3DModelScaleSet(OpeningMdlId[5], 0.0f, 0.0f, 0.0f);
+    Hu3DModelScaleSet(OpeningMdlId[6], 0.0f, 0.0f, 0.0f);
+    maxTime = time / 2;
+    for (i = 1; i <= maxTime; i++) {
+        if (i <= 0.7 * maxTime) {
+            len = 0.7 * maxTime;
+            scaleY = 0.9f * (HuSin(130.0f * ((float)i / len)) * (1.0 / HuSin(130)));
+        }
+        if (i > 0.3 * maxTime) {
+            ofs = i - 0.3f * maxTime;
+            len = 0.7f * maxTime;
+            scaleXZ = 0.9f * (HuSin(130.0f * ((float)ofs / len)) * (1.0 / HuSin(130)));
+        }
+        Hu3DModelScaleSet(OpeningMdlId[4], scaleXZ, scaleY, scaleXZ);
+        HuPrcVSleep();
+    }
+    HuAudFXPlay(1201);
+    for (i = 1; i <= maxTime; i++) {
+        scaleXZ = 0.5 * (HuSin(130.0f * ((float)i / maxTime)) * (1.0 / HuSin(130)));
+        Hu3DModelScaleSet(OpeningMdlId[5], scaleXZ, scaleXZ, 0.5f);
+        scaleXZ = 0.5 * HuSin(90.0f * ((float)i / maxTime));
+        Hu3DModelScaleSet(OpeningMdlId[6], scaleXZ, scaleXZ, 0.5f);
+        HuPrcVSleep();
+    }
+}
+
+static void CharObjStarEnd(u32 time)
+{
+    s16 i;
+    s16 maxTime;
+    float scaleXZ;
+    float scaleY;
+
+    maxTime = time / 2;
+    for (i = 1; i <= maxTime; i++) {
+        scaleXZ = 0.5 * (1.0 - HuSin(90.0f * ((float)i / maxTime)));
+        Hu3DModelScaleSet(OpeningMdlId[5], scaleXZ, scaleXZ, 0.5f);
+        Hu3DModelScaleSet(OpeningMdlId[6], scaleXZ, scaleXZ, 0.5f);
+        HuPrcVSleep();
+    }
+    for (i = 1; i <= maxTime; i++) {
+        scaleXZ = 0.9f * (1.0 - HuSin(90.0f * ((float)i / maxTime)));
+        scaleY = 0.9f * (1.0 - HuSin(90.0f * ((float)i / maxTime)));
+        Hu3DModelScaleSet(OpeningMdlId[4], scaleXZ, scaleY, scaleXZ);
+        HuPrcVSleep();
+    }
+}
+
+static void ObjStarExec(void)
+{
+    HuVecF pos;
+    float time;
+
+    time = 0.0f;
+    while (1) {
+        pos = StarPos;
+        pos.x += 3.0 * HuSin(time / 2.0f);
+        pos.y += 5.0 * HuSin(time);
+        Hu3DModelPosSetV(OpeningMdlId[5], &pos);
+        Hu3DModelPosSetV(OpeningMdlId[6], &pos);
+        time += 1.0f;
+        if (time > 720.0f) {
+            time -= 720.0f;
+        }
+        HuPrcVSleep();
+    }
+}
+
+static void ObjStarStart(u32 time)
+{
+    HuVecF pos;
+    s16 i;
+    float scale;
+    float scaleBase;
+
+    Hu3DModelDispOn(OpeningMdlId[5]);
+    Hu3DModelDispOn(OpeningMdlId[6]);
+    Hu3DModelPosGet(OpeningMdlId[1], &pos);
+    pos.y = 80.0f;
+    pos.z += 150.0f;
+    Hu3DModelPosSetV(OpeningMdlId[5], &pos);
+    Hu3DModelScaleSet(OpeningMdlId[5], 0.0f, 0.0f, 0.0f);
+    Hu3DModelPosSetV(OpeningMdlId[6], &pos);
+    Hu3DModelScaleSet(OpeningMdlId[6], 0.0f, 0.0f, 0.0f);
+    HuAudFXPlay(1202);
+    for (i = 1; i <= time; i++) {
+        scale = 0.5 * (HuSin(130.0f * ((float)i / time)) * (1.0 / HuSin(130)));
+        Hu3DModelScaleSet(OpeningMdlId[5], scale, scale, 0.5f);
+        scale = 0.5 * HuSin(90.0f * ((float)i / time));
+        Hu3DModelScaleSet(OpeningMdlId[6], scale, scale, 0.5f);
+        HuPrcVSleep();
+    }
+}
+
+static void ObjStarEnd(void)
+{
+    HuVecF dir;
+    HuVecF pos;
+    HuVecF endPos = { 0.0f, -40.0f, 500.0f };
+    s16 i;
+    float t;
+
+    for (i = 1; i <= 60; i++) {
+        t = 720.0f * (i / 60.0f);
+        Hu3DModelRotSet(OpeningMdlId[5], 0.0f, 0.0f, 30.0 * HuSin(t));
+        HuPrcVSleep();
+    }
+    for (i = 1; i <= 30; i++) {
+        if (i == 5) {
+            HuAudFXPlay(1203);
+        }
+        t = 720.0 * (1.0 - HuCos(90.0f * (i / 30.0f)));
+        Hu3DModelRotSet(OpeningMdlId[5], 0.0f, t, 0.0f);
+        HuPrcVSleep();
+    }
+    HuAudFXPlay(1201);
+    Hu3DModelDispOn(OpeningMdlId[7]);
+    Hu3DMotionTimeSet(OpeningMdlId[7], 0.0f);
+    Hu3DModelPosGet(OpeningMdlId[5], &pos);
+    Hu3DModelPosSetV(OpeningMdlId[7], &pos);
+    HuPrcSleep(20);
+    Hu3DModelPosGet(OpeningMdlId[5], &pos);
+    for (i = 1; i <= 60; i++) {
+        if (i == 5) {
+            HuAudFXPlay(1204);
+        }
+        t = i / 60.0f;
+        VECSubtract(&endPos, &pos, &dir);
+        VECScale(&dir, &dir, 1.0 - HuCos(90.0f * t));
+        VECAdd(&pos, &dir, &dir);
+        dir.y -= 100.0 * HuSin(180.0f * (i / 50.0f));
+        StarPos = dir;
+        Hu3DModelRotSet(OpeningMdlId[5], 0.0f, 0.0f, 20.0f * t);
+        HuPrcVSleep();
+    }
+}
+
+static void CharWaitEvent(u32 time)
+{
+    s16 wait[10];
+    s16 frame[10];
+    s16 i;
+    s16 j;
+
+    for (i = 0; i < 10; i++) {
+        wait[i] = frandmod(30);
+        frame[i] = 1;
+    }
+    for (j = 0; j < time - 10; j++) {
+        for (i = 0; i < 10; i++) {
+            if (wait[i] == 0) {
+                SwapAnimFrame((s16)i, (i * 7) + (frame[i] & 1));
+                frame[i]++;
+                wait[i] = frandmod(20) + 30;
+            }
+            wait[i]--;
+        }
+        HuPrcVSleep();
+    }
+    HuPrcSleep(11);
+}
+
+static void CharFocusLeft(void)
+{
+    s16 i;
+    for (i = 0; i < 10; i++) {
+        SwapAnimFrame((s16)i, (i * 7) + 5);
+    }
+    HuPrcSleep(10);
+}
+
+static void CharFocusRight(void)
+{
+    s16 i;
+    for (i = 0; i < 10; i++) {
+        SwapAnimFrame((s16)i, (i * 7) + 6);
+    }
+    HuPrcSleep(10);
+}
+
+static void CharFocusRandom(u32 time)
+{
+    s16 wait[10];
+    s16 frame[10];
+    s16 i;
+    s16 j;
+    s16 maxWait;
+    BOOL focusF;
+    float weight;
+
+    focusF = FALSE;
+    for (i = 0; i < 10; i++) {
+        wait[i] = frandmod(30);
+        frame[i] = 1;
+    }
+    for (j = 0; j < time - 10; j++) {
+        weight = 1.0f - ((float)j / time);
+        for (i = 0; i < 10; i++) {
+            if (i == 0 && focusF) {
+                continue;
+            }
+            if (wait[i] == 0) {
+                if (!focusF && i == 0 && j > 240) {
+                    SetCharAnimFrame(0, 78);
+                    focusF = TRUE;
+                    continue;
+                }
+                SwapAnimFrame((s16)i, (i * 7) + 5 + (frame[i] & 1));
+                frame[i]++;
+                maxWait = 40.0f * weight;
+                wait[i] = frandmod(maxWait) + 10;
+            }
+            wait[i]--;
+        }
+        HuPrcVSleep();
+    }
+    HuPrcSleep(11);
+}
+
+static void CharHappyEvent(u32 time)
+{
+    s16 wait[10];
+    s16 frame[10];
+    s16 i;
+    s16 j;
+
+    for (i = 0; i < 10; i++) {
+        wait[i] = frandmod(30);
+        frame[i] = 1;
+    }
+    for (j = 0; j < time - 10; j++) {
+        for (i = 0; i < 10; i++) {
+            if (wait[i] == 0) {
+                SwapAnimFrame((s16)i, (i * 7) + 2 + (frame[i] & 1));
+                frame[i]++;
+                wait[i] = frandmod(30) + 20;
+            }
+            wait[i]--;
+        }
+        HuPrcVSleep();
+    }
+    HuPrcSleep(11);
+}
+
+static void SetStarDist(s16 charNo, float angle)
+{
+    HSF_OBJECT *obj = Hu3DModelObjPtrGet(OpeningMdlId[2], OpeningCharObjNameTbl[charNo]);
+    obj->mesh.base.pos.x = 450.0 * HuSin(angle);
+    obj->mesh.base.pos.y = 450.0 * HuCos(angle);
+}
+
+static void SetCharAnimFrame(s16 charNo, s16 frame)
+{
+    Hu3DAnimAnimSet(OpeningCharAnimId[charNo], OpeningCharAnim[frame]);
+}
+
+static void SwapAnimFrame(s16 charNo, s16 frame)
+{
+    EventCreate(SwapAnimFrameEvent, charNo, frame);
+}
+
+static void SwapAnimFrameEvent(int charNo, int frame)
+{
+    s16 unused = 0;
+    HuPrcSleep(5);
+    Hu3DAnimAnimSet(OpeningCharAnimId[charNo], OpeningCharAnim[frame]);
+}
+
+static void MessStart(s16 winNo, u32 mess, s16 time)
+{
+    s16 i;
+    for (i = 0; i < 4; i++) {
+        HuWinDispOff(OpeningWinId[i]);
+    }
+    HuWinDispOn(OpeningWinId[winNo]);
+    if (mess) {
+        HuWinMesSet(OpeningWinId[winNo], mess);
+    } else {
+        HuWinHomeClear(OpeningWinId[winNo]);
+    }
+    if (time >= 0 && time != 0) {
+        HuPrcSleep(time);
+    }
+}
+
+static void BookOpen(void)
+{
+    HuVecF dir;
+    HuVecF pos = { 0.0f, 40.0f, -300.0f };
+    HuVecF rot = { -10.0f, 360.0f, 360.0f };
+    Mtx mtx;
+    s16 i;
+    float t;
+
+    Hu3DMotionTimeSet(OpeningMdlId[1], 0.0f);
+    Hu3DMotionClusterTimeSet(OpeningMdlId[1], 0, 0.0f);
+    Hu3DModelAttrReset(OpeningMdlId[1], HU3D_MOTATTR_PAUSE);
+    Hu3DModelClusterAttrReset(OpeningMdlId[1], 0, HU3D_CLUSTER_ATTR_PAUSE);
+    EventCreate(BookOpenEvent, 0, 0);
+    for (i = 1; i <= 180; i++) {
+        t = i / 180.0f;
+        VECSubtract(&pos, &BookDefPos, &dir);
+        VECScale(&dir, &dir, HuSin(90.0f * t));
+        VECAdd(&BookDefPos, &dir, &BookPos);
+        VECSubtract(&rot, &BookDefRot, &dir);
+        VECScale(&dir, &dir, HuSin(90.0f * t));
+        VECAdd(&BookDefRot, &dir, &BookRot);
+        MTXTrans(mtx, 150.0 * (1.0 - HuSin(90.0f * t)), 0.0f, 0.0f);
+        Hu3DModelMtxSet(OpeningMdlId[1], &mtx);
+        BookRadius = 0.05f + 0.95f * (1.0 - HuSin(90.0f * t));
+        HuPrcVSleep();
+    }
+}
+
+static void BookOpenEvent(void)
+{
+    HuPrcSleep(120);
+    Hu3DModelAttrSet(OpeningMdlId[1], HU3D_MOTATTR_PAUSE);
+    Hu3DModelClusterAttrSet(OpeningMdlId[1], 0, HU3D_CLUSTER_ATTR_PAUSE);
+}
+
+static void BookExec(void)
+{
+    HU3D_MODEL *modelP;
+    float time;
+
+    modelP = &Hu3DData[OpeningMdlId[1]];
+    time = 0.0f;
+    while (1) {
+        HuPrcVSleep();
+        if (modelP->attr & HU3D_ATTR_DISPOFF) {
+            continue;
+        }
+        VECAdd(&BookPos, &BookOfs, &modelP->pos);
+        BookOfs.x = BookRadius * (5.0 * HuSin(time));
+        BookOfs.y = BookRadius * (20.0 * HuCos(2.0f * time));
+        modelP->rot = BookRot;
+        time += 1.0f;
+        if (time > 720.0f) {
+            time -= 720.0f;
+        }
+    }
+}
+
+static void EventExec(void)
+{
+    HUPROCESS *process;
+    OPENING_EVENT *event;
+
+    process = HuPrcCurrentGet();
+    event = process->property;
+    event->func(event->arg1, event->arg2);
+    HuPrcEnd();
+}
+
+static void EventDestroy(void)
+{
+    HUPROCESS *process;
+
+    process = HuPrcCurrentGet();
+    HuMemDirectFree(process->property);
+}
+
+static void EventCreate(EVENT_FUNC func, int arg1, int arg2)
+{
+    HUPROCESS *process;
+    OPENING_EVENT *event;
+
+    process = HuPrcChildCreate(EventExec, 256, 12288, 0, HuPrcCurrentGet());
+    event = HuMemDirectMalloc(HEAP_HEAP, sizeof(OPENING_EVENT));
+    process->property = event;
+    HuPrcDestructorSet2(process, EventDestroy);
+    event->func = func;
+    event->arg1 = arg1;
+    event->arg2 = arg2;
+}
+
+static void OpeningCameraSet(HuVecF *rot, HuVecF *target, float dist)
+{
+    float rotX;
+    float rotY;
+    float rotZ;
+    HuVecF pos;
+    HuVecF camTarget;
+    HuVecF up;
+
+    rotX = rot->x;
+    rotY = rot->y;
+    rotZ = rot->z;
+    pos.x = target->x + dist * (HuSin(rotY) * HuCos(rotX));
+    pos.y = target->y + dist * -HuSin(rotX);
+    pos.z = target->z + dist * (HuCos(rotY) * HuCos(rotX));
+    camTarget.x = target->x;
+    camTarget.y = target->y;
+    camTarget.z = target->z;
+    up.x = HuSin(rotY) * HuSin(rotX);
+    up.y = HuCos(rotX);
+    up.z = HuCos(rotY) * HuSin(rotX);
+    Hu3DCameraPosSet(HU3D_CAM0, pos.x, pos.y, pos.z, up.x, up.y, up.z, camTarget.x, camTarget.y, camTarget.z);
+}
+
+static void FilterDraw(float tpLvl)
+{
+    GXColor color1 = { 0x9A, 0x70, 0x56, 0xFF };
+    GXColor color2 = { 0xA6, 0xA6, 0xA6, 0xFF };
+    GXTexObj texObj;
+    Mtx44 proj;
+    Mtx modelview;
+
+    MTXOrtho(proj, 0.0f, 480.0f, 0.0f, 640.0f, 0.0f, 8000.0f);
+    GXSetProjection(proj, GX_ORTHOGRAPHIC);
+    MTXIdentity(modelview);
+    GXLoadPosMtxImm(modelview, GX_PNMTX0);
+    GXClearVtxDesc();
+    GXSetVtxDesc(GX_VA_POS, GX_DIRECT);
+    GXSetVtxDesc(GX_VA_TEX0, GX_DIRECT);
+    GXSetVtxAttrFmt(GX_VTXFMT0, GX_VA_POS, GX_POS_XY, GX_F32, 0);
+    GXSetVtxAttrFmt(GX_VTXFMT0, GX_VA_TEX0, GX_TEX_ST, GX_F32, 0);
+    color1.a = 255.0f * tpLvl;
+    GXSetTevColor(GX_TEVREG0, color1);
+    GXSetTevColor(GX_TEVREG1, color2);
+    GXSetTexCoordGen2(GX_TEXCOORD0, GX_TG_MTX2x4, GX_TG_TEX0, GX_IDENTITY, GX_FALSE, GX_PTIDENTITY);
+    GXSetTevOrder(GX_TEVSTAGE0, GX_TEXCOORD0, GX_TEXMAP0, GX_COLOR0);
+    GXSetTevColorIn(GX_TEVSTAGE0, GX_CC_ZERO, GX_CC_TEXC, GX_CC_C0, GX_CC_ZERO);
+    GXSetTevColorOp(GX_TEVSTAGE0, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
+    GXSetTevAlphaIn(GX_TEVSTAGE0, GX_CA_KONST, GX_CA_ZERO, GX_CA_ZERO, GX_CA_ZERO);
+    GXSetTevAlphaOp(GX_TEVSTAGE0, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
+    GXSetTevOrder(GX_TEVSTAGE1, GX_TEXCOORD0, GX_TEXMAP0, GX_COLOR0);
+    GXSetTevColorIn(GX_TEVSTAGE1, GX_CC_TEXC, GX_CC_CPREV, GX_CC_C1, GX_CC_ZERO);
+    GXSetTevColorOp(GX_TEVSTAGE1, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
+    GXSetTevAlphaIn(GX_TEVSTAGE1, GX_CA_A0, GX_CA_ZERO, GX_CA_ZERO, GX_CA_ZERO);
+    GXSetTevAlphaOp(GX_TEVSTAGE1, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
+    GXSetNumTexGens(1);
+    GXSetNumTevStages(2);
+    GXInitTexObj(&texObj, FilterFrameBuf, 640, 320, GX_TF_I8, GX_CLAMP, GX_CLAMP, GX_FALSE);
+    GXInitTexObjLOD(&texObj, GX_NEAR, GX_NEAR, 0.0f, 0.0f, 0.0f, GX_FALSE, GX_FALSE, GX_ANISO_1);
+    GXLoadTexObj(&texObj, GX_TEXMAP0);
+    GXSetZMode(GX_FALSE, GX_ALWAYS, GX_FALSE);
+    GXBegin(GX_QUADS, GX_VTXFMT0, 4);
+    GXPosition2f32(0.0f, 80.0f);
+    GXTexCoord2f32(0.0f, 0.0f);
+    GXPosition2f32(640.0f, 80.0f);
+    GXTexCoord2f32(1.0f, 0.0f);
+    GXPosition2f32(640.0f, 400.0f);
+    GXTexCoord2f32(1.0f, 1.0f);
+    GXPosition2f32(0.0f, 400.0f);
+    GXTexCoord2f32(0.0f, 1.0f);
+    GXEnd();
+}
 /* @@END@@ */
