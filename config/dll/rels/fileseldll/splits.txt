@@ -19,10 +19,10 @@ REL/fileseldll/filename.c:
 	.bss        start:0x00000348 end:0x00000430
 
 REL/fileseldll/saveload.c:
-	.text       start:0x0000B63C end:0x0000E460
+	.text       start:0x0000B63C end:0x0000E404
 	.rodata     start:0x000002C0 end:0x000002D8
 	.data       start:0x00000568 end:0x000005DC
 
 REL/runtime.c:
-	.text       start:0x0000E460 end:0x0000EE48
+	.text       start:0x0000E404 end:0x0000EE48
 	.rodata     start:0x000002D8 end:0x000002F0
