@@ -231,6 +231,7 @@ void MdSelGuide2IdleWait(OMOBJ *obj);
 #define fn_1_3328 MdSelGuide2IdleWait
 
 /* other parts (prototypes as known to part 1) */
-void fn_1_FEC0(HU3D_MODELID mdlId, s32 seId, s16 vol, s32 arg3);
+void MdSelSePosPlay(HuVecF *pos, s32 seId);
+void MdSelSeMdlPlay(HU3D_MODELID mdlId, s32 seId, s16 range, s16 vol);
 
 #endif

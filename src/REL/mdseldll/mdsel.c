@@ -18,6 +18,7 @@ int HuAudFXPlayVolPan();
 #include "game/charman.h"
 #include "game/data.h"
 #include "game/gamework.h"
+#include "game/mgdata.h"
 #include "game/memory.h"
 #include "game/mic.h"
 #include "game/pad.h"
@@ -28,6 +29,12 @@ int HuAudFXPlayVolPan();
 #include "dolphin.h"
 
 #include "datadir_enum.h"
+
+/* frandmod and rand8 are called unprototyped: game/frand.h stays out of this unit */
+
+typedef void (*VoidFunc)(void);
+extern const VoidFunc _ctors[];
+extern const VoidFunc _dtors[];
 
 /* .bss is laid out in reverse definition order */
 HUMC_CONTEXTID lbl_1_bss_1A4C;
@@ -658,7 +665,7 @@ void MdSelGuideIdleWait(OMOBJ *obj)
 void MdSelGuideIdleSet(void)
 {
     OMOBJ *obj = lbl_1_bss_30;
-    fn_1_FEC0(lbl_1_bss_14->mdlId[0], 0x3B6, 16, -1);
+    MdSelSeMdlPlay(lbl_1_bss_14->mdlId[0], 0x3B6, 16, -1);
     Hu3DMotionShiftSet(lbl_1_bss_14->mdlId[0], lbl_1_bss_14->mtnId[4], 0.0f, 15.0f, HU3D_MOTATTR_LOOP);
     obj->work[0] = 0;
     obj->objFunc = MdSelGuideIdleWait;
