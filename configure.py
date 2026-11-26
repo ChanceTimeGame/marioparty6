@@ -737,6 +737,14 @@ config.libs = [
         },
     ),
     Rel(
+        "fileseldll",
+        objects={
+            Object(NonMatching, "REL/fileseldll/filesel.c"),
+            Object(NonMatching, "REL/fileseldll/filename.c"),
+            Object(NonMatching, "REL/fileseldll/saveload.c"),
+        },
+    ),
+    Rel(
         "motchkDll",
         objects={
             Object(Matching, "REL/motchkDll/motchk.c"),
