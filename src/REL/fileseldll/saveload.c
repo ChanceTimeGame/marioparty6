@@ -44,20 +44,9 @@ void SLCurBoxNoSet();
 #define FILE_MESS_REINSERT 11
 #define FILE_MESS_FORMAT_UNMOUNT 12
 
-typedef struct FileselBox_s {
-    BOOL validF;
-    s32 unk04[4];
-    s16 lastBoard; //0x14
-    s16 bankStar; //0x16
-    s32 unk18;
-    OSCalendarTime time;
-    char name[17]; //0x44
-    u8 unk55[0x2B];
-} FILESEL_BOX;
+#include "REL/fileseldll.h"
 
-extern FILESEL_BOX lbl_1_bss_D8[SAVE_BOX_MAX];
 #define fileselBox lbl_1_bss_D8
-void FileselSprUpdate(s16 boxNo, s16 no);
 
 #define MPSYS(n) MESSNUM(9, n)
 enum {

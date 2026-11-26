@@ -17,8 +17,8 @@ typedef struct FileselBox_s {
     HU3D_MODELID textMdlId; //0x0A
     HU3D_MODELID glowMdlId[3]; //0x0C
     s16 glowNo; //0x12
-    s16 charNo; //0x14
-    s16 playNum; //0x16
+    s16 lastBoard; //0x14
+    s16 bankStar; //0x16
     HU3D_ANIMID frameAnimId; //0x18
     HU3D_ANIMID charAnimId; //0x1A
     OSCalendarTime time; //0x1C

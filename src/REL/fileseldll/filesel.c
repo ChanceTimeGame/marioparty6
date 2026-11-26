@@ -620,8 +620,8 @@ s32 FileselSelect(void)
                     }
                 }
                 lbl_1_bss_D8[boxNo].validF = TRUE;
-                lbl_1_bss_D8[boxNo].charNo = -1;
-                lbl_1_bss_D8[boxNo].playNum = 0;
+                lbl_1_bss_D8[boxNo].lastBoard = -1;
+                lbl_1_bss_D8[boxNo].bankStar = 0;
                 OSTicksToCalendarTime(GwCommon.time, &lbl_1_bss_D8[boxNo].time);
                 FileselSprUpdate(boxNo, boxNo);
                 goto select;
@@ -871,7 +871,7 @@ void FileselBoxInit(void)
         box->validF = TRUE;
         strcpy(box->name, "ABCDEFGH");
         OSTicksToCalendarTime(OSGetTime(), &box->time);
-        box->playNum = 10;
+        box->bankStar = 10;
         FileselSprUpdate(i, i % 3);
     }
     Hu3DCameraLayerHookSet(1, 1, FileselFbCopyHook);
@@ -900,7 +900,7 @@ void FileselSprUpdate(s16 boxNo, s16 no)
     box->boxNoStr[1] = 0;
     HuWinInsertMesSet(box->winId, MESSNUM_PTR(box->boxNoStr), 0);
     if (!box->validF) {
-        box->charNo = -1;
+        box->lastBoard = -1;
         box->name[0] = 0;
         HuWinInsertMesSet(box->winId, 0x90033, 1);
         HuWinMesSet(box->winId, 0x90042);
@@ -945,10 +945,10 @@ void FileselSprUpdate(s16 boxNo, s16 no)
         for (i = 0; i < 5; i++) {
             HuSprAttrSet(grpId, i + 13, HUSPR_ATTR_DISPOFF);
         }
-        if (box->playNum > 9999) {
-            box->playNum = 9999;
+        if (box->bankStar > 9999) {
+            box->bankStar = 9999;
         }
-        sprintf(str, "%d", box->playNum);
+        sprintf(str, "%d", box->bankStar);
         len = strlen(str);
         HuSprPosSet(grpId, 10, 108 - ((len * 12) + 36) / 2, 96.0f);
         HuSprPosSet(grpId, 12, 126 - ((len * 12) + 36) / 2, 96.0f);
@@ -960,10 +960,10 @@ void FileselSprUpdate(s16 boxNo, s16 no)
             HuSprAttrReset(grpId, i + 13, HUSPR_ATTR_DISPOFF);
             HuSprPosSet(grpId, i + 13, (126 - ((len * 12) + 36) / 2) + ((i + 1) * 12), 96.0f);
         }
-        if (box->charNo == -1) {
+        if (box->lastBoard == -1) {
             Hu3DAnimAnimSet(box->charAnimId, lbl_1_bss_A8[1]);
         } else {
-            Hu3DAnimAnimSet(box->charAnimId, lbl_1_bss_A8[box->charNo + 2]);
+            Hu3DAnimAnimSet(box->charAnimId, lbl_1_bss_A8[box->lastBoard + 2]);
         }
     }
 }
@@ -1314,9 +1314,9 @@ s32 FileselCopy(s16 srcBoxNo)
     }
     if (result == 0) {
         lbl_1_bss_D8[boxNo].validF = TRUE;
-        lbl_1_bss_D8[boxNo].charNo = lbl_1_bss_D8[srcBoxNo].charNo;
+        lbl_1_bss_D8[boxNo].lastBoard = lbl_1_bss_D8[srcBoxNo].lastBoard;
         lbl_1_bss_D8[boxNo].time = lbl_1_bss_D8[srcBoxNo].time;
-        lbl_1_bss_D8[boxNo].playNum = lbl_1_bss_D8[srcBoxNo].playNum;
+        lbl_1_bss_D8[boxNo].bankStar = lbl_1_bss_D8[srcBoxNo].bankStar;
         memcpy(&lbl_1_bss_D8[boxNo].name, &lbl_1_bss_D8[srcBoxNo].name, 17);
         FileselSprUpdate(boxNo, boxNo);
         HuAudFXPlay(0x488);
