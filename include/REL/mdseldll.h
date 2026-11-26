@@ -112,12 +112,12 @@ extern s16 lbl_1_data_2D0;
 extern s32 lbl_1_data_35C[5];
 
 /* mdsel.c part 1 */
-void MdSelWinCallback(HUWINID winId, u32 mess, char c);
+void MdSelWinCallback(HUWINID winId, u32 mess, s16 no);
 void MdSelOvlCall(void);
 void MdSelARamFree(void);
 void MdSelARamDump(void);
-void MdSelSprGrpAttrSet(HUSPR_GROUPID grpId, u16 attr);
-void MdSelSprGrpAttrReset(HUSPR_GROUPID grpId, u16 attr);
+void MdSelSprGrpAttrSet(HUSPR_GROUPID grpId, u32 attr);
+void MdSelSprGrpAttrReset(HUSPR_GROUPID grpId, u32 attr);
 float MdSelLerp(float start, float end, float time, float maxTime);
 float MdSelSmooth(float cur, float target, float speed);
 void MdSelSmoothV(HuVecF *cur, HuVecF *target, float speed);

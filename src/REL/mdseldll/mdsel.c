@@ -75,7 +75,7 @@ s16 lbl_1_data_70[6] = { 3, 5, 4, 1, 0, 2 };
 s32 lbl_1_data_7C = -1;
 
 /* @@PART1@@ */
-void MdSelWinCallback(HUWINID winId, u32 mess, char c)
+void MdSelWinCallback(HUWINID winId, u32 mess, s16 no)
 {
     s32 messTbl[3] = { 0xA0000, 0xA0001, -1 };
     s32 seTbl[16] = {
@@ -83,8 +83,7 @@ void MdSelWinCallback(HUWINID winId, u32 mess, char c)
         0x3AD, 0x3AE, 0x3AF, 0x3B0, 0x3B1, 0x3B2, 0x3B3, -1
     };
     s16 i;
-    s16 no;
-    no = c - 1;
+    no--;
     OSReport("# ========== win callback :: %d\n", no);
     if (lbl_1_data_7C != mess) {
         lbl_1_data_7C = mess;
@@ -157,21 +156,21 @@ void MdSelARamDump(void)
     OSReport("\n");
 }
 
-void MdSelSprGrpAttrSet(HUSPR_GROUPID grpId, u16 attr)
+void MdSelSprGrpAttrSet(HUSPR_GROUPID grpId, u32 attr)
 {
     HUSPR_GROUP *grpP = &HuSprGrpData[grpId];
     s16 i;
     for (i = 0; i < grpP->sprNum; i++) {
-        HuSprAttrSet(grpId, i, attr);
+        HuSprAttrSet(grpId, i, (u16)attr);
     }
 }
 
-void MdSelSprGrpAttrReset(HUSPR_GROUPID grpId, u16 attr)
+void MdSelSprGrpAttrReset(HUSPR_GROUPID grpId, u32 attr)
 {
     HUSPR_GROUP *grpP = &HuSprGrpData[grpId];
     s16 i;
     for (i = 0; i < grpP->sprNum; i++) {
-        HuSprAttrReset(grpId, i, attr);
+        HuSprAttrReset(grpId, i, (u16)attr);
     }
 }
 
@@ -444,7 +443,7 @@ void MdSelWinInit(void)
     HuWinBGTPLvlSet(lbl_1_bss_1A40[3], 0.9f);
     for (i = 0; i < 4; i++) {
         winData[lbl_1_bss_1A40[i]].padMask = HUWIN_PLAYER_1;
-        HuWinCallbackSet(lbl_1_bss_1A40[i], MdSelWinCallback);
+        HuWinCallbackSet(lbl_1_bss_1A40[i], (HUWIN_CALLBACK)MdSelWinCallback);
         HuWinAttrSet(lbl_1_bss_1A40[i], HUWIN_ATTR_UPAUSE);
     }
 }
@@ -587,8 +586,7 @@ void MdSelFbHook(s16 layerNo)
         MTXConcat(rot, trans, final);
         mtxTransCat(final, 320.0f, 240.0f, 0.0f);
         GXLoadPosMtxImm(final, GX_PNMTX0);
-        lbl_1_bss_2C += 1.0f;
-        alpha = MdSelSinLerp90(0.0f, 1.0f, lbl_1_bss_2C, 60.0f);
+        alpha = MdSelSinLerp90(0.0f, 1.0f, lbl_1_bss_2C += 1.0f, 60.0f);
         GXBegin(GX_QUADS, GX_VTXFMT0, 4);
         GXPosition3f32(-50.0f, -50.0f, 0.0f);
         GXColor4u8(128, 128, 128, 160);
