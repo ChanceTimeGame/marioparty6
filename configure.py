@@ -737,6 +737,12 @@ config.libs = [
         },
     ),
     Rel(
+        "mdpartydll",
+        objects={
+            Object(NonMatching, "REL/mdpartydll/mdparty.c"),
+        },
+    ),
+    Rel(
         "mdseldll",
         objects={
             Object(NonMatching, "REL/mdseldll/mdsel.c"),
