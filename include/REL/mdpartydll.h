@@ -41,7 +41,7 @@ typedef struct MdPartyRule_s {
     s16 turnNo; //0x06 turnMax = turnNo * 5 + 10
     s16 mgPack; //0x08
     s16 bonusStarF; //0x0A
-    s16 unkC; //0x0C
+    s16 handicapCursor; //0x0C (part 8)
     s16 teamNo; //0x0E row of lbl_1_data_4
     u32 mesNo[2]; //0x10
     s16 unk18; //0x18
@@ -65,15 +65,13 @@ struct MdPartyCamera_s {
 }; //size 0x50
 
 /* layouts not known yet: owners of the functions that use them report fields */
-/* lbl_1_bss_108 (part 3) */
-typedef struct MdPartyJump_s {
+/* lbl_1_bss_108, _1C8, _228: quadratic Bezier paths (parts 2 and 3) */
+typedef struct MdPartyPath_s {
     s16 mode; //0x00
-    HuVecF start; //0x04
-    HuVecF mid; //0x10
-    HuVecF end; //0x1C
+    HuVecF pos[3]; //0x04 start, mid, end
     float time; //0x28
     float maxTime; //0x2C
-} MDPARTY_JUMP; //size 0x30
+} MDPARTY_PATH; //size 0x30
 
 /* lbl_1_data_E12 (part 6) */
 typedef struct MdPartyCharSlot_s {
@@ -122,9 +120,9 @@ extern HUSPR_GROUPID lbl_1_bss_918[18];
 extern HUSPRID lbl_1_bss_8A4[58];
 extern ANIMDATA *lbl_1_bss_800[41];
 extern MDPARTY_MODEL lbl_1_bss_288[25];
-extern float lbl_1_bss_228[24];
-extern float lbl_1_bss_1C8[24];
-extern MDPARTY_JUMP lbl_1_bss_108[4];
+extern MDPARTY_PATH lbl_1_bss_228[2];
+extern MDPARTY_PATH lbl_1_bss_1C8[2];
+extern MDPARTY_PATH lbl_1_bss_108[4];
 extern HUWINID lbl_1_bss_104[2];
 extern HuVecF lbl_1_bss_D4[4];
 extern HuVecF lbl_1_bss_A4[4];
@@ -163,6 +161,10 @@ extern s32 lbl_1_data_BFC[14];
 /* .data, end of PART1 (after the strings of MdPartyCameraDebug) */
 extern s16 lbl_1_data_DA2[3];
 extern s32 lbl_1_data_DA8[3];
+/* .data defined by later parts (see below) */
+extern s16 lbl_1_data_DE6[6];
+extern MDPARTY_CHARSLOT lbl_1_data_E12[11];
+extern s32 lbl_1_data_F10[9];
 /* .data defined by later parts, in this order between their string literals:
    lbl_1_data_DE6 (s16[6], after the strings of fn_1_9218, before fn_1_A970),
    lbl_1_data_E12 (MDPARTY_CHARSLOT[11], after the string table of fn_1_D748, before fn_1_12364),
@@ -207,6 +209,10 @@ void MdPartyWinOpen(s16 winNo);
 void MdPartyWinClose(s16 winNo);
 void MdPartyWinWait(s16 winNo);
 s16 MdPartyWinChoiceGet(s16 winNo, s16 mode);
+
+/* later parts (signatures reported by their callers) */
+void fn_1_45F3C(s16 playerNo, HuVecF *pos, s16 dif, s16 mode);
+void fn_1_464A0(s16 playerNo, HuVecF *pos, s16 mode, s16 dif);
 
 /* old fn_1_ names of renamed functions (so parts calling the old names still inline) */
 #define fn_1_0 MdPartyWinCallback
