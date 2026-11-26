@@ -40,7 +40,7 @@ static void RotateGuide(u32 time);
 static void CharObjLightStart(u32 time);
 static void CharObjLightEnd(u32 time);
 static void CharObjStarStart(u32 time);
-static void CharObjStarEnd(void);
+static void CharObjStarEnd(u32 time);
 static void ObjStarExec(void);
 static void ObjStarStart(u32 time);
 static void ObjStarEnd(void);
