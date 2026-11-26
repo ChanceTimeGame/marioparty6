@@ -740,7 +740,7 @@ config.libs = [
         "fileseldll",
         objects={
             Object(NonMatching, "REL/fileseldll/filesel.c"),
-            Object(NonMatching, "REL/fileseldll/filename.c"),
+            Object(Matching, "REL/fileseldll/filename.c"),
             Object(NonMatching, "REL/fileseldll/saveload.c"),
         },
     ),
