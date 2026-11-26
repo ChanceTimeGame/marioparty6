@@ -1,4 +1,11 @@
 /* @@HEAD@@ */
+/* Retail's opening.c was built without math.h: its sqrtf statics (0.5, 3.0) are absent from this
+ * unit's .rodata. Block it and declare the two functions the unit calls. */
+#define _MATH_H
+#define M_PI 3.141592653589793
+double sin(double x);
+double cos(double x);
+
 #include "game/hu3d.h"
 #include "game/sprite.h"
 #include "game/window.h"
@@ -21,7 +28,7 @@ typedef struct OpeningEvent_s {
     s32 arg2;
 } OPENING_EVENT;
 
-extern HU3D_LIGHTID BootLightId[3];
+extern HU3D_LIGHTID BootLightId[2];
 
 static void PreDrawHook(s16 layerNo);
 static void PostDrawHook(s16 layerNo);
@@ -56,28 +63,29 @@ static void EventCreate(OPENING_EVENTFUNC func, s32 arg1, s32 arg2);
 static void OpeningCameraSet(HuVecF *pos, HuVecF *target, float zoom);
 static void FilterDraw(float tpLvl);
 
-static s16 FbCopyMode;
-static BOOL OpeningEndF;
-static BOOL CharFocusCancelF;
-static BOOL CharLightFocusF;
-static float FilterTPLvl;
-static HuVecF StarPos;
-static float OpeningBgRotZ;
-static float GuideDist[2];
-static s16 OpeningBgState;
-static HUWINID OpeningWinId[4];
-static float BookRadius;
-static HuVecF BookRot;
-static HuVecF BookOfs;
-static HuVecF BookPos;
-static HU3D_ANIMID OpeningCharAnimId[12];
-static HU3D_ANIMID BookFrameBufAnimId[2];
-static ANIMDATA *OpeningCharAnim[79];
-static ANIMDATA *BookFrameBufAnim[2];
-static void *FilterFrameBuf;
-static void *BookFrameBuf[2];
-s16 lbl_1_bss_224;
+/* CodeWarrior emits .bss in reverse definition order */
 static HU3D_MODELID OpeningMdlId[8];
+s16 lbl_1_bss_224;
+static void *BookFrameBuf[2];
+static void *FilterFrameBuf;
+static ANIMDATA *BookFrameBufAnim[2];
+static ANIMDATA *OpeningCharAnim[79];
+static HU3D_ANIMID BookFrameBufAnimId[2];
+static HU3D_ANIMID OpeningCharAnimId[12];
+static HuVecF BookPos;
+static HuVecF BookOfs;
+static HuVecF BookRot;
+static float BookRadius;
+static HUWINID OpeningWinId[4];
+static s16 OpeningBgState;
+static float GuideDist[2];
+static float OpeningBgRotZ;
+static HuVecF StarPos;
+static float FilterTPLvl;
+static BOOL CharLightFocusF;
+static BOOL CharFocusCancelF;
+static BOOL OpeningEndF;
+static s16 FbCopyMode;
 
 static s16 WinFrameTypeTbl[4] = { 0, 4, 3, 5 };
 
