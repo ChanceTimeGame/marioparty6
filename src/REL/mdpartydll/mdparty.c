@@ -1789,16 +1789,7 @@ void MdPartyInfoWinOpen(u32 mess0, u32 mess1)
     HuWinDispOn(lbl_1_bss_104[1]);
     MdPartyInfoWinMesSet(0, mess0);
     MdPartyInfoWinMesSet(1, mess1);
-    {
-        HUSPR_GROUP *grpP;
-        HUSPR_GROUPID grpId;
-        s16 i;
-        grpId = lbl_1_bss_918[13];
-        grpP = &HuSprGrpData[grpId];
-        for (i = 0; i < grpP->sprNum; i++) {
-            HuSprAttrReset(grpId, i, HUSPR_ATTR_DISPOFF);
-        }
-    }
+    MdPartySprGrpAttrReset(lbl_1_bss_918[13], HUSPR_ATTR_DISPOFF);
 }
 
 void MdPartyInfoWinClose(void)
