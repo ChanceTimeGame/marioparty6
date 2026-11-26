@@ -11,6 +11,8 @@
 #include "game/saveload.h"
 #include "game/wipe.h"
 #include "humath.h"
+#include "string.h"
+#include "stdio.h"
 #include "msm.h"
 
 #include "datadir_enum.h"
@@ -52,7 +54,7 @@ ANIMDATA *lbl_1_bss_A8[8];
 HU3D_ANIMID lbl_1_bss_A2[3];
 HU3D_PARMANID lbl_1_bss_98[5];
 HuVecF lbl_1_bss_68[4];
-FILESEL_WORK18 lbl_1_bss_18[2];
+FILESEL_WAVE lbl_1_bss_18[2];
 ANIMDATA *lbl_1_bss_14;
 ANIMDATA *lbl_1_bss_10;
 void *lbl_1_bss_C;
@@ -91,7 +93,7 @@ s32 lbl_1_data_98[8] = {
 /* @@PART1@@ */
 void ObjectSetup(void)
 {
-    s16 lightId;
+    int lightId;
     OSReport("******* FileSelect ObjectSetup *********\n");
     lbl_1_bss_340 = omInitObjMan(50, 512);
     omGameSysInit(lbl_1_bss_340);
@@ -123,11 +125,11 @@ void FileselMain(void)
     BOOL ovlReturnF;
     ovlReturnF = TRUE;
     FileselInit();
-    fn_1_2C6C();
+    FileselBoxInit();
     SLSaveFlagSet(TRUE);
     WipeCreate(WIPE_MODE_IN, WIPE_TYPE_NORMAL, 60);
     WipeWait();
-    result = fn_1_B63C(-1);
+    result = FileBoxInit(-1);
     if(result == -2) {
         goto end;
     }
@@ -135,7 +137,7 @@ void FileselMain(void)
         HuAudFXPlay(1167);
         FileselBookOpen(FALSE);
         GwCommon = GwCommonOrig;
-        fn_1_6E54(0, 0);
+        FileselDecideExec(0, 0);
         SLSaveFlagSet(FALSE);
         ovlReturnF = FALSE;
         goto end;
@@ -150,29 +152,29 @@ void FileselMain(void)
         if(result != -3) {
             break;
         }
-        result = fn_1_B63C(-1);
+        result = FileBoxInit(-1);
         if(result == -2) {
             goto end;
         }
         if(result == -1) {
             GwCommon = GwCommonOrig;
-            fn_1_6E54(0, 0);
+            FileselDecideExec(0, 0);
             SLSaveFlagSet(FALSE);
             goto noReturn;
         }
         for(i=0; i<3; i++) {
-            fn_1_36C4(i, i);
+            FileselSprUpdate(i, i);
         }
     }
     if(result == -1) {
         GwCommon = GwCommonOrig;
-        fn_1_6E54(0, 0);
+        FileselDecideExec(0, 0);
         SLSaveFlagSet(FALSE);
         ovlReturnF = FALSE;
         goto end;
     }
     SLSaveFlagSet(TRUE);
-    fn_1_6E54(result, TRUE);
+    FileselDecideExec(result, TRUE);
     noReturn:
     ovlReturnF = FALSE;
     end:
@@ -187,7 +189,7 @@ void FileselMain(void)
     }
     GXSetPixelFmt(GX_PF_RGB8_Z24, GX_ZC_LINEAR);
     for(i=0; i<4; i++) {
-        HuMemDirectFree(lbl_1_bss_D8[i].fbAnim);
+        HuMemDirectFree(lbl_1_bss_D8[i].textAnim);
     }
     if(ovlReturnF) {
         omOvlReturnEx(1, 1);
@@ -284,10 +286,10 @@ void FileselInit(void)
     lbl_1_bss_A2[1] = Hu3DAnimCreate(lbl_1_bss_C8, lbl_1_bss_2D8[2], "data_select_ura");
     Hu3DAnimBankSet(lbl_1_bss_A2[1], 0);
     HuPrcChildCreate(FileselBookMoveExec, 256, 4096, 0, HuPrcCurrentGet());
-    fn_1_8B94();
+    NameEnterInit();
     Hu3DCameraLayerHookSet(HU3D_CAM0, 0, FileselToueiHook);
     Hu3DCameraLayerHookSet(HU3D_CAM1, 0, FileselPixelFmtHook);
-    omAddObjEx(lbl_1_bss_340, 4096, 16, 16, -1, fn_1_8688);
+    omAddObjEx(lbl_1_bss_340, 4096, 16, 16, -1, FileselWaveCreate);
     anim = HuSprAnimDataRead(DATANUM(DATA_effect, 0));
     for(i=0; i<5; i++) {
         lbl_1_bss_98[i] = Hu3DParManCreate(anim, 100, &lbl_1_data_E8);
@@ -303,7 +305,7 @@ void FileselInit(void)
 void FileselToueiHook(s16 layerNo)
 {
     GXSetPixelFmt(GX_PF_RGBA6_Z24, GX_ZC_LINEAR);
-    fn_1_6A8C();
+    FileselZClear();
 }
 
 void FileselPixelFmtHook(s16 layerNo)
@@ -334,8 +336,8 @@ void FileselBookOpen(BOOL boxF)
     HuWinAttrSet(lbl_1_bss_2E0, 0x800);
     HuWinPadMaskSet(lbl_1_bss_2E0, 1);
     for(i=0; i<3; i++) {
-        fn_1_36C4(i, i);
-        fn_1_3CF4(i, 2);
+        FileselSprUpdate(i, i);
+        FileselBoxSwayModeSet(i, 2);
     }
     maxTime = 10.0f+Hu3DMotionMaxTimeGet(lbl_1_bss_D8[i].mdlId);
     rot.x = -20;
@@ -389,7 +391,7 @@ void FileselBookOpen(BOOL boxF)
                     trans.y += t*(lbl_1_data_154[i].y-trans.y);
                     trans.z += t*(lbl_1_data_154[i].z-trans.z);
                     lbl_1_bss_2E4[i] = trans;
-                    fn_1_3C80(i, &trans);
+                    FileselBoxPosSetV(i, &trans);
                     objRot.x *= 1.0-t;
                     objRot.y *= 1.0-t;
                     objRot.z *= 1.0-t;
@@ -402,7 +404,7 @@ void FileselBookOpen(BOOL boxF)
                 Hu3DShadowTPLvlSet(0.5f*t);
             }
             if(time == maxTime-10) {
-                fn_1_50DC(FileselInfoWinOpen, 0);
+                FileselPrcCreate(FileselInfoWinOpen, 0);
             }
         }
     }
@@ -483,9 +485,9 @@ s32 FileselSelect(void)
             validNum++;
         }
         if(boxNo == i) {
-            fn_1_3CF4(i, 0);
+            FileselBoxSwayModeSet(i, 0);
         } else {
-            fn_1_3CF4(i, 1);
+            FileselBoxSwayModeSet(i, 1);
         }
     }
     Hu3DModelScaleGet(lbl_1_bss_D8[boxNo].mdlId, &scale);
@@ -493,11 +495,11 @@ s32 FileselSelect(void)
         for(i=1; i<=10; i++) {
             box = &lbl_1_bss_D8[boxNo];
             t = i/10.0f;
-            fn_1_3CC0(boxNo, pos[boxNo].x, pos[boxNo].y, (20*t)+pos[boxNo].z);
+            FileselBoxPosSet(boxNo, pos[boxNo].x, pos[boxNo].y, (20*t)+pos[boxNo].z);
             t = HuSin(130*t)*(1.0/HuSin(130));
             Hu3DModelScaleSet(box->mdlId, 1.5+(0.5*t), 1.5+(0.5*t), 1.5+(0.5*t));
             if(i == 5) {
-                box->state = 1;
+                box->glowNo = 1;
             }
             HuPrcVSleep();
         }
@@ -541,9 +543,9 @@ s32 FileselSelect(void)
                     goto select;
                 }
                 if((validNum >= 3 && choice == 1) || (validNum < 3 && choice == 2)) {
-                    lbl_1_bss_D8[boxNo].state = 2;
-                    choice = fn_1_642C(boxNo);
-                    lbl_1_bss_D8[boxNo].state = 1;
+                    lbl_1_bss_D8[boxNo].glowNo = 2;
+                    choice = FileselEraseConfirm(boxNo);
+                    lbl_1_bss_D8[boxNo].glowNo = 1;
                     if(choice == FILESEL_RESULT_CANCEL || choice == -4 || choice == -5) {
                         goto cancel;
                     }
@@ -552,11 +554,11 @@ s32 FileselSelect(void)
                     }
                     goto repeat;
                 } else {
-                    lbl_1_bss_D8[boxNo].state = 3;
-                    fn_1_63A0(boxNo, 1);
-                    choice = fn_1_5244(boxNo);
-                    fn_1_63A0(boxNo, 0);
-                    lbl_1_bss_D8[boxNo].state = 1;
+                    lbl_1_bss_D8[boxNo].glowNo = 3;
+                    FileselBoxCopyFocusSet(boxNo, 1);
+                    choice = FileselCopy(boxNo);
+                    FileselBoxCopyFocusSet(boxNo, 0);
+                    lbl_1_bss_D8[boxNo].glowNo = 1;
                     if(choice == -4 || choice == -5) {
                         goto cancel;
                     }
@@ -567,9 +569,9 @@ s32 FileselSelect(void)
                 }
             } else {
                 UnMountCnt = 0;
-                fn_1_69B0();
+                FileselCommonReset();
                 FileselBoxHide(-1);
-                choice = fn_1_916C(boxNo);
+                choice = NameEnterMain(boxNo);
                 FileselBoxShow();
                 if(choice == FILESEL_RESULT_CANCEL) {
                     goto repeat;
@@ -580,7 +582,7 @@ s32 FileselSelect(void)
                     UnMountCnt = 0;
                     goto cancel;
                 }
-                if(!fn_1_C278()) {
+                if(!FileTestOpen()) {
                     time = OSGetTime();
                     SLSaveDataMake(TRUE, &time);
                     SLCommonSet();
@@ -590,7 +592,7 @@ s32 FileselSelect(void)
                         }
                     }
                     seNo = HuAudFXPlay(1165);
-                    choice = fn_1_D348(-1);
+                    choice = FileClear(-1);
                     HuAudFXStop(seNo);
                     if(choice == FILESEL_RESULT_CANCEL || choice == -4 || choice == -5) {
                         goto cancel;
@@ -603,7 +605,7 @@ s32 FileselSelect(void)
                     SLSaveDataMake(FALSE, &time);
                     SLCommonSet();
                     seNo = HuAudFXPlay(1165);
-                    choice = fn_1_D90C(-1, 0x9002A);
+                    choice = FileSaveMesOpen(-1, 0x9002A);
                     HuAudFXStop(seNo);
                     if(choice == FILESEL_RESULT_CANCEL || choice == -4 || choice == -5) {
                         goto cancel;
@@ -613,10 +615,10 @@ s32 FileselSelect(void)
                     }
                 }
                 lbl_1_bss_D8[boxNo].validF = TRUE;
-                lbl_1_bss_D8[boxNo].unk14 = -1;
-                lbl_1_bss_D8[boxNo].unk16 = 0;
+                lbl_1_bss_D8[boxNo].charNo = -1;
+                lbl_1_bss_D8[boxNo].playNum = 0;
                 OSTicksToCalendarTime(GwCommon.time, &lbl_1_bss_D8[boxNo].time);
-                fn_1_36C4(boxNo, boxNo);
+                FileselSprUpdate(boxNo, boxNo);
                 goto select;
             }
         } else if(HuPadBtnDown[0] & PAD_BUTTON_B) {
@@ -632,21 +634,21 @@ s32 FileselSelect(void)
         }
         if(dir != 0 && boxNo+dir >= 0 && boxNo+dir < 3) {
             HuAudFXPlay(1155);
-            fn_1_3CF4(boxNo+dir, 0);
-            fn_1_3CF4(boxNo, 1);
+            FileselBoxSwayModeSet(boxNo+dir, 0);
+            FileselBoxSwayModeSet(boxNo, 1);
             for(i=1; i<=10; i++) {
                 t = i/10.0f;
                 t = HuSin(130*t)*(1.0/HuSin(130));
                 box = &lbl_1_bss_D8[boxNo+dir];
                 Hu3DModelScaleSet(box->mdlId, 1.5+(0.5*t), 1.5+(0.5*t), 1.5+(0.5*t));
-                fn_1_3CC0(boxNo+dir, pos[boxNo+dir].x, pos[boxNo+dir].y, (20*t)+pos[boxNo+dir].z);
+                FileselBoxPosSet(boxNo+dir, pos[boxNo+dir].x, pos[boxNo+dir].y, (20*t)+pos[boxNo+dir].z);
                 t = 1.0-t;
                 box = &lbl_1_bss_D8[boxNo];
                 Hu3DModelScaleSet(box->mdlId, 1.5+(0.5*t), 1.5+(0.5*t), 1.5+(0.5*t));
-                fn_1_3CC0(boxNo, pos[boxNo].x, pos[boxNo].y, (20*t)+pos[boxNo].z);
+                FileselBoxPosSet(boxNo, pos[boxNo].x, pos[boxNo].y, (20*t)+pos[boxNo].z);
                 if(i == 5) {
-                    lbl_1_bss_D8[boxNo+dir].state = 1;
-                    lbl_1_bss_D8[boxNo].state = 0;
+                    lbl_1_bss_D8[boxNo+dir].glowNo = 1;
+                    lbl_1_bss_D8[boxNo].glowNo = 0;
                 }
                 HuPrcVSleep();
             }
@@ -667,7 +669,7 @@ s32 FileselSelect(void)
         HuPrcVSleep();
     }
     for(i=0; i<3; i++) {
-        lbl_1_bss_D8[i].state = 0;
+        lbl_1_bss_D8[i].glowNo = 0;
     }
     HuPrcSleep(30);
     return -3;
@@ -695,9 +697,9 @@ void FileselBoxHide(s16 boxNo)
     if(boxNo == -1) {
         for(i=1; i<=10; i++) {
             t = 1.0-HuCos(90.0*(i/10.0));
-            fn_1_3CC0(0, lbl_1_bss_68[0].x, lbl_1_bss_68[0].y+(350*t), lbl_1_bss_68[0].z);
-            fn_1_3CC0(1, lbl_1_bss_68[1].x, lbl_1_bss_68[1].y+(350*t), lbl_1_bss_68[1].z);
-            fn_1_3CC0(2, lbl_1_bss_68[2].x, lbl_1_bss_68[2].y+(350*t), lbl_1_bss_68[2].z);
+            FileselBoxPosSet(0, lbl_1_bss_68[0].x, lbl_1_bss_68[0].y+(350*t), lbl_1_bss_68[0].z);
+            FileselBoxPosSet(1, lbl_1_bss_68[1].x, lbl_1_bss_68[1].y+(350*t), lbl_1_bss_68[1].z);
+            FileselBoxPosSet(2, lbl_1_bss_68[2].x, lbl_1_bss_68[2].y+(350*t), lbl_1_bss_68[2].z);
             Hu3DModelPosSet(lbl_1_bss_2D8[2], lbl_1_bss_68[3].x-(200*t), lbl_1_bss_68[3].y, lbl_1_bss_68[3].z);
             HuPrcVSleep();
         }
@@ -706,13 +708,13 @@ void FileselBoxHide(s16 boxNo)
             t = 1.0-HuCos(90.0*(i/10.0));
             switch(boxNo) {
                 case 0:
-                    fn_1_3CC0(0, lbl_1_bss_68[0].x, lbl_1_bss_68[0].y+(300*t), lbl_1_bss_68[0].z);
+                    FileselBoxPosSet(0, lbl_1_bss_68[0].x, lbl_1_bss_68[0].y+(300*t), lbl_1_bss_68[0].z);
                     break;
                 case 1:
-                    fn_1_3CC0(1, lbl_1_bss_68[1].x, lbl_1_bss_68[1].y-(400*t), lbl_1_bss_68[1].z);
+                    FileselBoxPosSet(1, lbl_1_bss_68[1].x, lbl_1_bss_68[1].y-(400*t), lbl_1_bss_68[1].z);
                     break;
                 case 2:
-                    fn_1_3CC0(2, lbl_1_bss_68[2].x, lbl_1_bss_68[2].y+(300*t), lbl_1_bss_68[2].z);
+                    FileselBoxPosSet(2, lbl_1_bss_68[2].x, lbl_1_bss_68[2].y+(300*t), lbl_1_bss_68[2].z);
                     break;
             }
             HuPrcVSleep();
@@ -739,7 +741,7 @@ void FileselBoxShow(void)
         for(j=0; j<3; j++) {
             PSVECScale(&ofs[j], &pos, t);
             PSVECAdd(&lbl_1_bss_68[j], &pos, &newPos);
-            fn_1_3C80(j, &newPos);
+            FileselBoxPosSetV(j, &newPos);
         }
         PSVECScale(&ofs[j], &pos, t);
         PSVECAdd(&lbl_1_bss_68[j], &pos, &newPos);
