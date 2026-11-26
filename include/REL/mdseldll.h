@@ -6,6 +6,7 @@
 #include "game/sprite.h"
 #include "game/object.h"
 #include "game/process.h"
+#include "game/mic.h"
 
 /* mode select camera: pos/target ease toward posEnd/targetEnd */
 typedef struct MdSelCamera_s {
@@ -28,58 +29,53 @@ typedef struct MdSelSprData_s {
     float zRot; //0x1C
 } MDSEL_SPRDATA; //size 0x20
 
-/* shared 0x88-byte work record (lbl_1_bss_A0, _128, _24C, _8AC, _9BC); fields named by offset.
-   Owners of the code that uses them: report better names/types to part 1. */
-typedef struct MdSelWork_s {
-    s16 unk00; //0x00
-    float unk04; //0x04
-    float unk08; //0x08
-    float unk0C; //0x0C
-    float unk10; //0x10
-    float unk14; //0x14
-    float unk18; //0x18
-    float unk1C; //0x1C
-    float unk20; //0x20
-    float unk24; //0x24
-    float unk28; //0x28
+/* lbl_1_bss_24C, _8AC, _9BC (layout from part 2) */
+typedef struct MdSelActor_s {
+    s16 active; //0x00
+    float time; //0x04
+    float maxTime; //0x08
+    HuVecF pos; //0x0C
+    HuVecF end; //0x18
+    float rotTime; //0x24
+    float rotMaxTime; //0x28
     float unk2C; //0x2C
-    float unk30; //0x30
+    float wait; //0x30
     float unk34; //0x34
-    float unk38; //0x38
-    float unk3C; //0x3C
-    s16 unk40; //0x40
+    u8 unk38[8]; //0x38
+    s16 mode; //0x40
     s16 unk42; //0x42
     s16 unk44; //0x44
     s16 unk46; //0x46
-    float unk48; //0x48
-    float unk4C; //0x4C
-    float unk50; //0x50
+    float moveTime; //0x48
+    float moveMaxTime; //0x4C
+    float rotTarget; //0x50
     float unk54; //0x54
-    float unk58; //0x58
-    float unk5C; //0x5C
-    float unk60; //0x60
-    float unk64; //0x64
-    float unk68; //0x68
-    float unk6C; //0x6C
-    float unk70; //0x70
-    float unk74; //0x74
-    float unk78; //0x78
-    float unk7C; //0x7C
-    float unk80; //0x80
-    float unk84; //0x84
-} MDSEL_WORK; //size 0x88
+    HuVecF moveStart; //0x58
+    HuVecF moveEnd; //0x64
+    u8 unk70[0x18]; //0x70
+} MDSEL_ACTOR; //size 0x88
 
-typedef struct MdSelWork8_s {
-    s16 unk00; //0x00
-    s32 unk04; //0x04
-} MDSEL_WORK8; //size 0x8
+/* lbl_1_bss_A0, _128 (layout from part 3) */
+typedef struct MdSelPath_s {
+    u32 unk0; //0x00
+    float time; //0x04
+    float maxTime; //0x08
+    HuVecF pos[3]; //0x0C
+    u8 unk30[0x58]; //0x30
+} MDSEL_PATH; //size 0x88
+
+/* lbl_1_bss_1D4: per-model sound (layout from part 2) */
+typedef struct MdSelSe_s {
+    s16 mdlId; //0x00
+    int seNo; //0x04
+} MDSEL_SE; //size 0x8
 
 typedef struct MdSelWorkA_s {
     s16 unk00[5]; //0x00
 } MDSEL_WORKA; //size 0xA
 
 /* .bss (definition order is the reverse of memory order) */
-extern s16 lbl_1_bss_1A4C;
+extern HUMC_CONTEXTID lbl_1_bss_1A4C;
 extern HU3D_LIGHTID lbl_1_bss_1A48[2];
 extern HUWINID lbl_1_bss_1A40[4];
 extern ANIMDATA *lbl_1_bss_1A3C[1];
@@ -91,13 +87,13 @@ extern s32 lbl_1_bss_1A28;
 extern s16 lbl_1_bss_19EC[30];
 extern s32 lbl_1_bss_19DC[4];
 extern MDSEL_CAMERA lbl_1_bss_19AC;
-extern MDSEL_WORK lbl_1_bss_9BC[30];
-extern MDSEL_WORK lbl_1_bss_8AC[2];
-extern MDSEL_WORK lbl_1_bss_24C[12];
-extern MDSEL_WORK8 lbl_1_bss_1D4[15];
+extern MDSEL_ACTOR lbl_1_bss_9BC[30];
+extern MDSEL_ACTOR lbl_1_bss_8AC[2];
+extern MDSEL_ACTOR lbl_1_bss_24C[12];
+extern MDSEL_SE lbl_1_bss_1D4[15];
 extern s16 lbl_1_bss_1B0[6][3];
-extern MDSEL_WORK lbl_1_bss_128;
-extern MDSEL_WORK lbl_1_bss_A0;
+extern MDSEL_PATH lbl_1_bss_128;
+extern MDSEL_PATH lbl_1_bss_A0;
 extern HuVecF lbl_1_bss_94;
 extern ANIMDATA *lbl_1_bss_80[5];
 extern MDSEL_WORKA lbl_1_bss_44[6];

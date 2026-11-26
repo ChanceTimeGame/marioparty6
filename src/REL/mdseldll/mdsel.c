@@ -1,11 +1,25 @@
 /* @@HEAD@@ */
 #include "REL/mdseldll.h"
 #include "game/armem.h"
+/* Retail calls these unprototyped (extsh on s16 arguments; parts 2 and 5) */
+#define HuAudFXPanning HuAudFXPanning_proto
+#define HuAudFXVolSet HuAudFXVolSet_proto
+#define HuAudFXPlayPan HuAudFXPlayPan_proto
+#define HuAudFXPlayVolPan HuAudFXPlayVolPan_proto
 #include "game/audio.h"
+#undef HuAudFXPanning
+#undef HuAudFXVolSet
+#undef HuAudFXPlayPan
+#undef HuAudFXPlayVolPan
+void HuAudFXPanning();
+s32 HuAudFXVolSet();
+int HuAudFXPlayPan();
+int HuAudFXPlayVolPan();
 #include "game/charman.h"
 #include "game/data.h"
 #include "game/gamework.h"
 #include "game/memory.h"
+#include "game/mic.h"
 #include "game/pad.h"
 #include "game/wipe.h"
 #include "humath.h"
@@ -16,7 +30,7 @@
 #include "datadir_enum.h"
 
 /* .bss is laid out in reverse definition order */
-s16 lbl_1_bss_1A4C;
+HUMC_CONTEXTID lbl_1_bss_1A4C;
 HU3D_LIGHTID lbl_1_bss_1A48[2];
 HUWINID lbl_1_bss_1A40[4];
 ANIMDATA *lbl_1_bss_1A3C[1];
@@ -28,13 +42,13 @@ s32 lbl_1_bss_1A28;
 s16 lbl_1_bss_19EC[30];
 s32 lbl_1_bss_19DC[4];
 MDSEL_CAMERA lbl_1_bss_19AC;
-MDSEL_WORK lbl_1_bss_9BC[30];
-MDSEL_WORK lbl_1_bss_8AC[2];
-MDSEL_WORK lbl_1_bss_24C[12];
-MDSEL_WORK8 lbl_1_bss_1D4[15];
+MDSEL_ACTOR lbl_1_bss_9BC[30];
+MDSEL_ACTOR lbl_1_bss_8AC[2];
+MDSEL_ACTOR lbl_1_bss_24C[12];
+MDSEL_SE lbl_1_bss_1D4[15];
 s16 lbl_1_bss_1B0[6][3];
-MDSEL_WORK lbl_1_bss_128;
-MDSEL_WORK lbl_1_bss_A0;
+MDSEL_PATH lbl_1_bss_128;
+MDSEL_PATH lbl_1_bss_A0;
 HuVecF lbl_1_bss_94;
 ANIMDATA *lbl_1_bss_80[5];
 MDSEL_WORKA lbl_1_bss_44[6];
