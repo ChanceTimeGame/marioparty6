@@ -184,6 +184,56 @@ void MdSelGuideIdleWait(OMOBJ *obj);
 void MdSelGuideIdleSet(void);
 void MdSelGuide2IdleWait(OMOBJ *obj);
 
+
+/* transition aliases: part 1 functions under their old fn_1_ names (drop once parts use the names) */
+#define fn_1_0 MdSelWinCallback
+#define fn_1_1B4 MdSelOvlCall
+#define fn_1_2CC MdSelARamFree
+#define fn_1_37C MdSelARamDump
+#define fn_1_40C MdSelSprGrpAttrSet
+#define fn_1_48C MdSelSprGrpAttrReset
+#define fn_1_50C MdSelLerp
+#define fn_1_550 MdSelSmooth
+#define fn_1_598 MdSelSmoothV
+#define fn_1_724 MdSelSinLerp90
+#define fn_1_80C MdSelSinLerp360
+#define fn_1_8E8 MdSelSinLerp180
+#define fn_1_9C4 MdSelBezier
+#define fn_1_A20 MdSelBezierV
+#define fn_1_C28 MdSelSmoothNoCheck
+#define fn_1_C48 MdSelLerp2
+#define fn_1_C8C MdSelModelMoveLook
+#define fn_1_FEC MdSelCameraTargetSet
+#define fn_1_11D4 MdSelCameraZoomSet
+#define fn_1_1370 MdSelCameraUpdate
+#define fn_1_1734 MdSelCameraInit
+#define fn_1_1964 MdSelCameraKill
+#define fn_1_1988 MdSelLightInit
+#define fn_1_1AD8 MdSelLightKill
+#define fn_1_1B30 MdSelWinOpen
+#define fn_1_1BA0 MdSelWinClose
+#define fn_1_1C10 MdSelWinWait
+#define fn_1_1C4C MdSelWinChoiceGet
+#define fn_1_1D20 MdSelWinMesSet
+#define fn_1_1DDC MdSelWinInit
+#define fn_1_2024 MdSelWinKill
+#define fn_1_2080 MdSelMainWinOpen
+#define fn_1_21DC MdSelMainWinClose
+#define fn_1_2288 MdSelMainWinWait
+#define fn_1_22E8 MdSelMainWinChoiceGet
+#define fn_1_23E0 MdSelMainWinMesSet
+#define fn_1_25F8 MdSelHelpWinMesSet
+#define fn_1_277C MdSelHelpWinClose
+#define fn_1_2828 MdSelSprInit
+#define fn_1_2A74 MdSelSprKill
+#define fn_1_2A78 MdSelFbHook
+#define fn_1_30FC MdSelFbHookSet
+#define fn_1_313C MdSelFbInit
+#define fn_1_318C MdSelFbKill
+#define fn_1_31E4 MdSelGuideIdleWait
+#define fn_1_3274 MdSelGuideIdleSet
+#define fn_1_3328 MdSelGuide2IdleWait
+
 /* other parts (prototypes as known to part 1) */
 void fn_1_FEC0(HU3D_MODELID mdlId, s32 seId, s16 vol, s32 arg3);
 
