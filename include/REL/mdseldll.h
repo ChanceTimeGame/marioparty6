@@ -28,13 +28,22 @@ typedef struct MdSelSprData_s {
     float zRot; //0x1C
 } MDSEL_SPRDATA; //size 0x20
 
-/* shared 0x88-byte work record (lbl_1_bss_A0, _128, _24C, _8AC, _9BC); fields named by offset */
+/* shared 0x88-byte work record (lbl_1_bss_A0, _128, _24C, _8AC, _9BC); fields named by offset.
+   Owners of the code that uses them: report better names/types to part 1. */
 typedef struct MdSelWork_s {
     s16 unk00; //0x00
-    HuVecF unk04; //0x04
-    HuVecF unk10; //0x10
-    HuVecF unk1C; //0x1C
-    HuVecF unk28; //0x28
+    float unk04; //0x04
+    float unk08; //0x08
+    float unk0C; //0x0C
+    float unk10; //0x10
+    float unk14; //0x14
+    float unk18; //0x18
+    float unk1C; //0x1C
+    float unk20; //0x20
+    float unk24; //0x24
+    float unk28; //0x28
+    float unk2C; //0x2C
+    float unk30; //0x30
     float unk34; //0x34
     float unk38; //0x38
     float unk3C; //0x3C
@@ -42,7 +51,22 @@ typedef struct MdSelWork_s {
     s16 unk42; //0x42
     s16 unk44; //0x44
     s16 unk46; //0x46
-    float unk48[16]; //0x48
+    float unk48; //0x48
+    float unk4C; //0x4C
+    float unk50; //0x50
+    float unk54; //0x54
+    float unk58; //0x58
+    float unk5C; //0x5C
+    float unk60; //0x60
+    float unk64; //0x64
+    float unk68; //0x68
+    float unk6C; //0x6C
+    float unk70; //0x70
+    float unk74; //0x74
+    float unk78; //0x78
+    float unk7C; //0x7C
+    float unk80; //0x80
+    float unk84; //0x84
 } MDSEL_WORK; //size 0x88
 
 typedef struct MdSelWork8_s {

@@ -74,6 +74,11 @@ HuVecF lbl_1_data_28[6] = {
 s16 lbl_1_data_70[6] = { 3, 5, 4, 1, 0, 2 };
 s32 lbl_1_data_7C = -1;
 
+/* .data placement: lbl_1_data_150/_154/_15C are defined at the end of PART1 (after the
+   strings of MdSelARamDump). Part 3 defines s16 lbl_1_data_2D0 = -1 between fn_1_8AE0 and
+   fn_1_8D44; part 5 defines s32 lbl_1_data_35C[5] (DATANUM(DATA_mdsel, 37) x5) before
+   fn_1_F790. Their extern declarations are in REL/mdseldll.h. */
+
 /* @@PART1@@ */
 void MdSelWinCallback(HUWINID winId, u32 mess, s16 no)
 {
