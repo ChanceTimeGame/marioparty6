@@ -743,7 +743,7 @@ static void CharObjLightEnd(u32 time)
 /* @@PART2@@ */
 #pragma dont_inline on
 static void CharObjStarStart(u32 time) { }
-static void CharObjStarEnd(void) { }
+static void CharObjStarEnd(u32 time) { }
 static void ObjStarExec(void) { }
 static void ObjStarStart(u32 time) { }
 static void ObjStarEnd(void) { }
