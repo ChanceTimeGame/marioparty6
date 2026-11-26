@@ -57,7 +57,7 @@ typedef struct FileselBox_s {
 
 extern FILESEL_BOX lbl_1_bss_D8[SAVE_BOX_MAX];
 #define fileselBox lbl_1_bss_D8
-void fn_1_36C4(s16 boxNo, s16 boxNo2);
+void FileselSprUpdate(s16 boxNo, s16 no);
 
 #define MPSYS(n) MESSNUM(9, n)
 enum {
@@ -300,7 +300,7 @@ s32 FileBoxInit(HUWINID srcWinId)
     }
     result = CARD_RESULT_READY;
     for(i=0; i<3; i++) {
-        fn_1_36C4(i, i);
+        FileselSprUpdate(i, i);
     }
     cleanup:
     if(srcWinId == HUWIN_NONE) {
