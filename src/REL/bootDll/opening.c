@@ -20,12 +20,12 @@ double cos(double x);
 
 #include "REL/bootDll/opening.h"
 
-typedef void (*OPENING_EVENTFUNC)();
+typedef void (*EVENT_FUNC)();
 
 typedef struct OpeningEvent_s {
-    OPENING_EVENTFUNC func;
-    s32 arg1;
-    s32 arg2;
+    EVENT_FUNC func;
+    int arg1;
+    int arg2;
 } OPENING_EVENT;
 
 extern HU3D_LIGHTID BootLightId[2];
@@ -40,10 +40,10 @@ static void RotateGuide(u32 time);
 static void CharObjLightStart(u32 time);
 static void CharObjLightEnd(u32 time);
 static void CharObjStarStart(u32 time);
-static void CharObjStarEnd(u32 time);
-static void ObjStarExec(u32 time);
+static void CharObjStarEnd(void);
+static void ObjStarExec(void);
 static void ObjStarStart(u32 time);
-static void ObjStarEnd(u32 time);
+static void ObjStarEnd(void);
 static void CharWaitEvent(u32 time);
 static void CharFocusLeft(void);
 static void CharFocusRight(void);
@@ -52,14 +52,14 @@ static void CharHappyEvent(u32 time);
 static void SetStarDist(s16 no, float dist);
 static void SetCharAnimFrame(s16 no, s16 frame);
 static void SwapAnimFrame(s16 no, s16 frame);
-static void SwapAnimFrameEvent(s32 no, s32 frame);
-static void MessStart(s32 winNo, u32 mess, s32 time);
+static void SwapAnimFrameEvent(int charNo, int frame);
+static void MessStart(s16 winNo, u32 mess, s16 time);
 static void BookOpen(void);
 static void BookOpenEvent(void);
 static void BookExec(void);
 static void EventExec(void);
 static void EventDestroy(void);
-static void EventCreate(OPENING_EVENTFUNC func, s32 arg1, s32 arg2);
+static void EventCreate(EVENT_FUNC func, int arg1, int arg2);
 static void OpeningCameraSet(HuVecF *pos, HuVecF *target, float zoom);
 static void FilterDraw(float tpLvl);
 
@@ -743,10 +743,10 @@ static void CharObjLightEnd(u32 time)
 /* @@PART2@@ */
 #pragma dont_inline on
 static void CharObjStarStart(u32 time) { }
-static void CharObjStarEnd(u32 time) { }
-static void ObjStarExec(u32 time) { }
+static void CharObjStarEnd(void) { }
+static void ObjStarExec(void) { }
 static void ObjStarStart(u32 time) { }
-static void ObjStarEnd(u32 time) { }
+static void ObjStarEnd(void) { }
 static void CharWaitEvent(u32 time) { }
 static void CharFocusLeft(void) { }
 static void CharFocusRight(void) { }
@@ -755,14 +755,14 @@ static void CharHappyEvent(u32 time) { }
 static void SetStarDist(s16 no, float dist) { }
 static void SetCharAnimFrame(s16 no, s16 frame) { }
 static void SwapAnimFrame(s16 no, s16 frame) { }
-static void SwapAnimFrameEvent(s32 no, s32 frame) { }
-static void MessStart(s32 winNo, u32 mess, s32 time) { }
+static void SwapAnimFrameEvent(int charNo, int frame) { }
+static void MessStart(s16 winNo, u32 mess, s16 time) { }
 static void BookOpen(void) { }
 static void BookOpenEvent(void) { }
 static void BookExec(void) { }
 static void EventExec(void) { }
 static void EventDestroy(void) { }
-static void EventCreate(OPENING_EVENTFUNC func, s32 arg1, s32 arg2) { }
+static void EventCreate(EVENT_FUNC func, int arg1, int arg2) { }
 static void OpeningCameraSet(HuVecF *pos, HuVecF *target, float zoom) { }
 static void FilterDraw(float tpLvl) { }
 #pragma dont_inline reset
