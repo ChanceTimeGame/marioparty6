@@ -7,16 +7,16 @@
    the function exists there; argN/fN are placeholder names. */
 void mbSingleInit(void);
 void mbSingleClose(void);
-void mbSingleSaveInit(int arg0, int arg1, int arg2);
+void mbSingleSaveInit(int teamChar, int mgPack, int comDif);
 void mbSingleMgUnlockInit(void);
 void mbSingleMgUnlockWrite(void);
-void mbSingleMgUnlockSet(int arg0);
-void mbSingleMgUnlockReset(int arg0);
-int mbSingleMgUnlockGet(int arg0);
-int mbSingleMgUnlockCheckAny(void);
+void mbSingleMgUnlockSet(int mgNo);
+void mbSingleMgUnlockReset(int mgNo);
+BOOL mbSingleMgUnlockGet(int mgNo);
+BOOL mbSingleMgUnlockCheckAny(void);
 int mbSingleMgUnlockNumGet(void);
-void mbev_SingleMg(int arg0, s16 arg1);
-int mbev_SingleMgEnd(int arg0);
+void mbev_SingleMg(int playerNo, s16 masuId);
+BOOL mbev_SingleMgEnd(int playerNo);
 void mbSinglePrizeFlagReset(int arg0);
 int mbSingleCall(int arg0, int arg1);
 void mbSingleReturn(void);
