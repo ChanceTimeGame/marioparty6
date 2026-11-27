@@ -3,6 +3,7 @@
 #include "game/board/audio.h"
 #include "game/board/camera.h"
 #include "game/board/coin.h"
+#include "game/board/exit.h"
 #include "game/board/comchoice.h"
 #include "game/board/masu.h"
 #include "game/board/math.h"
@@ -186,6 +187,138 @@ void mbev_CapTeresaStealSet(int mesId, int coinNum, void *beginHook, void *hook)
     teresaStealCoinNum = coinNum;
     teresaStealBeginHook = beginHook;
     teresaStealHook = hook;
+}
+
+static inline void *CapTeresaMallocNum(s32 size, u32 num)
+{
+    return HuMemDirectMallocNum(HEAP_MODEL, size, num);
+}
+
+void mbev_CapTeresaFadeCreate(int objId)
+{
+    int mdlId;
+    HU3D_MODEL *modelP;
+    HSF_DATA *hsf;
+    HSF_MATERIAL *material;
+    int i;
+
+    mdlId = mbObjModelIDGet(objId);
+    modelP = &Hu3DData[mdlId];
+    hsf = modelP->hsf;
+    material = hsf->material;
+    Hu3DModelMatHookSet(mdlId, ev_CapTeresaFadeMatHook);
+    for(i = 0; i < hsf->materialNum; i++, material++) {
+        material->flags |= 0x2000;
+    }
+    teresaFadeWork = CapTeresaMallocNum(sizeof(CAPTERESAFADEWORK), modelP->mallocNo);
+    memset(teresaFadeWork, 0, sizeof(CAPTERESAFADEWORK));
+    teresaFadeWork->mipmapF = TRUE;
+    teresaFadeWork->alpha = 255.0f;
+    teresaFadeWork->copyF = FALSE;
+    teresaFadeWork->srcW = 640;
+    teresaFadeWork->srcH = 480;
+    teresaFadeWork->dstW = 320;
+    teresaFadeWork->dstH = 240;
+    teresaFadeWork->obj = omAddObjEx(mbObjMan, 32768, 0, 0, -1, ev_CapTeresaFadeOMExec);
+    teresaFadeWork->texSize = GXGetTexBufferSize(teresaFadeWork->dstW, teresaFadeWork->dstH, GX_TF_RGB565, GX_FALSE, 0);
+    teresaFadeWork->texBuf = CapTeresaMallocNum(teresaFadeWork->texSize, modelP->mallocNo);
+    memset(teresaFadeWork->texBuf, 0, teresaFadeWork->texSize);
+    DCFlushRange(teresaFadeWork->texBuf, teresaFadeWork->texSize);
+}
+
+void mbev_CapTeresaFadeKill(int objId)
+{
+    Hu3DModelMatHookSet(mbObjModelIDGet(objId), NULL);
+    if(teresaFadeWork) {
+        HuMemDirectFree(teresaFadeWork->texBuf);
+        HuMemDirectFree(teresaFadeWork);
+        teresaFadeWork = NULL;
+    }
+}
+
+static void ev_CapTeresaFadeMatHook(HU3D_DRAW_OBJ *drawObj, HSF_MATERIAL *material)
+{
+    CAPTERESAFADEWORK *work;
+    HU3D_CAMERA *cameraP;
+    float fov;
+    GXColor color;
+    GXTexObj texObj;
+    Mtx lightMtx;
+    Mtx invCamMtx;
+    Mtx objMtx;
+    Mtx texMtx;
+
+    work = teresaFadeWork;
+    if(work) {
+        if(work->copyF == FALSE) {
+            GXDrawDone();
+            GXSetTexCopySrc(0, 0, work->srcW, work->srcH);
+            GXSetTexCopyDst(work->dstW, work->dstH, GX_TF_RGB565, work->mipmapF);
+            GXCopyTex(work->texBuf, GX_FALSE);
+            GXPixModeSync();
+            work->copyF = TRUE;
+        }
+        if(material->attrNum == 1) {
+            GXSetNumTexGens(2);
+            GXSetNumTevStages(2);
+            GXSetTevKAlphaSel(GX_TEVSTAGE0, GX_TEV_KASEL_1);
+            GXSetTexCoordGen2(GX_TEXCOORD0, GX_TG_MTX2x4, GX_TG_TEX0, GX_IDENTITY, GX_FALSE, GX_PTIDENTITY);
+            GXSetTevOrder(GX_TEVSTAGE0, GX_TEXCOORD0, GX_TEXMAP0, GX_COLOR0);
+            GXSetTevColorIn(GX_TEVSTAGE0, GX_CC_ZERO, GX_CC_TEXC, GX_CC_RASC, GX_CC_ZERO);
+            GXSetTevColorOp(GX_TEVSTAGE0, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
+            GXSetTevAlphaIn(GX_TEVSTAGE0, GX_CA_ZERO, GX_CA_ZERO, GX_CA_ZERO, GX_CA_KONST);
+            GXSetTevAlphaOp(GX_TEVSTAGE0, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
+            Hu3DMatLightSet(drawObj->model, 0, material->hiliteScale);
+            cameraP = &Hu3DCamera[Hu3DCameraNo];
+            fov = cameraP->fov;
+            if(fov <= 0.0f) {
+                fov = 30.0f;
+            }
+            C_MTXLightPerspective(lightMtx, fov, 1.2f, 0.5f, -0.5f, 0.5f, 0.5f);
+            PSMTXInverse(Hu3DCameraMtx, invCamMtx);
+            PSMTXConcat(invCamMtx, drawObj->matrix, objMtx);
+            PSMTXConcat(lightMtx, Hu3DCameraMtx, texMtx);
+            PSMTXConcat(texMtx, objMtx, texMtx);
+            GXLoadTexMtxImm(texMtx, GX_TEXMTX1, GX_MTX3x4);
+            GXSetTexCoordGen2(GX_TEXCOORD1, GX_TG_MTX3x4, GX_TG_POS, GX_TEXMTX1, GX_FALSE, GX_PTIDENTITY);
+            color.r = color.g = color.b = 255;
+            color.a = teresaFadeWork->alpha;
+            GXSetTevColor(GX_TEVREG2, color);
+            GXSetTevOrder(GX_TEVSTAGE1, GX_TEXCOORD1, GX_TEXMAP1, GX_COLOR0A0);
+            GXSetTevKAlphaSel(GX_TEVSTAGE1, GX_TEV_KASEL_1);
+            GXSetTevColorIn(GX_TEVSTAGE1, GX_CC_TEXC, GX_CC_CPREV, GX_CC_A2, GX_CC_ZERO);
+            GXSetTevColorOp(GX_TEVSTAGE1, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
+            GXSetTevAlphaIn(GX_TEVSTAGE1, GX_CA_ZERO, GX_CA_ZERO, GX_CA_ZERO, GX_CA_KONST);
+            GXSetTevAlphaOp(GX_TEVSTAGE1, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, GX_TRUE, GX_TEVPREV);
+            GXInitTexObj(&texObj, work->texBuf, work->dstW, work->dstH, GX_TF_RGB565, GX_CLAMP, GX_CLAMP, GX_FALSE);
+            GXInitTexObjLOD(&texObj, GX_LINEAR, GX_LINEAR, 0.0f, 0.0f, 0.0f, GX_FALSE, GX_FALSE, GX_ANISO_1);
+            GXLoadTexObj(&texObj, GX_TEXMAP1);
+        } else {
+            return;
+        }
+    }
+}
+
+static void ev_CapTeresaFadeOMExec(OMOBJ *obj)
+{
+    if(mbExitCheck() || !teresaFadeWork) {
+        omDelObjEx(mbObjMan, obj);
+    } else {
+        teresaFadeWork->copyF = FALSE;
+    }
+}
+
+void mbev_CapTeresaFadeSet(float alpha)
+{
+    if(teresaFadeWork) {
+        if(alpha < 0.0f) {
+            alpha = 0.0f;
+        }
+        if(alpha > 255.0f) {
+            alpha = 255.0f;
+        }
+        teresaFadeWork->alpha = alpha;
+    }
 }
 
 /* @@PART2@@ */
