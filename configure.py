@@ -764,6 +764,12 @@ config.libs = [
         },
     ),
     Rel(
+        "resultDll",
+        objects={
+            Object(NonMatching, "REL/resultDll/result.c"),
+        },
+    ),
+    Rel(
         "w01Dll",
         objects={
             Object(NonMatching, "REL/w01Dll/w01.c"),
