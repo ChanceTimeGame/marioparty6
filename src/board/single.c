@@ -105,14 +105,14 @@ typedef struct SingleSaveWork_s {
     u8 unk17; /* 0x17 */
     u8 unk18; /* 0x18 */
     u8 masuNum[12]; /* 0x19 */
-} SINGLE_SAVE_WORK; /* size 0x26 */
+} SINGLESAVEWORK; /* size 0x26 */
 
 static ANIMDATA *singleEffAnim[4];
 static SINGLEMASUORDER singleMasuOrder[256];
 static u32 singleMgUnlock[4];
 static SINGLEEFF singleEffData[SINGLE_EFF_MAX];
 static u32 mgUnlockOld[4];
-static SINGLE_SAVE_WORK singleSaveWork;
+static SINGLESAVEWORK singleSaveWork;
 static u64 singleBoardFlagOld[3];
 static u32 singleMgRecordOld[8];
 static u32 singleMgRecordPrize[8];
