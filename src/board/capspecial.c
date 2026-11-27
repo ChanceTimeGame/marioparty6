@@ -72,6 +72,9 @@ int mbev_CapPlayerCheck(int playerNo, int otherNo);
 int mbev_CapPlayerComSelKettouGet(int playerNo, int mode, int *choiceList, int num);
 void mbev_CapPlayerMotShiftWait(int playerNo, int motNo, int attr, int arg3);
 void mbev_CapCoinAdd(void *coinEff, int playerNo, int coinNum, int arg3);
+int mbev_CapEffGlowAdd(void *eff, HuVecF pos, HuVecF vel, int time, float scale, float speed, float arg6, GXColor color);
+void mbev_CapEffGlowKinokoTimeSet(void *eff, int glowId, int mode, int time);
+void mbev_CapEffColorSet(GXColor *color, int no);
 void mbev_CapPlayerRotate(int playerNo, float rotY);
 void mbev_CapObjClose(void *objWork, int objId);
 void mbev_CapPlayerPosSet(void *objWork, int playerNo, int masuId, HuVecF *ofs);
@@ -123,13 +126,9 @@ static int (*teresaStealHook)(int startF);
 static OMOBJ *miracleSprObj;
 static s32 diceHitTimer;
 
-static GXColor miracleMasuEffColorTbl[6] = {
-    { 255, 127, 127, 255 },
-    { 255, 255, 127, 255 },
-    { 255, 190, 127, 255 },
-    { 127, 127, 255, 255 },
-    { 127, 255, 255, 255 },
-    { 127, 190, 255, 255 },
+static GXColor miracleMasuEffColorTbl[2][3] = {
+    { { 255, 127, 127, 255 }, { 255, 255, 127, 255 }, { 255, 190, 127, 255 } },
+    { { 127, 127, 255, 255 }, { 127, 255, 255, 255 }, { 127, 190, 255, 255 } },
 };
 
 static int miracleTradeOrderTbl[3][16][2] = {
@@ -1205,6 +1204,163 @@ void mbev_CapMiracleKill(void)
 
 static void ev_CapMiracleMasu(CAPWORK *work)
 {
+    int playerNo;
+    int masuId;
+    int i;
+    int j;
+    int k;
+    int glowId;
+    float t;
+    HuVecF objPos[2];
+    HuVecF objRot[2];
+    HuVecF playerPos;
+    HuVecF masuPos;
+    HuVecF vel;
+    HuVecF pos;
+    int seNo[4];
+    int objId[2];
+    int motId[2];
+    GXColor color;
+
+    playerNo = work->playerNo;
+    masuId = GwPlayer[playerNo].masuId;
+    mbPlayerPosGet(playerNo, &playerPos);
+    mbMasuPosGet(masuId, &masuPos);
+    objId[0] = work->arg[0];
+    objId[1] = work->arg[1];
+    motId[0] = mbev_CapPlayerMotionCreate(work->objWork, playerNo, 0x930017);
+    motId[1] = mbev_CapPlayerMotionCreate(work->objWork, playerNo, 0x93004E);
+    mbCameraMoveWait();
+    omVibrate(playerNo, 300, 4, 4);
+    pos.x = 0.0f;
+    pos.y = 100.0f;
+    pos.z = 0.0f;
+    mbCameraMoveMasu(masuId, NULL, &pos, -1.0f, -1.0f, 60);
+    mbPlayerMotionShiftSet(playerNo, motId[0], 0.0f, 8.0f, HU3D_MOTATTR_LOOP);
+    seNo[0] = mbAudFXPlay(0x443);
+    for(i = 0; i < 60.0f; i++) {
+        for(j = 0; j < 2; j++) {
+            pos.x = masuPos.x+(2.0f*(100.0f*(-0.5f+CAP_RANDF())));
+            pos.y = masuPos.y+(100.0f*CAP_RANDF());
+            pos.z = masuPos.z+(2.0f*(100.0f*(-0.5f+CAP_RANDF())));
+            vel.x = vel.y = vel.z = 0.0f;
+            mbev_CapEffColorSet(&color, mbRandMod(0x8000));
+            glowId = mbev_CapEffGlowAdd(work->glowEff, pos, vel, 60.0f*(1.0f+(0.3f*CAP_RANDF())), 100.0f*(0.15f+(0.05f*CAP_RANDF())), 0.05f+(0.02f*CAP_RANDF()), -0.08166666f, color);
+            mbev_CapEffGlowKinokoTimeSet(work->glowEff, glowId, 1, 90);
+        }
+        HuPrcVSleep();
+    }
+    seNo[1] = mbAudFXPlay(0x444);
+    for(i = 1; i <= 120.0f; i++) {
+        t = i/120.0f;
+        for(j = 0; j < 2; j++) {
+            objRot[j].x = 0.0f;
+            objRot[j].y = 540.0f*t;
+            if(j & 1) {
+                objRot[j].y += 270.0f;
+            } else {
+                objRot[j].y += 90.0f;
+            }
+            objRot[j].z = 0.0f;
+            objPos[j].x = masuPos.x+(1.5*(100.0*HuSin(180.0f+objRot[j].y)));
+            objPos[j].z = masuPos.z+(1.5*(100.0*HuCos(180.0f+objRot[j].y)));
+            objPos[j].y = 100.0f+masuPos.y+(6.0*(100.0*HuCos(90.0f*t)));
+            mbObjPosSetV(objId[j], &objPos[j]);
+            mbObjRotSetV(objId[j], &objRot[j]);
+            mbObjDispSet(objId[j], TRUE);
+            for(k = 0; k < 3; k++) {
+                pos.x = objPos[j].x+(2.0f*(100.0f*(-0.5f+CAP_RANDF())));
+                pos.y = objPos[j].y+(100.0f*CAP_RANDF());
+                pos.z = objPos[j].z+(2.0f*(100.0f*(-0.5f+CAP_RANDF())));
+                vel.x = vel.y = vel.z = 0.0f;
+                glowId = mbev_CapEffGlowAdd(work->glowEff, pos, vel, 60.0f*(1.0f+(0.3f*CAP_RANDF())), 100.0f*(0.15f+(0.05f*CAP_RANDF())), 0.05f+(0.02f*CAP_RANDF()), -0.08166666f, miracleMasuEffColorTbl[j][mbRandMod(3)]);
+                mbev_CapEffGlowKinokoTimeSet(work->glowEff, glowId, 2, 60.0f*(0.5f+(0.5f*CAP_RANDF())));
+            }
+        }
+        for(j = 0; j < 2; j++) {
+            pos.x = masuPos.x+(2.0f*(100.0f*(-0.5f+CAP_RANDF())));
+            pos.y = masuPos.y+(100.0f*CAP_RANDF());
+            pos.z = masuPos.z+(2.0f*(100.0f*(-0.5f+CAP_RANDF())));
+            vel.x = vel.y = vel.z = 0.0f;
+            mbev_CapEffColorSet(&color, mbRandMod(0x8000));
+            glowId = mbev_CapEffGlowAdd(work->glowEff, pos, vel, 60.0f*(1.0f+(0.3f*CAP_RANDF())), 100.0f*(0.15f+(0.05f*CAP_RANDF())), 0.05f+(0.02f*CAP_RANDF()), -0.08166666f, color);
+            mbev_CapEffGlowKinokoTimeSet(work->glowEff, glowId, 1, 90);
+        }
+        HuPrcVSleep();
+    }
+    if(seNo[1] != -1) {
+        mbAudFXStop(seNo[1]);
+    }
+    for(j = 0; j < 2; j++) {
+        mbObjMotionShiftSet(objId[j], 9, 0.0f, 8.0f, 0);
+    }
+    mbPlayerColSnapPlayerSet(playerNo, FALSE);
+    mbPlayerMotionShiftSet(playerNo, motId[1], 0.0f, 18.0f, HU3D_MOTATTR_LOOP);
+    for(i = 1; i <= 45.0f; i++) {
+        t = i/45.0f;
+        playerPos.y = masuPos.y+(100.0*HuSin(90.0f*t));
+        mbPlayerPosSetV(playerNo, &playerPos);
+        for(j = 0; j < 2; j++) {
+            pos.x = playerPos.x+(2.0f*(100.0f*(-0.5f+CAP_RANDF())));
+            pos.y = playerPos.y+(2.0f*(100.0f*(-0.5f+CAP_RANDF())));
+            pos.z = playerPos.z+(2.0f*(100.0f*(-0.5f+CAP_RANDF())));
+            vel.x = vel.y = vel.z = 0.0f;
+            mbev_CapEffColorSet(&color, mbRandMod(0x8000));
+            glowId = mbev_CapEffGlowAdd(work->glowEff, pos, vel, 60.0f*(1.0f+(0.3f*CAP_RANDF())), 100.0f*(0.15f+(0.05f*CAP_RANDF())), 0.05f+(0.02f*CAP_RANDF()), -0.08166666f, color);
+            mbev_CapEffGlowKinokoTimeSet(work->glowEff, glowId, 1, 90);
+        }
+        HuPrcVSleep();
+    }
+    seNo[2] = mbAudFXPlay(0x445);
+    seNo[3] = mbAudFXPlay(0x3FE);
+    for(i = 1; i <= 120.0f; i++) {
+        t = i/120.0f;
+        playerPos.y = 100.0f+masuPos.y+(6.0*(100.0*HuSin(90.0f*t)));
+        mbPlayerPosSetV(playerNo, &playerPos);
+        mbPlayerRotSet(playerNo, 0.0f, 720.0*HuSin(90.0f*t), 0.0f);
+        for(j = 0; j < 2; j++) {
+            objRot[j].x = 0.0f;
+            objRot[j].y = 720.0*HuSin(90.0f*(t*t));
+            if(j & 1) {
+                objRot[j].y += 90.0f;
+            } else {
+                objRot[j].y += 270.0f;
+            }
+            objRot[j].z = 0.0f;
+            objPos[j].x = masuPos.x+(1.5*(100.0*HuSin(180.0f+objRot[j].y)));
+            objPos[j].z = masuPos.z+(1.5*(100.0*HuCos(180.0f+objRot[j].y)));
+            objPos[j].y = 100.0f+masuPos.y+(6.0*(100.0*HuSin(90.0f*(t*t))));
+            mbObjPosSetV(objId[j], &objPos[j]);
+            mbObjRotSetV(objId[j], &objRot[j]);
+            for(k = 0; k < 3; k++) {
+                pos.x = objPos[j].x+(2.0f*(100.0f*(-0.5f+CAP_RANDF())));
+                pos.y = objPos[j].y+(100.0f*CAP_RANDF());
+                pos.z = objPos[j].z+(2.0f*(100.0f*(-0.5f+CAP_RANDF())));
+                vel.x = vel.y = vel.z = 0.0f;
+                glowId = mbev_CapEffGlowAdd(work->glowEff, pos, vel, 60.0f*(1.0f+(0.3f*CAP_RANDF())), 100.0f*(0.15f+(0.05f*CAP_RANDF())), 0.05f+(0.02f*CAP_RANDF()), -0.08166666f, miracleMasuEffColorTbl[j][mbRandMod(3)]);
+                mbev_CapEffGlowKinokoTimeSet(work->glowEff, glowId, 2, 60.0f*(0.5f+(0.5f*CAP_RANDF())));
+            }
+        }
+        for(j = 0; j < 2; j++) {
+            pos.x = playerPos.x+(2.0f*(100.0f*(-0.5f+CAP_RANDF())));
+            pos.y = playerPos.y+(2.0f*(100.0f*(-0.5f+CAP_RANDF())));
+            pos.z = playerPos.z+(2.0f*(100.0f*(-0.5f+CAP_RANDF())));
+            vel.x = vel.y = vel.z = 0.0f;
+            mbev_CapEffColorSet(&color, mbRandMod(0x8000));
+            glowId = mbev_CapEffGlowAdd(work->glowEff, pos, vel, 60.0f*(1.0f+(0.3f*CAP_RANDF())), 100.0f*(0.15f+(0.05f*CAP_RANDF())), 0.05f+(0.02f*CAP_RANDF()), -0.08166666f, color);
+            mbev_CapEffGlowKinokoTimeSet(work->glowEff, glowId, 1, 90);
+        }
+        HuPrcVSleep();
+    }
+    if(seNo[0] != -1) {
+        mbAudFXStop(seNo[0]);
+    }
+    if(seNo[2] != -1) {
+        mbAudFXStop(seNo[2]);
+    }
+    if(seNo[3] != -1) {
+        mbAudFXStop(seNo[3]);
+    }
 }
 
 /* @@PART2@@ */
