@@ -100,62 +100,23 @@ static int (*teresaStealHook)(int startF);
 static OMOBJ *miracleSprObj;
 static s32 diceHitTimer;
 
-static GXColor miracleMasuEffColorTbl[2][3] = {
-    { { 255, 127, 127, 255 }, { 255, 255, 127, 255 }, { 255, 190, 127, 255 } },
-    { { 127, 127, 255, 255 }, { 127, 255, 255, 255 }, { 127, 190, 255, 255 } },
-};
 
-static int miracleTradeOrderTbl[3][32] = {
-    { 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0, 4, 0, 1, 0, 1, -1 },
-    { 3, 2, 0, 1, 0, 2, 0, 1, 3, 0, 4, 2, 3, 0, 1, 0, 1, 5, 2, 4, -1 },
-    { 3, 0, 4, 2, 0, 5, 1, 2, 0, 3, 0, 1, 4, 1, 3, 1, 2, 3, 4, 5, -1 },
-};
 
-static int miracleLeftCharOrderTbl[32] = { 1, 2, 1, 3, 1, 0, 1, 3, 0, 2, -1 };
 
-static int miracleRightCharOrderTbl[2][32] = {
-    { 2, 0, 2, 1, 2, 1, 2, 0, 2, 0, -1 },
-    { 1, 0, 2, 0, 2, 0, 1, 0, 2, 0, -1 },
-};
 
-static HuVecF miracleTradePosTbl[3] = {
-    { 138.0f, 90.0f, 0.0f },
-    { 288.0f, 90.0f, 0.0f },
-    { 438.0f, 90.0f, 0.0f },
-};
 
-static int miracleTradeFileTbl[6] = { 0x11003B, 0x11003C, 0x11003D, 0x11003E, 0x11003F, 0x110040 };
 
-static s32 miracleBackFile = 0x11003A;
 
-static int kettouGuideMotTbl[2][16] = {
-    { 0x110001, 0x110004, 0x110011, 0x110005, 0x110012, 0x110013, 0x110014, -1 },
-    { 0x11001C, 0x11001F, 0x11002B, 0x110020, 0x11002C, 0x11002D, 0x11002E, -1 },
-};
 
-static int kettouPlayerMotTbl[4] = { 0x8E0027, 0x93001F, 0x8E0078, 0x93004B };
 
 static s32 kettouMotId[12];
 static s16 mgResultData[5];
 
-static int donkeyMotTbl[12] = {
-    0xE000F, 0xE0011, 0xE0012, 0xE0015, 0xE0016, 0xE0013, 0xE0014, 0xE0018, 0xE0019, 0xE001A, 0xE001B, -1
-};
 
-static s32 donkeyMgFile[2] = { 0x5008C, 0x5008C };
-static s8 donkeyDiceTbl[8] = { 0, 1, 2, 3, 4, -1 };
 
-static int donkeyDiceResultTbl[5] = { 5, 10, 20, 30, -1 };
-static int donkeyRouletteBankTbl[10] = { 0, 1, 0, 1, 0, 1, 0, 1, 0, 2 };
 
-static int koopaMotTbl[7] = { 0xE0001, 0xE0005, 0xE0003, 0xE0007, 0xE0004, 0xE000A, -1 };
 
-static s32 koopaMgFile[2] = { 0x5008D, 0x5008D };
-static s8 koopaDiceTbl[8] = { 0, 1, 2, 3, 4, -1 };
 
-static int koopaDiceResultTbl[5] = { 5, 10, 20, 30, -1 };
-static int koopaLoseMesTbl[3] = { 0x3F000A, 0x3F000B, 0x3F000C };
-static int koopaLoseMesTbl2[3] = { 0x3F000A, 0x3F000B, 0x3F000C };
 
 /* @@PART1@@ */
 void mbev_CapTeresa(void)
@@ -1158,6 +1119,47 @@ void mbev_CapMiracleKill(void)
 {
 }
 
+static GXColor miracleMasuEffColorTbl[2][3] = {
+    { { 255, 127, 127, 255 }, { 255, 255, 127, 255 }, { 255, 190, 127, 255 } },
+    { { 127, 127, 255, 255 }, { 127, 255, 255, 255 }, { 127, 190, 255, 255 } },
+};
+
+static int miracleTradeOrderTbl[3][32] = {
+    { 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0, 4, 0, 1, 0, 1, -1 },
+    { 3, 2, 0, 1, 0, 2, 0, 1, 3, 0, 4, 2, 3, 0, 1, 0, 1, 5, 2, 4, -1 },
+    { 3, 0, 4, 2, 0, 5, 1, 2, 0, 3, 0, 1, 4, 1, 3, 1, 2, 3, 4, 5, -1 },
+};
+
+static int miracleLeftCharOrderTbl[32] = { 1, 2, 1, 3, 1, 0, 1, 3, 0, 2, -1 };
+
+static int miracleRightCharOrderTbl[2][32] = {
+    { 2, 0, 2, 1, 2, 1, 2, 0, 2, 0, -1 },
+    { 1, 0, 2, 0, 2, 0, 1, 0, 2, 0, -1 },
+};
+
+static HuVecF miracleTradePosTbl[3] = {
+    { 138.0f, 90.0f, 0.0f },
+    { 288.0f, 90.0f, 0.0f },
+    { 438.0f, 90.0f, 0.0f },
+};
+
+static int miracleTradeFileTbl[6] = { 0x11003B, 0x11003C, 0x11003D, 0x11003E, 0x11003F, 0x110040 };
+
+static int kettouGuideMotTbl[2][16] = {
+    { 0x110001, 0x110004, 0x110011, 0x110005, 0x110012, 0x110013, 0x110014, -1 },
+    { 0x11001C, 0x11001F, 0x11002B, 0x110020, 0x11002C, 0x11002D, 0x11002E, -1 },
+};
+
+static int kettouPlayerMotTbl[4] = { 0x8E0027, 0x93001F, 0x8E0078, 0x93004B };
+
+static int donkeyMotTbl[12] = {
+    0xE000F, 0xE0011, 0xE0012, 0xE0015, 0xE0016, 0xE0013, 0xE0014, 0xE0018, 0xE0019, 0xE001A, 0xE001B, -1
+};
+
+static int donkeyDiceResultTbl[5] = { 5, 10, 20, 30, -1 };
+
+static int donkeyRouletteBankTbl[10] = { 0, 1, 0, 1, 0, 1, 0, 1, 0, 2 };
+
 static void ev_CapMiracleMasu(CAPWORK *work)
 {
     int glowId;
@@ -1735,6 +1737,16 @@ static void ev_CapMiracleRun(CAPWORK *work)
     mbMusBoardFadeOut(0, 0, 1000, 1000, -1, FALSE);
     ev_CapMiracleSprDestroy();
 }
+
+static s32 miracleBackFile = 0x11003A;
+
+static s32 donkeyMgFile[2] = { 0x5008C, 0x5008C };
+
+static s8 donkeyDiceTbl[8] = { 0, 1, 2, 3, 4, -1 };
+
+static s32 koopaMgFile[2] = { 0x5008D, 0x5008D };
+
+static s8 koopaDiceTbl[8] = { 0, 1, 2, 3, 4, -1 };
 
 static void ev_CapMiraclePlayerSet(CAPWORK *work, int playerA, int playerB, int masuId)
 {
@@ -3623,6 +3635,15 @@ static void ev_CapDonkeyCoin(CAPWORK *work)
     }
     mbev_CapPlayerMotShiftWait(playerNo, 1, 0x40000001, 1);
 }
+
+static int koopaMotTbl[7] = { 0xE0001, 0xE0005, 0xE0003, 0xE0007, 0xE0004, 0xE000A, -1 };
+
+static int koopaDiceResultTbl[5] = { 5, 10, 20, 30, -1 };
+
+static int koopaLoseMesTbl[3] = { 0x3F000A, 0x3F000B, 0x3F000C };
+
+static int koopaLoseMesTbl2[3] = { 0x3F000A, 0x3F000B, 0x3F000C };
+
 
 static void ev_CapDonkeyReturn(CAPWORK *work)
 {
