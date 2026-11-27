@@ -58,6 +58,9 @@ void mbev_CapPlayerMoveMinYSet(int playerNo, float minY);
 void mbev_CapPlayerMoveVelSet(int playerNo, float speed, HuVecF vel);
 int mbev_CapPlayerMoveObjCheck(int playerNo);
 void mbev_CapPlayerIdleWait(void);
+void mbev_CapBezierGetV(float t, HuVecF *a, HuVecF *b, HuVecF *c, HuVecF *out);
+void mbev_CapBezierNormGetV(float t, HuVecF *a, HuVecF *b, HuVecF *c, HuVecF *out);
+void mbev_CapVecRotGet(HuVecF *dir, HuVecF *rot);
 void mbev_CapPlayerMoveObjInit(void);
 s16 mbev_CapPlayerMotionCreate(void *objList, int playerNo, int dataNum);
 int mbev_CapObjCreate(void *objList, int dataNum, int *motData, int arg3, int arg4, int arg5);
@@ -777,6 +780,213 @@ void mbev_CapPakkun(void)
 
 void mbev_CapPakkunKill(void)
 {
+}
+
+static HuVecF jangoPlayerOfs = { 0.0f, -120.0f, 0.0f };
+
+void mbev_CapJango(void)
+{
+    CAPEVENTWORK *work = HuPrcCurrentGet()->property;
+    int i;
+    int jangoId;
+    int destMasuId;
+    int masuId;
+    int seNo;
+    float t;
+    float s;
+    float angle;
+    float radius;
+    Mtx mtx;
+    int motData[16];
+    HuVecF p0;
+    HuVecF rot;
+    HuVecF p2;
+    HuVecF p1;
+    HuVecF hookPos;
+    HuVecF masuPos;
+    HuVecF playerRot;
+    HuVecF objRot;
+    HuVecF pos;
+
+    mbev_CapWait(work);
+    masuId = GwPlayer[work->playerNo].masuId;
+    for(i=1; i<mbMasuNumGet(); i++) {
+        if(mbMasuAttrGet(i) & 0x8000) {
+            break;
+        }
+    }
+    if(i < mbMasuNumGet()) {
+        destMasuId = i;
+    } else {
+        destMasuId = masuId;
+    }
+    motData[0] = 0xF0009;
+    motData[1] = 0xF000A;
+    motData[2] = -1;
+    jangoId = mbev_CapObjCreate(work->objList, 0xF0008, motData, 0, 5, 0);
+    mbObjMotionSet(jangoId, 1, 0x40000001);
+    mbObjScaleSet(jangoId, 0.5f, 0.5f, 0.5f);
+    mbObjDispSet(jangoId, FALSE);
+    pos.x = pos.z = 0.0f;
+    pos.y = 100.0f;
+    mbCameraMoveMasu(masuId, NULL, &pos, -1.0f, -1.0f, 30);
+    motData[0] = mbev_CapPlayerMotionCreate(work->objList, work->playerNo, 0x93003F);
+    motData[1] = mbev_CapPlayerMotionCreate(work->objList, work->playerNo, 0x930017);
+    mbPlayerMotionShiftSet(work->playerNo, motData[1], 0.0f, 8.0f, 0x40000001);
+    HuPrcSleep(60);
+    mbObjDispSet(jangoId, TRUE);
+    mbAudFXPlay(0x415);
+    seNo = mbAudFXPlay(0x416);
+    for(i=1; i<=120.0f; i++) {
+        t = i/120.0f;
+        radius = 4.0*(100.0*HuCos(90.0f*t));
+        angle = 990.0f*t;
+        mbPlayerPosGet(work->playerNo, &p0);
+        pos.x = p0.x+(radius*HuSin(angle));
+        pos.y = (150.0f+p0.y)+(8.0*(100.0*HuCos(90.0f*t)));
+        pos.z = p0.z+(radius*HuCos(angle));
+        rot.x = 0.0f;
+        rot.y = 90.0f+angle;
+        rot.z = 0.0f;
+        mbObjPosSetV(jangoId, &pos);
+        mbObjRotSetV(jangoId, &rot);
+        HuPrcVSleep();
+    }
+    mbPlayerMotionShiftSet(work->playerNo, motData[0], 0.0f, 8.0f, 0x40000001);
+    mbPlayerColSnapPlayerSet(work->playerNo, FALSE);
+    mbObjMotionShiftSet(jangoId, 2, 0.0f, 8.0f, 0x40000001);
+    omVibrate(work->playerNo, 20, 7, 3);
+    for(i=0; i<18.0f; i++) {
+        t = i/18.0f;
+        rot.x = 0.0f;
+        rot.y = 0.0f;
+        rot.z = 0.0f;
+        mbObjRotSetV(jangoId, &rot);
+        Hu3DModelObjMtxGet(mbObjModelIDGet(jangoId), "itemhook_oya", mtx);
+        p2.x = mtx[0][3]+jangoPlayerOfs.x;
+        p2.y = mtx[1][3]+jangoPlayerOfs.y;
+        p2.z = mtx[2][3]+jangoPlayerOfs.z;
+        mbPlayerPosGet(work->playerNo, &p0);
+        mbev_CapVecChase(t, &p0, &p2, &pos);
+        mbPlayerPosSetV(work->playerNo, &pos);
+        HuPrcVSleep();
+    }
+    mbObjPosGet(jangoId, &p0);
+    p1.x = p0.x;
+    p1.y = p0.y;
+    p1.z = 500.0f+p0.z;
+    p2.x = p0.x;
+    p2.y = 1000.0f+p0.y;
+    p2.z = 1000.0f+p0.z;
+    for(i=1; i<=72.0f; i++) {
+        t = i/72.0f;
+        mbev_CapBezierGetV(t, &p0, &p1, &p2, &pos);
+        mbev_CapBezierNormGetV(t, &p0, &p1, &p2, &rot);
+        mbObjPosSetV(jangoId, &pos);
+        mbObjRotSetV(jangoId, &rot);
+        Hu3DMotionCalc(mbObjModelIDGet(jangoId));
+        Hu3DModelObjMtxGet(mbObjModelIDGet(jangoId), "itemhook_oya", mtx);
+        pos.x = mtx[0][3]+jangoPlayerOfs.x;
+        pos.y = mtx[1][3]+jangoPlayerOfs.y;
+        pos.z = mtx[2][3]+jangoPlayerOfs.z;
+        mbPlayerPosSetV(work->playerNo, &pos);
+        mbPlayerRotSetV(work->playerNo, &rot);
+        HuPrcVSleep();
+    }
+    mbWipeDissolveFadeOutTime(1);
+    mbMasuPosGet(destMasuId, &p2);
+    p2.y += 2000.0f;
+    mbObjPosSetV(jangoId, &p2);
+    mbPlayerPosSetV(work->playerNo, &p2);
+    mbev_PlayerColMasuSet(work->playerNo, destMasuId, TRUE);
+    pos.x = pos.z = 0.0f;
+    pos.y = 100.0f;
+    mbCameraMoveMasu(destMasuId, NULL, &pos, -1.0f, -1.0f, -1);
+    mbCameraMoveWait();
+    mbWipeDissolveFadeIn();
+    mbMasuPosGet(destMasuId, &p2);
+    p2.y += 150.0f;
+    p1.x = 200.0f+p2.x;
+    p1.y = 300.0f+p2.y;
+    p1.z = 200.0f+p2.z;
+    p0.x = p2.x-200.0f;
+    p0.y = 800.0f+p2.y;
+    p0.z = 600.0f+p2.z;
+    for(i=1; i<=60.0f; i++) {
+        t = i/60.0f;
+        mbev_CapBezierGetV(t, &p0, &p1, &p2, &pos);
+        mbev_CapBezierNormGetV(t, &p0, &p1, &p2, &rot);
+        mbev_CapVecRotGet(&rot, &rot);
+        mbObjPosSetV(jangoId, &pos);
+        mbObjRotSetV(jangoId, &rot);
+        Hu3DMotionCalc(mbObjModelIDGet(jangoId));
+        Hu3DModelObjMtxGet(mbObjModelIDGet(jangoId), "itemhook_oya", mtx);
+        pos.x = mtx[0][3]+jangoPlayerOfs.x;
+        pos.y = mtx[1][3]+jangoPlayerOfs.y;
+        pos.z = mtx[2][3]+jangoPlayerOfs.z;
+        mbPlayerPosSetV(work->playerNo, &pos);
+        mbPlayerRotSetV(work->playerNo, &rot);
+        if(i == 52) {
+            mbPlayerMotionShiftSet(work->playerNo, 6, 0.0f, 8.0f, 0x40000001);
+        }
+        HuPrcVSleep();
+    }
+    Hu3DMotionCalc(mbObjModelIDGet(jangoId));
+    Hu3DModelObjMtxGet(mbObjModelIDGet(jangoId), "itemhook_oya", mtx);
+    hookPos.x = mtx[0][3]+jangoPlayerOfs.x;
+    hookPos.y = mtx[1][3]+jangoPlayerOfs.y;
+    hookPos.z = mtx[2][3]+jangoPlayerOfs.z;
+    mbMasuPosGet(destMasuId, &masuPos);
+    mbPlayerRotGet(work->playerNo, &playerRot);
+    mbObjRotGet(jangoId, &objRot);
+    mbObjMotionShiftSet(jangoId, 1, 0.0f, 8.0f, 0x40000001);
+    mbMasuPosGet(destMasuId, &p0);
+    p0.y += 150.0f;
+    p1.x = p0.x-200.0f;
+    p1.y = p0.y;
+    p1.z = 200.0f+p0.z;
+    p2.x = 200.0f+p0.x;
+    p2.y = 800.0f+p0.y;
+    p2.z = 800.0f+p0.z;
+    for(i=1; i<=60.0f; i++) {
+        t = i/60.0f;
+        mbev_CapBezierGetV(t, &p0, &p1, &p2, &pos);
+        mbev_CapBezierNormGetV(t, &p0, &p1, &p2, &rot);
+        mbev_CapVecRotGet(&rot, &rot);
+        s = 2.0f*t;
+        if(s > 1.0f) {
+            s = 1.0f;
+        }
+        rot.x = mbev_CapAngleSumLerp(s, objRot.x, rot.x);
+        rot.y = mbev_CapAngleSumLerp(s, objRot.y, rot.y);
+        rot.z = mbev_CapAngleSumLerp(s, objRot.z, rot.z);
+        mbObjPosSetV(jangoId, &pos);
+        mbObjRotSetV(jangoId, &rot);
+        s = 5.0f*t;
+        if(s > 1.0f) {
+            s = 1.0f;
+        }
+        mbMasuPosGet(destMasuId, &masuPos);
+        mbev_CapVecChase(s, &hookPos, &masuPos, &pos);
+        rot.x = mbev_CapAngleSumLerp(s, playerRot.x, 0.0f);
+        rot.y = mbev_CapAngleSumLerp(s, playerRot.y, 0.0f);
+        rot.z = mbev_CapAngleSumLerp(s, playerRot.z, 0.0f);
+        mbPlayerPosSetV(work->playerNo, &pos);
+        mbPlayerRotSetV(work->playerNo, &rot);
+        HuPrcVSleep();
+    }
+    mbObjDispSet(jangoId, FALSE);
+    if(seNo != -1) {
+        mbAudFXStop(seNo);
+    }
+    mbMasuPosGet(destMasuId, &p2);
+    mbPlayerPosSetV(work->playerNo, &p2);
+    mbPlayerRotSet(work->playerNo, 0.0f, 0.0f, 0.0f);
+    GwPlayer[work->playerNo].masuId = destMasuId;
+    mbPlayerColSnapPlayerSet(work->playerNo, TRUE);
+    HuPrcSleep(60);
+    mbPlayerMotionShiftSet(work->playerNo, 1, 0.0f, 8.0f, 0x40000001);
+    HuPrcEnd();
 }
 
 /* @@PART2@@ */
