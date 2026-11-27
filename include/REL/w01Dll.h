@@ -74,18 +74,39 @@ typedef struct W01Flower_s {
     /* 0x10 */ char objName[16];
 } W01_FLOWER; /* size 0x20 */
 
+typedef struct W01BranchLeaf_s {
+    HuVecF pos; /* 0x00 */
+    HuVecF rot; /* 0x0C */
+    HuVecF rotBase; /* 0x18 */
+    HuVecF vel; /* 0x24 */
+    HuVecF windScale; /* 0x30 */
+    s16 time; /* 0x3C */
+    float angle; /* 0x40 */
+    float angVel; /* 0x44 */
+} W01_BRANCHLEAF; /* size 0x48 */
+
 typedef struct W01Branch_s {
-    /* 0x00 */ MBOBJID objId;
-    /* 0x02 */ char objName[18];
-    /* 0x14 */ u32 unk14;
-    /* 0x18 */ u32 unk18;
-    /* 0x1C */ int unk1C;
-    /* 0x20 */ u32 unk20;
-    /* 0x24 */ int unk24;
-    /* 0x28 */ u8 unk28[0x18];
-    /* 0x40 */ OMOBJ *obj;
-    /* 0x44 */ u8 unk44[0xC];
+    MBOBJID objId; /* 0x00 */
+    char name[18]; /* 0x02 */
+    W01_BRANCHLEAF *leaf; /* 0x14 */
+    s32 leafNum; /* 0x18 */
+    s32 attachF; /* 0x1C */
+    s16 fadeF; /* 0x20 */
+    s32 playerNo; /* 0x24 */
+    HuVecF pos; /* 0x28 */
+    HuVecF vel; /* 0x34 */
+    OMOBJ *obj; /* 0x40 */
+    s16 fadeTime; /* 0x44 */
+    s16 fadeMax; /* 0x46 */
+    u32 unk48; /* 0x48 */
+    s32 moveF; /* 0x4C */
 } W01_BRANCH; /* size 0x50 */
+
+typedef struct W01ZSort_s {
+    HuVecF pos; /* 0x00 */
+    s32 colNo; /* 0x0C */
+    float depth; /* 0x10: a float (fn_1_BFA0 stores m[2][1] and takes fabs of it) */
+} W01ZSORT; /* size 0x14 */
 
 /* lbl_1_bss_EFC (part 5) */
 struct W01Bat_s;
@@ -127,6 +148,74 @@ typedef struct W01Bat_s {
     /* 0x288 */ s32 mode;
 } W01BAT; /* size 0x28C */
 
+typedef float (*W01_CURVEFUNC)(HuVecF *a, HuVecF *b, HuVecF *c, HuVecF *d, float t);
+
+/* lbl_1_bss_0 (part 7) */
+typedef struct W01Spark_s {
+    /* 0x00 */ BOOL activeF;
+    /* 0x04 */ MBOBJID objId;
+    /* 0x08 */ HuVecF pos;
+    /* 0x14 */ HuVecF vel;
+    /* 0x20 */ s16 time;
+    /* 0x22 */ s16 maxTime;
+} W01_SPARK; /* size 0x24 */
+
+/* lbl_1_bss_1618: GwSystem.boardWork (part 7) */
+typedef struct W01StarWork_s {
+    /* 0x00 */ u8 unk0[4];
+    /* 0x04 */ u8 starNum;
+    /* 0x05 */ u8 starOrder[8];
+    /* 0x0D */ u8 starIdx;
+} W01_STARWORK;
+
+/* lbl_1_bss_1438: double-pendulum swing (part 2) */
+typedef struct W01Swing_s {
+    /* 0x00 */ int playerNo;
+    /* 0x04 */ MBOBJID objId[2];
+    /* 0x08 */ MBOBJID baseObjId;
+    /* 0x0C */ float angle[2];
+    /* 0x14 */ float angVel[2];
+    /* 0x1C */ float mass[2];
+    /* 0x24 */ float len[2];
+    /* 0x2C */ HuVecF pos;
+    /* 0x38 */ HuVecF point[2];
+} W01_SWING; /* size 0x50; lbl_1_bss_1438 is W01_SWING[1] */
+
+/* lbl_1_bss_148C: bobbing platforms, lbl_1_bss_1490 of them (part 2) */
+typedef struct W01Platform_s {
+    /* 0x00 */ int onF;
+    /* 0x04 */ MBOBJID objId;
+    /* 0x08 */ HuVecF pos;
+    /* 0x14 */ float unk14;
+    /* 0x18 */ float vel;
+    /* 0x1C */ float unk1C;
+    /* 0x20 */ s16 masuId;
+    /* 0x22 */ s16 time;
+    /* 0x24 */ s16 maxTime;
+    /* 0x28 */ float speed;
+} W01_PLATFORM; /* size 0x2C */
+
+/* lbl_1_bss_1494: hanging chain the player rides (parts 1, 2) */
+typedef struct W01ChainLink_s {
+    /* 0x00 */ MBOBJID objId;
+    /* 0x04 */ HuVecF pos;
+    /* 0x10 */ HuVecF vel;
+} W01_CHAINLINK; /* size 0x1C */
+
+typedef struct W01Chain_s {
+    /* 0x00 */ s16 masuA;
+    /* 0x02 */ s16 masuB;
+    /* 0x04 */ HuVecF posA;
+    /* 0x10 */ HuVecF posB;
+    /* 0x1C */ HuVecF dir;
+    /* 0x28 */ float rotY;
+    /* 0x2C */ float len;
+    /* 0x30 */ int playerNo;
+    /* 0x34 */ MBOBJID ropeId[16];
+    /* 0x54 */ MBOBJID objId;
+    /* 0x58 */ W01_CHAINLINK link[4];
+} W01_CHAIN; /* size 0xC8 */
+
 /* lbl_1_bss_4B0 (parts 6, 7) */
 typedef struct W01Leaf_s {
     /* 0x00 */ HuVecF pos;
@@ -149,6 +238,30 @@ typedef struct W01Teresa_s {
 
 /* .bss placeholders (sizes from the asm). The part whose functions use one replaces it with the
    real layout in its report; part 1 merges it into the unit's HEAD. */
+/* lbl_1_bss_155C: the rope bridge (fn_1_10A0, fn_1_13CC, fn_1_2A08) */
+typedef struct W01BridgePlank_s {
+    MBOBJID mdlId; //0x00
+    s16 masuId; //0x02
+} W01_BRIDGEPLANK; //size 0x4
+
+typedef struct W01Bridge_s {
+    s16 masuA; //0x00
+    s16 masuB; //0x02
+    HuVecF posA; //0x04
+    HuVecF posB; //0x10
+    HuVecF dir; //0x1C
+    float curLen; //0x28 where the bridge sags most, eased toward the player
+    float len; //0x2C
+    float rotY; //0x30
+    BOOL resetF; //0x34
+    W01_BRIDGEPLANK plank[6]; //0x38
+    MBOBJID ropeId[7]; //0x50
+    u8 unk5E[0x12]; //0x5E
+    HuVecF ropeEndA; //0x70
+    HuVecF ropeEndB; //0x7C
+    s16 lastMasu; //0x88
+} W01_BRIDGE; //size 0x8C
+
 /* lbl_1_bss_15F4: board map objects (fn_1_F4) */
 typedef struct W01MapObj_s {
     MBOBJID mapId; //0x00
@@ -162,12 +275,6 @@ typedef struct W01Bss15E8_s {
     MBOBJID mdlId; //0x08
 } W01_BSS_15E8; //size 0xC
 
-typedef struct W01BssEE8_s { u8 unk[0x10]; } W01_BSS_EE8; /* placeholder: owner replaces */
-typedef struct W01Bss0_s { u8 unk[0x480]; } W01_BSS_0; /* placeholder: owner replaces */
-typedef struct W01Bss1188_s { u8 unk[0x80]; } W01_BSS_1188; /* placeholder: owner replaces */
-typedef struct W01Bss1438_s { u8 unk[0x50]; } W01_BSS_1438; /* placeholder: owner replaces */
-typedef struct W01Bss1494_s { u8 unk[0xC8]; } W01_BSS_1494; /* placeholder: owner replaces */
-typedef struct W01Bss155C_s { u8 unk[0x8C]; } W01_BSS_155C; /* placeholder: owner replaces */
 
 void ObjectSetup(void);
 
@@ -232,34 +339,34 @@ void fn_1_950C(BOOL flag);
 void fn_1_9574(void);
 void fn_1_99E4(void);
 void fn_1_9AEC(int playerNo, s16 masuId);
-void fn_1_A82C(int arg0);
+int fn_1_A82C(int playerNo);
 void fn_1_ACDC(OMOBJ *obj);
-void fn_1_AFD4(int arg0, int arg1);
-void fn_1_B01C(int arg0, int arg1);
-void fn_1_B3F8(int arg0);
-u32 fn_1_B434(u32 *arg0);
-void fn_1_B7D8(int arg0);
-void fn_1_B97C(int arg0);
-void fn_1_B9A8(int arg0, int arg1);
-void fn_1_BB44(int arg0, int arg1, float f0);
+void fn_1_AFD4(int no, int playerNo);
+void fn_1_B01C(int no, int pathNo);
+void fn_1_B3F8(int no);
+int fn_1_B434(W01_BRANCHLEAF **leafP);
+void fn_1_B7D8(int no);
+void fn_1_B97C(int no);
+void fn_1_B9A8(int no, int time);
+void fn_1_BB44(W01_BRANCH *tree, HuVecF *pos);
 void fn_1_BFA0(HU3D_MODEL *modelP, Mtx *mtx);
-void fn_1_C694(int arg0, int arg1);
-u32 fn_1_C7DC(u32 *arg0);
-u32 fn_1_CAA4(u32 *arg0);
-int fn_1_CCEC(int arg0, int arg1, int arg2, float f0);
-int fn_1_D080(int arg0, float f0);
-int fn_1_D1D0(int arg0, int arg1, float f0);
-void fn_1_D320(int arg0, int arg1, int arg2);
-void fn_1_D50C(int arg0, int arg1, int arg2);
+void fn_1_C694(const s32 *data, u32 color);
+s32 fn_1_C7DC(void **dlP);
+s32 fn_1_CAA4(void **dlP);
+s32 fn_1_CCEC(HuVecF *src, s32 triNum, float radius, HuVecF *dst);
+s32 fn_1_D080(HuVecF *dst, float radius);
+s32 fn_1_D1D0(HuVecF *dst, float radius);
+s32 fn_1_D320(HuVecF *src, s32 num, HuVecF *dst);
+void fn_1_D50C(W01ZSORT *list, s32 left, s32 right);
 void fn_1_DEA4(void);
 void fn_1_E234(int playerNo);
 void fn_1_ED00(void);
 void fn_1_F06C(void);
 void fn_1_F0D0(void);
 void fn_1_F1F4(int playerNo, s16 masuId);
-void fn_1_F66C(int arg0);
+void fn_1_F66C(W01BATSUB *sub);
 BOOL fn_1_1089C(void);
-void fn_1_10900(int arg0);
+void fn_1_10900(void);
 void fn_1_10998(int arg0);
 void fn_1_10AA8(void);
 void fn_1_10C68(void);
@@ -289,7 +396,7 @@ void fn_1_144C0(int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, floa
 void fn_1_147DC(int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, float f0, float f1);
 float fn_1_14A90(HuVecF *a, HuVecF *b, HuVecF *c, HuVecF *d, float t);
 void fn_1_14B34(int arg0, int arg1, int arg2, int arg3, float f0);
-void fn_1_14BF0(int arg0, int arg1, int arg2, int arg3, float f0);
+float fn_1_14BF0(HuVecF *a, HuVecF *b, HuVecF *c, HuVecF *d, float t);
 void fn_1_14CAC(float f0, float f1, float f2, float f3, float f4);
 void fn_1_14D34(float f0, float f1, float f2, float f3, float f4);
 void fn_1_14E0C(int arg0, int arg1, int arg2, int arg3, int arg4, float f0);

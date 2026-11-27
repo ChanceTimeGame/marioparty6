@@ -37,18 +37,18 @@ extern const VoidFunc _ctors[];
 extern const VoidFunc _dtors[];
 
 /* .bss is laid out in reverse definition order */
-s32 lbl_1_bss_1620;
-s32 lbl_1_bss_161C;
-u32 *lbl_1_bss_1618;
+float *lbl_1_bss_1620;
+OSTick lbl_1_bss_161C;
+W01_STARWORK *lbl_1_bss_1618;
 s16 lbl_1_bss_1616;
 W01_MAPOBJ lbl_1_bss_15F4;
 W01_BSS_15E8 lbl_1_bss_15E8;
-W01_BSS_155C lbl_1_bss_155C;
-W01_BSS_1494 lbl_1_bss_1494;
+W01_BRIDGE lbl_1_bss_155C;
+W01_CHAIN lbl_1_bss_1494;
 s32 lbl_1_bss_1490;
-s32 lbl_1_bss_148C;
+W01_PLATFORM *lbl_1_bss_148C;
 s16 lbl_1_bss_1488;
-W01_BSS_1438 lbl_1_bss_1438;
+W01_SWING lbl_1_bss_1438[1];
 s16 lbl_1_bss_1436;
 s16 lbl_1_bss_1434;
 HuVecF lbl_1_bss_1428;
@@ -62,15 +62,15 @@ W01_FLOWER lbl_1_bss_1338[2];
 ANIMDATA *lbl_1_bss_1334;
 static u32 lbl_1_bss_1330; /* 4 bytes above lbl_1_bss_1240[3] (its symbol is 0xF4) */
 W01_BRANCH lbl_1_bss_1240[3];
-s16 lbl_1_bss_1238[4];
+MBOBJID lbl_1_bss_1238[4];
 s16 lbl_1_bss_1230[4];
 HuVecF lbl_1_bss_1224;
 HU3D_MODELID lbl_1_bss_1220;
 ANIMDATA *lbl_1_bss_121C;
-u32 lbl_1_bss_1214[2];
-u32 lbl_1_bss_120C[2];
-s32 lbl_1_bss_1208;
-W01_BSS_1188 lbl_1_bss_1188;
+void *lbl_1_bss_1214[2];
+s32 lbl_1_bss_120C[2];
+float lbl_1_bss_1208;
+float lbl_1_bss_1188[32];
 W01BAT lbl_1_bss_EFC;
 s32 lbl_1_bss_EF8;
 MBOBJID lbl_1_bss_EE8[8];
@@ -84,7 +84,7 @@ void *lbl_1_bss_49C;
 u32 lbl_1_bss_498;
 HuVecF lbl_1_bss_48C;
 HuVecF lbl_1_bss_480;
-W01_BSS_0 lbl_1_bss_0;
+W01_SPARK lbl_1_bss_0[32];
 
 HuVecF lbl_1_data_0[12] = {
     { 404.027f, 1906.982f, 1602.27f },
@@ -184,6 +184,29 @@ HuVecF lbl_1_data_3FC = { 0.0f, 0.0f, 1200.0f };
 HuVecF lbl_1_data_408 = { -28.0f, 0.0f, 0.0f };
 HuVecF lbl_1_data_414 = { 0.0f, 0.0f, 0.0f };
 
+/* Part 2 (lift, swing and coin functions) needs these in HEAD */
+static inline void W01Free(void *ptr)
+{
+    HuMemDirectFree(ptr);
+}
+
+/* MSL's sqrtf with plain constants (0.5 and 3.0 sit in this unit's .rodata pool) */
+static inline float W01Sqrtf(float x)
+{
+    const double _half = .5;
+    const double _three = 3.0;
+    volatile float y;
+    if(x > 0.0f) {
+        double guess = __frsqrte((double)x);
+        guess = _half*guess*(_three-guess*guess*x);
+        guess = _half*guess*(_three-guess*guess*x);
+        guess = _half*guess*(_three-guess*guess*x);
+        y = (float)(x*guess);
+        return y;
+    }
+    return x;
+}
+
 /* Later .data (string literals, local initialisers, tables) is defined with the function that
    uses it first: CodeWarrior emits it in function order. */
 
@@ -220,7 +243,7 @@ void fn_1_F4(void)
     int i;
 
     HuAudSndGrpSetSet(22);
-    lbl_1_bss_1618 = GwSystem.boardWork;
+    lbl_1_bss_1618 = (W01_STARWORK *)GwSystem.boardWork;
     mbObjDirSet(DATA_w01, DATA_w01n);
     mbMasuInit(W01_DIR);
     mapObj->mapId = mbObjCreate(W01_DIR | 4, NULL, FALSE);
@@ -526,6 +549,43 @@ void fn_1_DD0(void)
     HuPrcEnd();
 }
 
+void fn_1_10A0(void)
+{
+    W01_BRIDGE *work = &lbl_1_bss_155C;
+    W01_BRIDGEPLANK *plank = work->plank;
+    int i;
+    u32 attr;
+
+    work->posA.x = -1123.03f;
+    work->posA.y = 3430.0f;
+    work->posA.z = -152.14f;
+    work->masuA = mbMasuFind_MAttrIdGet(-1, 0x10);
+    work->posB.x = 1090.968f;
+    work->posB.y = 3430.0f;
+    work->posB.z = 68.8458f;
+    work->masuB = mbMasuFind_MAttrIdGet(-1, 0x20);
+    VECSubtract(&work->posB, &work->posA, &work->dir);
+    work->len = VECMag(&work->dir);
+    work->rotY = HuAtan(-work->dir.x, -work->dir.z);
+    work->curLen = 0.5f * work->len;
+    for(i = 0; i < 6; i++, plank++) {
+        plank->mdlId = mbObjCreate(W01_DIR | 8, NULL, TRUE);
+        mbObjRotYSet(plank->mdlId, work->rotY);
+        attr = mbev_MasuAttrGet(i + 1, 7);
+        plank->masuId = mbMasuFind_MAttrMatchIdGet(-1, attr, 7);
+    }
+    work->ropeEndA.x = -1213.0f - 100.0f * (0.5f * mbSinDeg(work->rotY));
+    work->ropeEndA.y = 3489.0f;
+    work->ropeEndA.z = -161.0f - 100.0f * (0.5f * mbCosDeg(work->rotY));
+    work->ropeEndB.x = 1169.0f + 100.0f * (0.5f * mbSinDeg(work->rotY));
+    work->ropeEndB.y = 3489.0f;
+    work->ropeEndB.z = 76.0f + 100.0f * (0.5f * mbCosDeg(work->rotY));
+    for(i = 0; i < 7; i++) {
+        work->ropeId[i] = mbObjCreate(W01_DIR | 9, NULL, TRUE);
+    }
+    work->resetF = TRUE;
+}
+
 /* @@PART2@@ */
 /* @@PART3@@ */
 /* @@PART4@@ */
@@ -533,7 +593,6 @@ void fn_1_DD0(void)
 /* @@PART6@@ */
 /* @@PART7@@ */
 /* scoring stubs for other parts (never spliced) */
-void fn_1_10A0(void) { }
 void fn_1_13CC(void) { }
 void fn_1_2A08(void) { }
 void fn_1_2A1C(void) { }
@@ -576,34 +635,34 @@ void fn_1_950C(BOOL flag) { }
 void fn_1_9574(void) { }
 void fn_1_99E4(void) { }
 void fn_1_9AEC(int playerNo, s16 masuId) { }
-void fn_1_A82C(int arg0) { }
+int fn_1_A82C(int playerNo) { return 0; }
 void fn_1_ACDC(OMOBJ *obj) { }
-void fn_1_AFD4(int arg0, int arg1) { }
-void fn_1_B01C(int arg0, int arg1) { }
-void fn_1_B3F8(int arg0) { }
-u32 fn_1_B434(u32 *arg0) { return 0; }
-void fn_1_B7D8(int arg0) { }
-void fn_1_B97C(int arg0) { }
-void fn_1_B9A8(int arg0, int arg1) { }
-void fn_1_BB44(int arg0, int arg1, float f0) { }
+void fn_1_AFD4(int no, int playerNo) { }
+void fn_1_B01C(int no, int pathNo) { }
+void fn_1_B3F8(int no) { }
+int fn_1_B434(W01_BRANCHLEAF **leafP) { return 0; }
+void fn_1_B7D8(int no) { }
+void fn_1_B97C(int no) { }
+void fn_1_B9A8(int no, int time) { }
+void fn_1_BB44(W01_BRANCH *tree, HuVecF *pos) { }
 void fn_1_BFA0(HU3D_MODEL *modelP, Mtx *mtx) { }
-void fn_1_C694(int arg0, int arg1) { }
-u32 fn_1_C7DC(u32 *arg0) { return 0; }
-u32 fn_1_CAA4(u32 *arg0) { return 0; }
-int fn_1_CCEC(int arg0, int arg1, int arg2, float f0) { return 0; }
-int fn_1_D080(int arg0, float f0) { return 0; }
-int fn_1_D1D0(int arg0, int arg1, float f0) { return 0; }
-void fn_1_D320(int arg0, int arg1, int arg2) { }
-void fn_1_D50C(int arg0, int arg1, int arg2) { }
+void fn_1_C694(const s32 *data, u32 color) { }
+s32 fn_1_C7DC(void **dlP) { return 0; }
+s32 fn_1_CAA4(void **dlP) { return 0; }
+s32 fn_1_CCEC(HuVecF *src, s32 triNum, float radius, HuVecF *dst) { return 0; }
+s32 fn_1_D080(HuVecF *dst, float radius) { return 0; }
+s32 fn_1_D1D0(HuVecF *dst, float radius) { return 0; }
+s32 fn_1_D320(HuVecF *src, s32 num, HuVecF *dst) { return 0; }
+void fn_1_D50C(W01ZSORT *list, s32 left, s32 right) { }
 void fn_1_DEA4(void) { }
 void fn_1_E234(int playerNo) { }
 void fn_1_ED00(void) { }
 void fn_1_F06C(void) { }
 void fn_1_F0D0(void) { }
 void fn_1_F1F4(int playerNo, s16 masuId) { }
-void fn_1_F66C(int arg0) { }
+void fn_1_F66C(W01BATSUB *sub) { }
 BOOL fn_1_1089C(void) { return 0; }
-void fn_1_10900(int arg0) { }
+void fn_1_10900(void) { }
 void fn_1_10998(int arg0) { }
 void fn_1_10AA8(void) { }
 void fn_1_10C68(void) { }
@@ -633,7 +692,7 @@ void fn_1_144C0(int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, floa
 void fn_1_147DC(int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, float f0, float f1) { }
 float fn_1_14A90(HuVecF *a, HuVecF *b, HuVecF *c, HuVecF *d, float t) { return 0; }
 void fn_1_14B34(int arg0, int arg1, int arg2, int arg3, float f0) { }
-void fn_1_14BF0(int arg0, int arg1, int arg2, int arg3, float f0) { }
+float fn_1_14BF0(HuVecF *a, HuVecF *b, HuVecF *c, HuVecF *d, float t) { return 0; }
 void fn_1_14CAC(float f0, float f1, float f2, float f3, float f4) { }
 void fn_1_14D34(float f0, float f1, float f2, float f3, float f4) { }
 void fn_1_14E0C(int arg0, int arg1, int arg2, int arg3, int arg4, float f0) { }
