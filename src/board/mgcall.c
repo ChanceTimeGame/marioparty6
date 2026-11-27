@@ -982,7 +982,7 @@ static int MgRouletteExec(int type, MGCALL_WORK *workP)
             } else {
                 rotY = -90.0*HuCos(90*(4*(weight-0.75f)));
             }
-            mbev_CapVecChase(&objPos, &targetPos, &outPos, HuSin(90*weight));
+            mbev_CapVecChase(HuSin(90*weight), &objPos, &targetPos, &outPos);
             mbObjPosSetV(workP->guideObjId, &outPos);
             mbObjRotSet(workP->guideObjId, 0, rotY, 0);
             HuPrcVSleep();
@@ -1776,7 +1776,7 @@ static int MgCallBattleExec(MGCALL_WORK *work)
             } else {
                 rotY = -90*HuCos(90*(4*(t-0.75f)));
             }
-            mbev_CapVecChase(&guidePos, &guideEnd, &guideCur, HuSin(90*t));
+            mbev_CapVecChase(HuSin(90*t), &guidePos, &guideEnd, &guideCur);
             mbObjPosSetV(work->guideObjId, &guideCur);
             mbObjRotSet(work->guideObjId, 0, rotY, 0);
             HuPrcVSleep();
