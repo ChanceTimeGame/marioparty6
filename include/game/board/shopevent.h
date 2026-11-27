@@ -3,15 +3,16 @@
 
 #include "game/board/board.h"
 
-/* Prototypes from the MP6 asm: argument/return classes from register use, names after MP5 where
-   the function exists there; argN/fN are placeholder names. */
-void mbev_ShopEnableSet(int arg0);
-void mbev_ShopInit(int arg0);
-void mbev_ShopExInit(int arg0, void *arg1);
-void mbev_ShopCreate(int arg0, int arg1);
-void mbev_ShopExObjHookSet(void *arg0);
-void mbev_ShopBackCreate(int arg0, int arg1, int arg2, int arg3);
-void mbev_ShopBackMotCreate(int arg0, int arg1, int arg2, int arg3, void *arg4);
-int mbev_Shop(int arg0, int arg1);
+/* Called for each shop model as it is created: the model's object id and the shop's index. */
+typedef void (*MBEV_SHOPHOOK)(int objId, int no);
+
+void mbev_ShopEnableSet(BOOL enableF);
+void mbev_ShopInit(int dataNum);
+void mbev_ShopExInit(int dataNum, MBEV_SHOPHOOK hook);
+void mbev_ShopCreate(int dataNum, int motDataNum);
+void mbev_ShopExObjHookSet(MBEV_SHOPHOOK hook);
+void mbev_ShopBackCreate(int dataNum, int motDataNum, int type, BOOL linkF);
+void mbev_ShopBackMotCreate(int dataNum, int motDataNum, int type, BOOL linkF, char *hookName);
+int mbev_Shop(int playerNo, int masuId);
 
 #endif
