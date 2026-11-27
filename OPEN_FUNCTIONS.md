@@ -7,7 +7,7 @@ by hand.
 *bytes*: size of the original function. Functions at 0% either have no C yet or have C whose
 shape differs from the original (functions merged or split, wrong inlining).
 
-**Summary:** 2,261 functions short of 100%: 45 at 95% or better, 29 at 80-95%, 14 below 80%, 2,173 at 0%; in 190 units.
+**Summary:** 2,698 functions short of 100%: 45 at 95% or better, 29 at 80-95%, 15 below 80%, 2,609 at 0%; in 195 units.
 
 ## Started, not matching yet
 
@@ -95,6 +95,7 @@ order or one wrong type.
 | 75.45% | `ParticleDraw` | `main/board/effect` | 2,668 |
 | 74.51% | `mbCapListRead` | `main/board/capsule` | 408 |
 | 74.26% | `mbPlayerInit` | `main/board/player` | 2,284 |
+| 72.64% | `fn_1_15C8` | `instDll/REL/instDll/inst` | 5,204 |
 | 71.48% | `ev_Shop` | `main/board/shopevent` | 5,876 |
 | 71.14% | `ev_OpeningSingle` | `main/board/opening` | 4,244 |
 | 67.97% | `CapSelectMasuCom` | `main/board/capsule` | 1,536 |
@@ -151,6 +152,7 @@ Every unit with a function short of 100%, largest remaining code first.
 | `main/gssdk_lib/asrpho/common/blocks/flfxblks/shs_vuv` | (no source yet) | 8 | 8 | 5,404 |
 | `main/dolphin/gx/GXAttr` | (no source yet) | 16 | 16 | 5,304 |
 | `main/gssdk_lib/asrpho/rec1600/convert` | (no source yet) | 6 | 6 | 5,272 |
+| `instDll/REL/instDll/inst` | (no source yet) | 1 | 30 | 5,204 |
 | `main/gssdk_lib/asrpho/common/blocks/flfxblks/pitchco` | (no source yet) | 13 | 13 | 5,112 |
 | `main/dolphin/gx/GXInit` | (no source yet) | 6 | 6 | 5,004 |
 | `main/gssdk_lib/asrpho/common/blocks/dpgenuw` | (no source yet) | 12 | 12 | 4,912 |
@@ -180,6 +182,10 @@ Every unit with a function short of 100%, largest remaining code first.
 | `main/gssdk_lib/asrpho/common/blocks/flblocks/acne` | (no source yet) | 8 | 8 | 3,108 |
 | `bootDll/REL/runtime` | (no source yet) | 109 | 109 | 3,100 |
 | `fileseldll/REL/runtime` | (no source yet) | 109 | 109 | 3,100 |
+| `instDll/REL/runtime` | (no source yet) | 109 | 109 | 3,100 |
+| `m612dll/REL/runtime` | (no source yet) | 109 | 109 | 3,100 |
+| `m616dll/REL/runtime` | (no source yet) | 109 | 109 | 3,100 |
+| `m621dll/REL/runtime` | (no source yet) | 109 | 109 | 3,100 |
 | `mdpartydll/REL/runtime` | (no source yet) | 109 | 109 | 3,100 |
 | `mdseldll/REL/runtime` | (no source yet) | 109 | 109 | 3,100 |
 | `w01Dll/REL/runtime` | (no source yet) | 109 | 109 | 3,100 |
