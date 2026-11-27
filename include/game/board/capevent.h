@@ -23,8 +23,8 @@ typedef struct CapFlag_s {
     u8 kettouEndF : 1;
     u8 donkeyEndF : 1;
     u8 koopaEndF : 1;
-    u8 unk04F : 1;
-    u8 unk02F : 1;
+    u8 koopaNoCoinF : 1;
+    u8 koopaMusF : 1;
     u8 shockNoWaitF : 1;
 } CAPFLAG;
 
@@ -42,8 +42,21 @@ typedef struct CapWork_s {
     /* 0x020 */ CAPOBJWORK objWork;
     /* 0xB68 */ CAPFLAG flag;
     /* 0xB69 */ u8 unkB69[3];
-    /* 0xB6C */ int objId;
-    /* 0xB70 */ u8 unkB70[0xBCC - 0xB70];
+    /* 0xB6C */ union { /* per-event work (capspecial.c: object ids, masu ids, player lists) */
+        int evWork[24];
+        struct {
+            int objId;
+            union {
+                int objId2;
+                int miracleMasuId;
+            };
+            int objId3;
+        };
+        struct {
+            u8 unkB6C[0xBAC - 0xB6C];
+            OMOBJ *guideObj;
+        };
+    };
     /* 0xBCC */ int procNo;
     /* 0xBD0 */ void *effExplode;
     /* 0xBD4 */ void *effBoost;
@@ -161,7 +174,7 @@ void mbev_CapEffExplodeAnimSet(void *eff, int dataNum);
 int mbev_CapEffExplodeAdd(void *eff, HuVecF pos, HuVecF vel, float scale, float rotSpeed, float speed, GXColor color);
 int mbev_CapEffExplodeKillerAdd(void *eff, HuVecF pos, HuVecF vel, float scale, float rotSpeed, float width, float speed, GXColor color);
 void mbev_CapEffExplodeCircleAdd(void *eff, HuVecF *pos, float scale, float radius, float angle);
-void mbev_CapEffDustCloudAdd(void *eff, HuVecF *pos);
+void mbev_CapEffDustCloudAdd(void *eff, HuVecF pos);
 void mbev_CapEffDustExplodeAdd(OMOBJ *obj, HuVecF pos);
 void mbev_CapEffDustHeavyAdd(OMOBJ *obj, HuVecF pos);
 void mbev_CapEffDustMultiAdd(OMOBJ *obj, HuVecF *pos, HuVecF *rot, int num);

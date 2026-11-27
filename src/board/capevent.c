@@ -2591,7 +2591,7 @@ void mbev_CapEffExplodeCircleAdd(void *eff, HuVecF *pos, float scale, float radi
     mbev_CapEffExplodeKillerAdd(eff, p, vel, 100.0f*(1.0f+(0.5f*CAP_RANDF())), 2.5f, 100.0f*(0.5f+(0.5f*CAP_RANDF())), 0.33f+(0.2f*CAP_RANDF()), color);
 }
 
-void mbev_CapEffDustCloudAdd(void *eff, HuVecF *pos)
+void mbev_CapEffDustCloudAdd(void *eff, HuVecF pos)
 {
     int i;
     float angle;
@@ -2602,9 +2602,9 @@ void mbev_CapEffDustCloudAdd(void *eff, HuVecF *pos)
     for(i=0; i<32; i++) {
         angle = 11.25f*i;
         r = 0.75f*(100.0f*(0.5f*CAP_RANDF()));
-        p.x = pos->x+(r*CapCosDeg(angle));
-        p.y = 100.0f+(pos->y+(r*CapSinDeg(angle)));
-        p.z = 50.0f+pos->z;
+        p.x = pos.x+(r*CapCosDeg(angle));
+        p.y = 100.0f+(pos.y+(r*CapSinDeg(angle)));
+        p.z = 50.0f+pos.z;
         r = 100.0f*(0.005f+(0.04f*CAP_RANDF()));
         vel.x = r*CapCosDeg(angle);
         vel.y = r*CapSinDeg(angle);
@@ -2619,9 +2619,9 @@ void mbev_CapEffDustCloudAdd(void *eff, HuVecF *pos)
     for(i=0; i<32; i++) {
         angle = 360.0f*CAP_RANDF();
         r = 0.33f*(100.0f*(0.5f*CAP_RANDF()));
-        p.x = pos->x+(1.25f*(100.0f*(-0.5f+CAP_RANDF())));
-        p.y = pos->y+(1.25f*(100.0f*(-0.5f+CAP_RANDF())));
-        p.z = pos->z+(50.0f*CAP_RANDF());
+        p.x = pos.x+(1.25f*(100.0f*(-0.5f+CAP_RANDF())));
+        p.y = pos.y+(1.25f*(100.0f*(-0.5f+CAP_RANDF())));
+        p.z = pos.z+(50.0f*CAP_RANDF());
         r = 100.0f*(0.005f+(0.04f*CAP_RANDF()));
         vel.x = r*CapCosDeg(angle);
         vel.y = r*CapSinDeg(angle);
