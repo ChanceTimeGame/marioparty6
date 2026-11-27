@@ -978,6 +978,70 @@ void fn_1_2D08(int playerNo)
     mbPlayerColSnapPlayerSet(playerNo, TRUE);
 }
 
+void fn_1_3214(float t)
+{
+    HuVecF midPos;
+    HuVecF ctrl;
+    HuVecF prevPos;
+    HuVecF pos;
+    HuVecF hookPos;
+    HuVecF dir;
+    HuVecF rot;
+    W01_CHAIN *work;
+    float a;
+    float b;
+    float c;
+    float sag;
+    float time;
+    float segLen;
+    int i;
+    float totalLen;
+    float scale;
+    float curLen;
+
+    work = &lbl_1_bss_1494;
+    curLen = t * work->len;
+    a = curLen;
+    b = work->len - a;
+    c = 1.1f * work->len;
+    sag = sqrtf((a * a * a * a + c * c * c * c + b * b * b * b - 2.0f * (a * a * b * b + a * a * c * c - c * c * b * b + 2.0f * c * c * b * b)) / (4.0f * c * c));
+    ctrl.x = work->posA.x + t * work->dir.x;
+    ctrl.y = (work->posA.y + t * work->dir.y) - sag;
+    ctrl.z = work->posA.z + t * work->dir.z;
+    hookPos = ctrl;
+    totalLen = W01PathLenGet(fn_1_14A90, &work->posA, &ctrl, &work->posB, NULL, 1);
+    time = 0.0f;
+    segLen = totalLen / 16.0f;
+    prevPos = work->posA;
+    for(i = 0; i < 16; i++) {
+        if(i < 15) {
+            time = W01PathTimeGet(fn_1_14A90, &work->posA, &ctrl, &work->posB, NULL, time, segLen);
+            mbBezierCalcV(&work->posA, &ctrl, &work->posB, &pos, time);
+        } else {
+            pos = work->posB;
+        }
+        VECSubtract(&pos, &prevPos, &dir);
+        midPos.x = prevPos.x + 0.5f * dir.x;
+        midPos.y = prevPos.y + 0.5f * dir.y;
+        midPos.z = prevPos.z + 0.5f * dir.z;
+        mbObjPosSetV(work->ropeId[i], &midPos);
+        mbObjRotGet(work->ropeId[i], &rot);
+        rot.x = HuAtan(dir.y, sqrtf(dir.z * dir.z + dir.x * dir.x));
+        mbObjRotSetV(work->ropeId[i], &rot);
+        scale = VECMag(&dir) / 100.0f;
+        mbObjScaleSet(work->ropeId[i], 1.0f, 1.0f, scale);
+        VECSubtract(&pos, &prevPos, &dir);
+        sag = (hookPos.z * dir.z + (hookPos.x * dir.x - prevPos.x * dir.x) - prevPos.z * dir.z) / (dir.x * dir.x + dir.z * dir.z);
+        if(sag >= 0.0f && sag < 1.0f) {
+            hookPos.y = prevPos.y + sag * dir.y;
+            mbObjPosSetV(work->objId, &hookPos);
+            mbObjRotSetV(work->objId, &rot);
+        }
+        prevPos = pos;
+        segLen += totalLen / 16.0f;
+    }
+}
+
 /* @@PART2@@ */
 /* @@PART3@@ */
 /* @@PART4@@ */
@@ -985,7 +1049,6 @@ void fn_1_2D08(int playerNo)
 /* @@PART6@@ */
 /* @@PART7@@ */
 /* scoring stubs for other parts (never spliced) */
-void fn_1_3214(float f0) { }
 void fn_1_4004(void) { }
 void fn_1_44C0(void) { }
 void fn_1_45A0(void) { }
