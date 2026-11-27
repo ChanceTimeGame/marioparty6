@@ -540,7 +540,7 @@ void fn_1_15C8(void)
             pos0.y = 440 - size0.y;
             win0[i] = HuWinCreate(pos0.x, pos0.y, size0.x, size0.y, frame);
             HuWinMesSpeedSet(win0[i], 0);
-            HuWinMesSet(win0[i], lbl_1_bss_18[0]);
+            HuWinMesSet(win0[i], *lbl_1_bss_18);
             size1.x = 336;
             size1.y = 48;
             pos1.x = 560 - size1.x;
@@ -713,7 +713,7 @@ void fn_1_15C8(void)
                 }
                 HuPrcVSleep();
             }
-            time = (time == 0) ? 1 : 0;
+            time = (time == 0) ? TRUE : FALSE;
             if (time == 0) {
                 for (i = 0; i < 4; i++) {
                     HuWinDispOff(winTbl[1][i]);
