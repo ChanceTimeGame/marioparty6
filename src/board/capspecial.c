@@ -32,9 +32,44 @@ typedef struct CapWork_s {
     /* 0x010 */ int masuId;
     /* 0x014 */ u8 unk14[0xC];
     /* 0x020 */ u8 objWork[0xB48]; /* mbev_CapObjCreate's object list */
-    /* 0xB68 */ u8 unkB68[4];
-    /* 0xB6C */ int arg[2]; /* passed to the event's sub-steps */
-    /* 0xB74 */ u8 unkB74[0x5C];
+    /* 0xB68 */ union {
+        struct {
+            u8 unkB68_80 : 1;
+            u8 kettouF : 1;
+            u8 kettouEndF : 1;
+            u8 donkeyEndF : 1;
+            u8 koopaEndF : 1;
+            u8 unk04F : 1;
+            u8 unk02F : 1;
+            u8 shockNoWaitF : 1;
+        };
+        struct {
+            u8 : 2;
+            u8 kettouMgF : 1;
+            u8 donkeyMgF : 1;
+            u8 koopaMgF : 1;
+            u8 koopaNoCoinF : 1;
+            u8 koopaMusF : 1;
+            u8 : 1;
+        };
+    };
+    /* 0xB69 */ u8 unkB69[3];
+    /* 0xB6C */ union { /* per-event work: object ids, masu ids, player lists */
+        int evWork[25];
+        int arg[2];
+        struct {
+            int objId;
+            union {
+                int objId2;
+                int miracleMasuId;
+            };
+            int objId3;
+        };
+        struct {
+            u8 padB6C[0xBAC-0xB6C];
+            OMOBJ *guideObj;
+        };
+    };
     /* 0xBD0 */ void *explodeEff;
     /* 0xBD4 */ u8 unkBD4[8];
     /* 0xBDC */ void *glowEff;
