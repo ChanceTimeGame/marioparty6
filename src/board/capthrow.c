@@ -32,12 +32,13 @@ typedef struct CapEventWork_s {
     /* 0xB70 */ u8 unkB70[0xBD0 - 0xB70];
     /* 0xBD0 */ void *effExplode;
     /* 0xBD4 */ void *effBD4;
-    /* 0xBD8 */ u8 unkBD8[4];
+    /* 0xBD8 */ void *effSnow;
     /* 0xBDC */ void *effGlow;
     /* 0xBE0 */ void *effRing;
     /* 0xBE4 */ void *effCoin;
     /* 0xBE8 */ void *coinMan;
-    /* 0xBEC */ u8 unkBEC[0xBF4 - 0xBEC];
+    /* 0xBEC */ u8 unkBEC[0xBF0 - 0xBEC];
+    /* 0xBF0 */ void *effCapLose;
 } CAPEVENTWORK;
 
 /* capevent.c prototypes as retail calls them here (local declarations, not capevent.h). */
@@ -61,6 +62,21 @@ void mbev_CapPlayerIdleWait(void);
 void mbev_CapBezierGetV(float t, HuVecF *a, HuVecF *b, HuVecF *c, HuVecF *out);
 void mbev_CapBezierNormGetV(float t, HuVecF *a, HuVecF *b, HuVecF *c, HuVecF *out);
 void mbev_CapVecRotGet(HuVecF *dir, HuVecF *rot);
+/* Used by part 3 (wt-p09); these belong in capevent.h (owned by capevent part 1). */
+void *mbev_CapMalloc(void *objList, int size);
+int mbev_CapPlayerCheck(int playerNo, int otherNo);
+int mbev_CapPlayerMotShiftCheck(int playerNo);
+void mbev_CapObjMotionSet(int objId, int arg1, int motNo, int arg3, int arg4, u32 attr, int arg6, int arg7);
+void mbev_CapPlayerMotionSet(int playerNo, int arg1, int motNo, int arg3, int arg4, u32 attr, int arg6, int arg7);
+void *mbev_CapEffSnowCreate(void);
+void *mbev_CapEffCapLoseCreate(void);
+void mbev_CapEffColorSet(GXColor *color, int no);
+int mbev_CapEffGlowAdd(void *eff, HuVecF pos, HuVecF vel, int time, float scale, float speed, float decay, GXColor color);
+int mbev_CapEffGlowKinokoTimeSet(void *eff, int no, s16 arg2, s16 time);
+void mbev_CapEffDustHeavyAdd(void *eff, HuVecF pos);
+int mbev_CapEffSnowAdd(void *eff, HuVecF *pos, int time);
+void mbev_CapEffCapLoseAdd(void *eff, int playerNo, int num, float speed);
+int mbev_CapEffCapLoseNumGet(void *eff);
 void mbev_CapPlayerMoveObjInit(void);
 s16 mbev_CapPlayerMotionCreate(void *objList, int playerNo, int dataNum);
 int mbev_CapObjCreate(void *objList, int dataNum, int *motData, int arg3, int arg4, int arg5);
