@@ -207,6 +207,130 @@ static inline float W01Sqrtf(float x)
     return x;
 }
 
+/* Static helpers: CodeWarrior inlines them into later functions, compiles them here (their
+   literals open .rodata) and the linker strips the unreferenced bodies. fn_1_14108..fn_1_147DC,
+   fn_1_14CAC, fn_1_14D34 and fn_1_161AC are their emitted twins at the end of .text. */
+static float W01PathLenGet2(void *func, HuVecF *a, HuVecF *b, HuVecF *c, HuVecF *d, float end)
+{
+    int i;
+    int div;
+    float start;
+    float t;
+    float delta;
+    float sum;
+
+    div = 10;
+    start = 0;
+    delta = (end - start) / div;
+    t = start;
+    sum = 0;
+    for (i = 0; i < div - 1; i++) {
+        t += delta;
+        sum += ((float (*)())func)(a, b, c, d, t);
+    }
+    sum = 0.5 * delta * (2.0 * sum + (((float (*)())func)(a, b, c, d, start) + ((float (*)())func)(a, b, c, d, end)));
+    return sum;
+}
+
+static float W01PathLenGet(void *func, HuVecF *a, HuVecF *b, HuVecF *c, HuVecF *d, float end)
+{
+    int div;
+    int j;
+    int i;
+    float start;
+    float delta;
+    float dLen;
+    float dAccel;
+    float len;
+
+    div = 10;
+    start = 0;
+    len = 0;
+    delta = end - start;
+    dLen = 0.5f * (delta * (((float (*)())func)(a, b, c, d, start) + ((float (*)())func)(a, b, c, d, end)));
+    for (i = 1; i <= div; i *= 2) {
+        for (dAccel = 0, j = 1; j <= i; j++) {
+            dAccel += ((float (*)())func)(a, b, c, d, start + (delta * (j - 0.5f)));
+        }
+        dAccel *= delta;
+        len = 0.33333334f * (dLen + (2.0f * dAccel));
+        delta *= 0.5f;
+        dLen = 0.5f * (dLen + dAccel);
+    }
+    return len;
+}
+
+static float W01PathTimeGet(void *func, HuVecF *a, HuVecF *b, HuVecF *c, HuVecF *d, float t, float len)
+{
+    int step;
+    float pathLen;
+    float speed;
+    float oldT;
+    float minLen;
+
+    minLen = 0.1f;
+    step = 0;
+    do {
+        pathLen = W01PathLenGet2(func, a, b, c, d, t) - len;
+        if (fabs(speed = ((float (*)())func)(a, b, c, d, t)) < minLen) {
+            speed = 1.0f;
+        }
+        oldT = t;
+        t -= pathLen / speed;
+        step++;
+    } while (t != oldT && step < 10);
+    return t;
+}
+
+static float W01Hermite(float a, float b, float c, float d, float t)
+{
+    float invTime = 1.0f - t;
+    return (d * (t * (t * t))) + ((c * (invTime * ((3.0f * t) * t))) + ((a * (invTime * (invTime * invTime))) + (b * (invTime * ((3.0f * t) * invTime)))));
+}
+
+static float W01HermiteSlope(float a, float b, float c, float d, float t)
+{
+    float tt = t * t;
+    return ((3.0f * tt) * d) + ((c * ((-9.0f * tt) + (6.0f * t))) + ((a * (((-3.0f * tt) - (6.0f * t)) - 3.0f)) + (b * (3.0f + ((9.0f * tt) - (12.0f * t))))));
+}
+
+/* static twin of fn_1_161AC (part 7), for the jumps parts inline before it */
+static void W01PlayerJumpTo(int playerNo, HuVecF *target, float rotY, float height, int time)
+{
+    int i;
+    s16 left;
+    float t;
+    float rate;
+    float rotStart;
+    HuVecF pos;
+    HuVecF newPos;
+    HuVecF diff;
+
+    mbPlayerMotionShiftSet(playerNo, 4, 0.0f, 8.0f, 0);
+    mbPlayerPosGet(playerNo, &pos);
+    rotStart = mbPlayerRotYGet(playerNo);
+    PSVECSubtract(target, &pos, &diff);
+    for (i = 0; i <= time; i++) {
+        t = (float)i / time;
+        if (i == time - 6U) {
+            mbPlayerMotionShiftSet(playerNo, 5, 0.0f, 2.0f, 0);
+        }
+        newPos.x = pos.x + (t * diff.x);
+        newPos.y = pos.y + (t * diff.y) + (height * HuSin(180.0f * t));
+        newPos.z = pos.z + (t * diff.z);
+        mbPlayerPosSetV(playerNo, &newPos);
+        rate = i / 6.0f;
+        if (rate > 1.0f) {
+            rate = 1.0f;
+        }
+        mbPlayerRotYSet(playerNo, mbAngleLerp(rotStart, rotY, rate));
+        left = time - i;
+        mbPlayerWorkGet(playerNo)->masuNext = left;
+        HuPrcVSleep();
+    }
+    mbPlayerMotionShiftSet(playerNo, 1, 0.0f, 2.0f, 0x40000001);
+}
+
 /* Later .data (string literals, local initialisers, tables) is defined with the function that
    uses it first: CodeWarrior emits it in function order. */
 
@@ -586,6 +710,274 @@ void fn_1_10A0(void)
     work->resetF = TRUE;
 }
 
+void fn_1_13CC(void)
+{
+    Mtx mtx;
+    HuVecF midPos;
+    HuVecF pos;
+    HuVecF ctrl;
+    HuVecF prevPos;
+    HuVecF dir;
+    HuVecF rot;
+    W01_BRIDGE *work;
+    W01_BRIDGEPLANK *plank;
+    float a;
+    float b;
+    float c;
+    float t;
+    s32 playerNo;
+    int masuId;
+    int masuCur;
+    int i;
+    int ropeNo;
+    int prevMasu;
+    float sag;
+    float totalLen;
+    float segLen;
+    float curLen;
+
+    work = &lbl_1_bss_155C;
+    plank = work->plank;
+    playerNo = GwSystem.turnPlayerNo;
+    if(playerNo >= 0) {
+        masuId = GwPlayer[playerNo].masuId;
+        masuCur = work->masuA;
+        do {
+            if(masuCur == masuId) {
+                break;
+            }
+            prevMasu = masuCur;
+            masuCur = mbMasuMAttrFindLink(masuCur, 7);
+        } while(masuCur > 0);
+        if(masuCur == masuId) {
+            mbPlayerPosGet(playerNo, &midPos);
+            t = (midPos.z * work->dir.z + (midPos.y * work->dir.y + (midPos.x * work->dir.x - work->posA.x * work->dir.x) - work->posA.y * work->dir.y) - work->posA.z * work->dir.z) / VECSquareMag(&work->dir);
+            if(mbPlayerWorkGet(playerNo)->unk10_3 != 1 || t < 0.0f || t >= 1.0f) {
+                curLen = 0.5f * work->len;
+            } else {
+                curLen = t * work->len;
+            }
+            goto moved;
+        }
+    }
+    curLen = 0.5f * work->len;
+moved:
+    if(!work->resetF) {
+        work->curLen += 0.05f * (curLen - work->curLen);
+        if(fabs(curLen - work->curLen) < 1.0) {
+            return;
+        }
+    } else {
+        work->curLen = curLen;
+        work->resetF = FALSE;
+        work->lastMasu = GwPlayer[playerNo].masuId;
+    }
+    if(masuCur >= 0 && work->lastMasu != masuCur) {
+        mbAudFXPlay(0x594);
+        work->lastMasu = masuId;
+    }
+    a = work->curLen;
+    b = work->len - a;
+    c = 1.2f * work->len;
+    sag = sqrtf((a * a * a * a + c * c * c * c + b * b * b * b - 2.0f * (a * a * b * b + a * a * c * c - c * c * b * b + 2.0f * c * c * b * b)) / (4.0f * c * c));
+    t = work->curLen / work->len;
+    ctrl.x = work->posA.x + t * work->dir.x;
+    ctrl.y = (work->posA.y + t * work->dir.y) - sag;
+    ctrl.z = work->posA.z + t * work->dir.z;
+    totalLen = W01PathLenGet(fn_1_14A90, &work->posA, &ctrl, &work->posB, NULL, 1);
+    t = 0.0f;
+    segLen = totalLen / 6.0f;
+    prevPos = work->posA;
+    for(i = 0; i < 6; i++, plank++) {
+        if(i < 5) {
+            t = W01PathTimeGet(fn_1_14A90, &work->posA, &ctrl, &work->posB, NULL, t, segLen);
+            mbBezierCalcV(&work->posA, &ctrl, &work->posB, &pos, t);
+        } else {
+            pos = work->posB;
+        }
+        VECSubtract(&pos, &prevPos, &dir);
+        midPos.x = prevPos.x + 0.5f * dir.x;
+        midPos.y = prevPos.y + 0.5f * dir.y;
+        midPos.z = prevPos.z + 0.5f * dir.z;
+        mbObjPosSetV(plank->mdlId, &midPos);
+        mbObjRotGet(plank->mdlId, &rot);
+        rot.x = HuAtan(dir.y, sqrtf(dir.z * dir.z + dir.x * dir.x));
+        mbObjRotSetV(plank->mdlId, &rot);
+        mbMtxRot(mtx, rot.x, rot.y, rot.z);
+        dir.x = 0.0f;
+        dir.y = 50.0f;
+        dir.z = 0.0f;
+        MTXMultVec(mtx, &dir, &dir);
+        mbMasuPosSet(plank->masuId, midPos.x + dir.x, midPos.y + dir.y, midPos.z + dir.z);
+        mbMasuRotSet(plank->masuId, 0.0f, 0.0f, rot.x);
+        prevPos = pos;
+        segLen += totalLen / 6.0f;
+    }
+    ropeNo = 0;
+    plank = work->plank;
+    for(i = 0; i < 7; i++, plank++) {
+        if(i == 0) {
+            mbObjPosGet(plank->mdlId, &midPos);
+            midPos.y -= 30.000002f;
+            prevPos = midPos;
+            VECSubtract(&midPos, &work->ropeEndA, &dir);
+            VECNormalize(&dir, &dir);
+            midPos.x = work->ropeEndA.x + 100.0f * (0.5f * dir.x);
+            midPos.y = work->ropeEndA.y + 100.0f * (0.5f * dir.y);
+            midPos.z = work->ropeEndA.z + 100.0f * (0.5f * dir.z);
+            mbObjPosSetV(work->ropeId[ropeNo], &midPos);
+            rot.x = HuAtan(dir.y, sqrtf(dir.z * dir.z + dir.x * dir.x));
+            rot.y = work->rotY;
+            rot.z = 0.0f;
+            mbObjRotSetV(work->ropeId[ropeNo], &rot);
+            ropeNo++;
+        } else if(i == 6) {
+            VECSubtract(&work->ropeEndB, &prevPos, &dir);
+            VECNormalize(&dir, &dir);
+            midPos.x = work->ropeEndB.x - 100.0f * (0.5f * dir.x);
+            midPos.y = work->ropeEndB.y - 100.0f * (0.5f * dir.y);
+            midPos.z = work->ropeEndB.z - 100.0f * (0.5f * dir.z);
+            mbObjPosSetV(work->ropeId[ropeNo], &midPos);
+            rot.x = HuAtan(dir.y, sqrtf(dir.z * dir.z + dir.x * dir.x));
+            rot.y = work->rotY;
+            rot.z = 0.0f;
+            mbObjRotSetV(work->ropeId[ropeNo], &rot);
+            ropeNo++;
+        } else {
+            mbObjPosGet(plank->mdlId, &midPos);
+            midPos.y -= 30.000002f;
+            VECSubtract(&midPos, &prevPos, &dir);
+            prevPos = midPos;
+            midPos.x -= 0.5f * dir.x;
+            midPos.y -= 0.5f * dir.y;
+            midPos.z -= 0.5f * dir.z;
+            mbObjPosSetV(work->ropeId[ropeNo], &midPos);
+            rot.x = HuAtan(dir.y, sqrtf(dir.z * dir.z + dir.x * dir.x));
+            rot.y = work->rotY;
+            rot.z = 0.0f;
+            mbObjRotSetV(work->ropeId[ropeNo], &rot);
+            ropeNo++;
+        }
+    }
+}
+
+void fn_1_2A08(void)
+{
+    lbl_1_bss_155C.resetF = TRUE;
+}
+
+/* player height above the chain by character (fn_1_2D08, fn_1_4004) */
+const float lbl_1_rodata_F8[14] = { -80.0f, -90.0f, -125.0f, -80.0f, -100.0f, -125.0f, -110.0f, -80.0f, -90.0f, -80.0f, -80.0f, -80.0f, -80.0f, -80.0f };
+
+void fn_1_2A1C(void)
+{
+    W01_CHAIN *work = &lbl_1_bss_1494;
+    W01_CHAINLINK *link = work->link;
+    int i;
+    HuVecF pos;
+
+    work->posA.x = 747.0f;
+    work->posA.y = 4993.0f;
+    work->posA.z = -1309.0f;
+    work->masuA = mbMasuFind_MAttrIdGet(-1, 0x100);
+    work->posB.x = 2708.0f;
+    work->posB.y = 4037.0f;
+    work->posB.z = 18.0f;
+    work->masuB = mbMasuFind_MAttrIdGet(-1, 0x200);
+    VECSubtract(&work->posB, &work->posA, &work->dir);
+    work->len = VECMag(&work->dir);
+    work->rotY = HuAtan(-work->dir.x, -work->dir.z);
+    work->playerNo = -1;
+    for(i = 0; i < 16; i++) {
+        work->ropeId[i] = mbObjCreate(W01_DIR | 10, NULL, TRUE);
+        mbObjRotYSet(work->ropeId[i], work->rotY);
+    }
+    work->objId = mbObjCreate(W01_DIR | 11, NULL, TRUE);
+    mbObjRotYSet(work->objId, work->rotY);
+    fn_1_3214(0.05f);
+    mbObjPosGet(work->objId, &pos);
+    for(i = 0; i < 4; i++, link++) {
+        link->objId = mbObjCreate(W01_DIR | 10, NULL, TRUE);
+        mbObjScaleSet(link->objId, 0.7f, 0.7f, 0.5f);
+        link->pos.x = pos.x;
+        link->pos.y = pos.y - 50.0f * (i + 1);
+        link->pos.z = pos.z;
+        link->vel.x = link->vel.y = link->vel.z = 0.0f;
+    }
+}
+
+void fn_1_2D08(int playerNo)
+{
+    W01_CHAIN *work = &lbl_1_bss_1494;
+    W01_CHAINLINK *link = work->link;
+    float rotY;
+    float t;
+    int i;
+    s16 motId;
+    HuVecF movePos;
+    HuVecF playerPos;
+    HuVecF pos;
+    HuVecF dir;
+
+    GwPlayer[playerNo].moveF = TRUE;
+    mbPlayerColSnapPlayerSet(playerNo, FALSE);
+    mbPlayerWorkGet(playerNo)->masuNext = 100;
+    mbObjPosGet(work->link[3].objId, &pos);
+    pos.y += lbl_1_rodata_F8[GwPlayer[playerNo].charNo];
+    motId = mbPlayerMotionCreate(playerNo, 0x930063);
+    mbPlayerPosGet(playerNo, &playerPos);
+    VECSubtract(&pos, &playerPos, &dir);
+    rotY = HuAtan(work->dir.x, work->dir.z);
+    mbPlayerRotYSet(playerNo, rotY);
+    mbPlayerMotionShiftSet(playerNo, 4, 0.0f, 8.0f, 0);
+    for(i = 0; i < 18U; i++) {
+        t = i / 18.0f;
+        if(i == 15U) {
+            mbPlayerMotionShiftSet(playerNo, motId, 0.0f, 4.0f, 0);
+        }
+        movePos.x = playerPos.x + t * dir.x;
+        movePos.y = playerPos.y + t * dir.y + 100.0f * mbSinDeg(180.0f * t);
+        movePos.z = playerPos.z + t * dir.z;
+        mbPlayerPosSetV(playerNo, &movePos);
+        HuPrcVSleep();
+    }
+    work->playerNo = playerNo;
+    mbAudFXPlay(0x594);
+    for(i = 3; i < 54U; i++) {
+        t = i / 59.0f;
+        if(i == 12U) {
+            CharFXPlay(GwPlayer[playerNo].charNo, 0x243);
+        }
+        fn_1_3214(t);
+        if((i - 3) % 30 == 0) {
+            omVibrate(playerNo, 20, 4, 4);
+        }
+        HuPrcVSleep();
+    }
+    work->playerNo = -1;
+    mbPlayerPosGet(playerNo, &playerPos);
+    mbMasuPosGet(work->masuB, &pos);
+    VECSubtract(&pos, &playerPos, &dir);
+    rotY = HuAtan(dir.x, dir.z);
+    mbPlayerRotYSet(playerNo, rotY);
+    mbPlayerMotionShiftSet(playerNo, 4, 0.0f, 4.0f, 0);
+    for(i = 0; i <= 18U; i++) {
+        t = i / 18.0f;
+        if(i == 12U) {
+            mbPlayerMotionShiftSet(playerNo, 5, 0.0f, 8.0f, 0);
+        }
+        movePos.x = playerPos.x + t * dir.x;
+        movePos.y = playerPos.y + t * dir.y + 100.0f * (2.0f * mbSinDeg(180.0f * t));
+        movePos.z = playerPos.z + t * dir.z;
+        mbPlayerPosSetV(playerNo, &movePos);
+        mbPlayerWorkGet(playerNo)->masuNext = 18 - i;
+        HuPrcVSleep();
+    }
+    mbPlayerMotionKill(playerNo, motId);
+    GwPlayer[playerNo].moveF = FALSE;
+    mbPlayerColSnapPlayerSet(playerNo, TRUE);
+}
+
 /* @@PART2@@ */
 /* @@PART3@@ */
 /* @@PART4@@ */
@@ -593,10 +985,6 @@ void fn_1_10A0(void)
 /* @@PART6@@ */
 /* @@PART7@@ */
 /* scoring stubs for other parts (never spliced) */
-void fn_1_13CC(void) { }
-void fn_1_2A08(void) { }
-void fn_1_2A1C(void) { }
-void fn_1_2D08(int playerNo) { }
 void fn_1_3214(float f0) { }
 void fn_1_4004(void) { }
 void fn_1_44C0(void) { }
