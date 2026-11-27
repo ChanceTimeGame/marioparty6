@@ -1,6 +1,14 @@
 /* @@HEAD@@ */
 #include "REL/w01Dll.h"
 #include "game/audio.h"
+#include "game/charman.h"
+#include "game/frand.h"
+#include "game/gamemes.h"
+#include "game/memory.h"
+#include "game/sprite.h"
+#include "game/board/capevent.h"
+#include "game/board/coin.h"
+#include "game/board/status.h"
 #include "game/data.h"
 #include "game/gamework.h"
 #include "game/pad.h"
@@ -21,6 +29,9 @@
 #include "string.h"
 #include "math.h"
 
+/* sprite.h leaves it out (WipeImage breaks with it) */
+void HuSprTexLoad(ANIMDATA *anim, s16 bmpNo, s16 texMapId, GXTexWrapMode wrapS, GXTexWrapMode wrapT, GXTexFilter filter);
+
 typedef void (*VoidFunc)(void);
 extern const VoidFunc _ctors[];
 extern const VoidFunc _dtors[];
@@ -30,8 +41,8 @@ s32 lbl_1_bss_1620;
 s32 lbl_1_bss_161C;
 u32 *lbl_1_bss_1618;
 s16 lbl_1_bss_1616;
-MBOBJID lbl_1_bss_15F4[17];
-HuVecF lbl_1_bss_15E8;
+W01_MAPOBJ lbl_1_bss_15F4;
+W01_BSS_15E8 lbl_1_bss_15E8;
 W01_BSS_155C lbl_1_bss_155C;
 W01_BSS_1494 lbl_1_bss_1494;
 s32 lbl_1_bss_1490;
@@ -43,33 +54,34 @@ s16 lbl_1_bss_1434;
 HuVecF lbl_1_bss_1428;
 HuVecF lbl_1_bss_141C;
 HuVecF lbl_1_bss_1410;
-W01_BSS_13D8 lbl_1_bss_13D8;
-s32 lbl_1_bss_13D0[2];
-W01_BSS_137C lbl_1_bss_137C;
-s32 lbl_1_bss_1378;
-W01_BSS_1338 lbl_1_bss_1338;
-s32 lbl_1_bss_1334;
-W01_BSS_1240 lbl_1_bss_1240;
-s32 lbl_1_bss_1238[2];
-s32 lbl_1_bss_1230[2];
+W01_COINWORK lbl_1_bss_13D8;
+ANIMDATA *lbl_1_bss_13D0[2];
+W01_LIFT lbl_1_bss_137C[3];
+ANIMDATA *lbl_1_bss_1378;
+W01_FLOWER lbl_1_bss_1338[2];
+ANIMDATA *lbl_1_bss_1334;
+static u32 lbl_1_bss_1330; /* 4 bytes above lbl_1_bss_1240[3] (its symbol is 0xF4) */
+W01_BRANCH lbl_1_bss_1240[3];
+s16 lbl_1_bss_1238[4];
+s16 lbl_1_bss_1230[4];
 HuVecF lbl_1_bss_1224;
-s16 lbl_1_bss_1220;
-s32 lbl_1_bss_121C;
-s32 lbl_1_bss_1214[2];
-s32 lbl_1_bss_120C[2];
+HU3D_MODELID lbl_1_bss_1220;
+ANIMDATA *lbl_1_bss_121C;
+u32 lbl_1_bss_1214[2];
+u32 lbl_1_bss_120C[2];
 s32 lbl_1_bss_1208;
 W01_BSS_1188 lbl_1_bss_1188;
-W01_BSS_EFC lbl_1_bss_EFC;
+W01BAT lbl_1_bss_EFC;
 s32 lbl_1_bss_EF8;
-W01_BSS_EE8 lbl_1_bss_EE8;
-s32 lbl_1_bss_EE4;
-W01_BSS_EB4 lbl_1_bss_EB4;
-s32 lbl_1_bss_EB0;
-W01_BSS_4B0 lbl_1_bss_4B0;
-HuVecF lbl_1_bss_4A4;
+MBOBJID lbl_1_bss_EE8[8];
+ANIMDATA *lbl_1_bss_EE4;
+W01_TERESA lbl_1_bss_EB4;
+BOOL lbl_1_bss_EB0;
+W01_LEAF lbl_1_bss_4B0[64];
+ANIMDATA *lbl_1_bss_4A4[3];
 s16 lbl_1_bss_4A0;
-s32 lbl_1_bss_49C;
-s32 lbl_1_bss_498;
+void *lbl_1_bss_49C;
+u32 lbl_1_bss_498;
 HuVecF lbl_1_bss_48C;
 HuVecF lbl_1_bss_480;
 W01_BSS_0 lbl_1_bss_0;
@@ -165,9 +177,9 @@ HuVecF lbl_1_data_240[33] = {
     { 2667.836f, 640.229f, 2606.38f },
     { 2593.185f, 605.703f, 2658.66f }
 };
-s32 lbl_1_data_3CC[] = { DATANUM(DATA_w01, 6), DATANUM(DATA_w01, 7), DATANUM(DATA_w01, 18), DATANUM(DATA_w01, 19), DATANUM(DATA_w01, 20), 0 };
-s32 lbl_1_data_3E4[] = { DATANUM(DATA_w01, 6), DATANUM(DATA_w01, 7), DATANUM(DATA_w01, 21), 0 };
-s32 *lbl_1_data_3F4[] = { lbl_1_data_3CC, lbl_1_data_3E4 };
+u32 lbl_1_data_3CC[] = { DATANUM(DATA_w01, 6), DATANUM(DATA_w01, 7), DATANUM(DATA_w01, 18), DATANUM(DATA_w01, 19), DATANUM(DATA_w01, 20), 0 };
+u32 lbl_1_data_3E4[] = { DATANUM(DATA_w01, 6), DATANUM(DATA_w01, 7), DATANUM(DATA_w01, 21), 0 };
+u32 *lbl_1_data_3F4[] = { lbl_1_data_3CC, lbl_1_data_3E4 };
 HuVecF lbl_1_data_3FC = { 0.0f, 0.0f, 1200.0f };
 HuVecF lbl_1_data_408 = { -28.0f, 0.0f, 0.0f };
 HuVecF lbl_1_data_414 = { 0.0f, 0.0f, 0.0f };
@@ -200,10 +212,439 @@ void ObjectSetup(void)
     mbObjectSetup(0, fn_1_F4, fn_1_60C);
 }
 
+void fn_1_F4(void)
+{
+    W01_MAPOBJ *mapObj = &lbl_1_bss_15F4;
+    int boardNo = mbBoardNoGet();
+    int tblNo;
+    int i;
+
+    HuAudSndGrpSetSet(22);
+    lbl_1_bss_1618 = GwSystem.boardWork;
+    mbObjDirSet(DATA_w01, DATA_w01n);
+    mbMasuInit(W01_DIR);
+    mapObj->mapId = mbObjCreate(W01_DIR | 4, NULL, FALSE);
+    mbObjAttrSet(mapObj->mapId, 0x40000001);
+    tblNo = mbTimeDayCheck() ? 0 : 1;
+    for(i = 0; lbl_1_data_3F4[tblNo][i] != 0; i++) {
+        mapObj->objId[i] = mbObjCreate(W01_DIR | FILENUM(lbl_1_data_3F4[tblNo][i]), NULL, FALSE);
+        mbObjAttrSet(mapObj->objId[i], 0x40000001);
+    }
+    mapObj->objId[i] = mbObjCreate(W01_DIR | 5, NULL, FALSE);
+    mbObjLayerSet(mapObj->objId[i], 1);
+    i++;
+    mbScrollInit(W01_DIR | 2);
+    mbCapThrowColCreate(W01_DIR | 3);
+    mbLightFuncSet(fn_1_970, fn_1_9F0);
+    if(mbSaveNewF) {
+        memset(lbl_1_bss_1618, 0, 16);
+        fn_1_139F8();
+    }
+    mbPlayerTurnInitHookSet(fn_1_914);
+    mbPlayerTurnCloseHookSet(fn_1_944);
+    fn_1_13B38();
+    mbOpeningInstHookSet(fn_1_644);
+    mbOpeningStarInstHookSet(NULL);
+    mbOpeningViewSet(&lbl_1_data_408, &lbl_1_data_414, 10000.0f);
+    mbev_ShopExInit(W01_DIR | 22, fn_1_9F4);
+    mbev_ShopBackCreate(W01_DIR | 26, -1, -1, 1);
+    mbev_MasuMoveEndSet(fn_1_760);
+    mbev_MasuMoveStartSet(fn_1_734);
+    mbev_MasuHatenaSet(fn_1_860);
+    mbStarMoveHookSet(fn_1_13BC4);
+    mbMapCameraSet(NULL, &lbl_1_data_3FC, 18500.0f);
+    mbMapHookSet(fn_1_AC4);
+    mbev_NextTimeSet(fn_1_B68);
+    omAddObjEx(mbObjMan, 0x200C, 0, 0, -1, fn_1_6D4);
+    fn_1_10A0();
+    fn_1_2A1C();
+    fn_1_45A0();
+    fn_1_4D88();
+    fn_1_5C7C();
+    fn_1_7944();
+    fn_1_8474();
+    fn_1_9574();
+    fn_1_ED00();
+    fn_1_DEA4();
+    fn_1_124C8();
+    fn_1_10AA8();
+    fn_1_12A4C();
+    fn_1_13D04();
+    HuDataDirClose(W01_DIR);
+}
+
+void fn_1_60C(void)
+{
+    fn_1_4750();
+    fn_1_7B20();
+    fn_1_8798();
+    fn_1_99E4();
+    fn_1_10C68();
+    fn_1_12CF0();
+    fn_1_5EF0();
+}
+
+void fn_1_644(void)
+{
+    s16 winId;
+
+    winId = mbWinCreate(2, 0x2F0016, mbGuideSpeakerNoGet());
+    mbWinWait(winId);
+    winId = mbWinCreate(2, 0x2F0017, mbGuideSpeakerNoGet());
+    mbWinWait(winId);
+    winId = mbWinCreate(2, 0x2F0018, mbGuideSpeakerNoGet());
+    mbWinWait(winId);
+}
+
+void fn_1_6D4(OMOBJ *obj)
+{
+    if(mbExitCheck()) {
+        omDelObjEx(HuPrcCurrentGet(), obj);
+        return;
+    }
+    fn_1_13CC();
+    fn_1_4004();
+    fn_1_47B0();
+    fn_1_5560(0);
+    fn_1_7C14();
+    fn_1_F0D0();
+    fn_1_1330C();
+    fn_1_13F50();
+}
+
+int fn_1_734(int playerNo, s16 masuId)
+{
+    fn_1_4D78(masuId);
+    return 0;
+}
+
+int fn_1_760(int playerNo, s16 masuId)
+{
+    u32 attr = mbMasuMAttrGet(masuId);
+
+    if(attr & 0x30000) {
+        fn_1_7B70(mbev_MasuBitGet(attr, 0x30000) - 1);
+    }
+    if(attr & 0x100) {
+        mbPlayerMoveHookSet(playerNo, fn_1_2D08);
+    }
+    if(attr & 0x4000) {
+        mbPlayerMoveHookSet(playerNo, fn_1_4F94);
+    }
+    if((attr & 0x400000) || (attr & 0x100000)) {
+        mbPlayerMoveHookSet(playerNo, fn_1_8860);
+    }
+    if(attr & 0x40000) {
+        mbPlayerMoveHookSet(playerNo, fn_1_E234);
+    }
+    if(attr & 0x1000000) {
+        fn_1_126EC(playerNo, masuId);
+    }
+    return 0;
+}
+
+int fn_1_860(int playerNo, s16 masuId)
+{
+    u32 attr = mbMasuMAttrGet(masuId);
+
+    if(attr & 0x8) {
+        fn_1_5FB4(playerNo, masuId);
+        return 0;
+    }
+    if(attr & 0x20000000) {
+        fn_1_9AEC(playerNo, masuId);
+    }
+    if(attr & 0x40) {
+        fn_1_F1F4(playerNo, masuId);
+    }
+    if(attr & 0x8000) {
+        fn_1_10CB8(playerNo, masuId);
+    }
+    return 1;
+}
+
+void fn_1_914(int playerNo)
+{
+    fn_1_87E8();
+    fn_1_12454();
+    fn_1_4C6C(playerNo);
+}
+
+void fn_1_944(int playerNo)
+{
+    fn_1_2A08();
+    fn_1_4CD0();
+    fn_1_5C18();
+    fn_1_44C0();
+}
+
+void fn_1_970(void)
+{
+    W01_MAPOBJ *mapObj = &lbl_1_bss_15F4;
+
+    Hu3DModelLightInfoSet(mbObjModelIDGet(mapObj->mapId), 1);
+    if(GwSystem.curTime == 0) {
+        Hu3DFogSet(6000.0f, 70000.0f, 200, 200, 200);
+    }
+}
+
+void fn_1_9F0(void)
+{
+}
+
+void fn_1_9F4(int objId)
+{
+    MBOBJID hookId = mbObjCreate(W01_DIR | 23, NULL, TRUE);
+
+    mbObjAttrSet(hookId, 0x40000001);
+    mbObjHookSet(objId, "b01_m080", hookId);
+    mbObjCullRadiusSet(objId, 400.0f);
+    mbObjCullRadiusSet(hookId, 400.0f);
+}
+
+void fn_1_AC4(BOOL startF)
+{
+    if(startF) {
+        fn_1_139E8(0);
+        if(GwSystem.curTime == 0) {
+            Hu3DFogClear();
+        }
+    } else {
+        fn_1_139E8(1);
+        if(GwSystem.curTime == 0) {
+            Hu3DFogSet(6000.0f, 70000.0f, 200, 200, 200);
+        }
+    }
+}
+
+void fn_1_B68(void)
+{
+    W01_BSS_15E8 *work = &lbl_1_bss_15E8;
+    int i;
+    HUPROCESS *proc;
+    s16 winId;
+
+    for(i = 0; i < 4; i++) {
+        mbPlayerDispSet(i, FALSE);
+    }
+    memset(work, 0, sizeof(W01_BSS_15E8));
+    if(GwSystem.curTime == 0) {
+        work->mdlId = mbObjCreate(DATANUM(DATA_w01, 37), NULL, FALSE);
+    } else {
+        work->mdlId = mbObjCreate(DATANUM(DATA_w01n, 40), NULL, FALSE);
+    }
+    mbObjMotionSpeedSet(work->mdlId, 0.0f);
+    mbObjMotionShapeSpeedSet(work->mdlId, 0.0f);
+    fn_1_950C(0);
+    proc = HuPrcChildCreate(fn_1_DD0, 0x2007, 0x8000, 0, mbMainProc);
+    winId = -1;
+    do {
+        if(work->endF) {
+            if(winId < 0) {
+                winId = mbWinCreateHelp(0x26000C);
+                mbWinPosSet(winId, 228, 408);
+            }
+            for(i = 0; i < 4; i++) {
+                if(!GwPlayer[i].comF && (HuPadBtnDown[GwPlayer[i].padNo] & PAD_BUTTON_START)) {
+                    HuPrcKill(proc);
+                    work->skipF = TRUE;
+                    break;
+                }
+            }
+        }
+        HuPrcVSleep();
+    } while(!work->skipF);
+    mbWipeWait();
+    if(!WipeCheckIn()) {
+        mbWipeFadeOut();
+    }
+    mbWinKill(winId);
+    mbObjKill(work->mdlId);
+    fn_1_950C(1);
+    for(i = 0; i < 4; i++) {
+        mbPlayerDispSet(i, TRUE);
+    }
+    HuDataDirClose(W01_DIR);
+}
+
+void fn_1_DD0(void)
+{
+    static HuVecF lbl_1_data_42C[2][2] = {
+        { { -50.0f, 15.0f, 0.0f }, { -20.0f, 0.0f, 0.0f } },
+        { { -50.0f, -15.0f, 0.0f }, { -20.0f, 0.0f, 0.0f } },
+    };
+    static HuVecF lbl_1_data_45C[2][2] = {
+        { { 0.0f, 0.0f, 0.0f }, { -20.0f, 0.0f, 0.0f } },
+        { { 0.0f, 0.0f, 0.0f }, { -20.0f, 0.0f, 0.0f } },
+    };
+    W01_BSS_15E8 *work = &lbl_1_bss_15E8;
+    HuVecF pos;
+    s16 masuId;
+    s16 no;
+
+    pos.x = pos.y = pos.z = 0.0f;
+    mbCameraMovePos(&pos, NULL, NULL, 10000.0f, -1.0f, 1);
+    mbCameraMoveWait();
+    mbWipeFadeIn();
+    mbTelopTimeChangeCreate();
+    while(mbTelopTimeChangeCheck()) {
+        HuPrcVSleep();
+    }
+    mbWipeFadeOut();
+    work->endF = TRUE;
+    if(GwSystem.curTime == 0) {
+        masuId = mbMasuFind_MAttrIdGet(-1, 0x400000);
+        no = 0;
+    } else {
+        masuId = mbMasuFind_MAttrIdGet(-1, 0x100000);
+        no = 1;
+    }
+    mbMasuPosGet(masuId, &pos);
+    pos.y += 1000.0f;
+    mbCameraMovePos(&pos, &lbl_1_data_42C[no][0], NULL, 5000.0f, -1.0f, 1);
+    HuPrcVSleep();
+    mbCameraMoveMasu(masuId, &lbl_1_data_42C[no][1], NULL, 2000.0f, -1.0f, 240);
+    mbCameraCurveTypeSet(1);
+    mbWipeFadeIn();
+    HuPrcSleep(60);
+    mbObjMotionSpeedSet(work->mdlId, 1.0f);
+    mbObjMotionShapeSpeedSet(work->mdlId, 1.0f);
+    HuPrcSleep(120);
+    mbWipeFadeOut();
+    masuId = mbMasuFind_MAttrIdGet(-1, 0x8);
+    mbMasuPosGet(masuId, &pos);
+    pos.y -= 500.0f;
+    mbCameraMovePos(&pos, &lbl_1_data_45C[no][0], NULL, 3000.0f, -1.0f, 1);
+    HuPrcVSleep();
+    pos.y += 1000.0f;
+    mbCameraMovePos(&pos, &lbl_1_data_45C[no][1], NULL, 1000.0f, -1.0f, 240);
+    mbCameraCurveTypeSet(1);
+    mbWipeFadeIn();
+    HuPrcSleep(180);
+    mbWipeFadeOut();
+    work->skipF = TRUE;
+    HuPrcEnd();
+}
+
 /* @@PART2@@ */
 /* @@PART3@@ */
 /* @@PART4@@ */
 /* @@PART5@@ */
 /* @@PART6@@ */
 /* @@PART7@@ */
+/* scoring stubs for other parts (never spliced) */
+void fn_1_10A0(void) { }
+void fn_1_13CC(void) { }
+void fn_1_2A08(void) { }
+void fn_1_2A1C(void) { }
+void fn_1_2D08(int playerNo) { }
+void fn_1_3214(float f0) { }
+void fn_1_4004(void) { }
+void fn_1_44C0(void) { }
+void fn_1_45A0(void) { }
+void fn_1_4750(void) { }
+void fn_1_47B0(void) { }
+void fn_1_4C6C(int arg0) { }
+void fn_1_4CD0(void) { }
+void fn_1_4D78(int arg0) { }
+void fn_1_4D88(void) { }
+void fn_1_4F94(int playerNo) { }
+void fn_1_5560(int arg0) { }
+void fn_1_5888(int arg0) { }
+void fn_1_5C18(void) { }
+void fn_1_5C7C(void) { }
+void fn_1_5EF0(void) { }
+void fn_1_5FB4(int playerNo, s16 masuId) { }
+int fn_1_6D98(void) { return 0; }
+HU3D_MODELID fn_1_7388(HuVecF *pos) { return 0; }
+void fn_1_7448(HU3D_MODEL *modelP, MBPARTICLE *particleP, Mtx mtx) { }
+void fn_1_77AC(HU3D_MODEL *modelP, MBPARTICLE *particleP, Mtx mtx) { }
+void fn_1_7944(void) { }
+void fn_1_7B20(void) { }
+void fn_1_7B70(int arg0) { }
+void fn_1_7C14(void) { }
+void fn_1_7D14(W01_LIFT *work, HuVecF *pos) { }
+void fn_1_7D84(HU3D_MODEL *modelP, MBPARTICLE *particleP, Mtx mtx) { }
+void fn_1_80B4(HU3D_MODEL *modelP, MBPARTICLE *particleP, Mtx mtx) { }
+void fn_1_8474(void) { }
+void fn_1_8798(void) { }
+void fn_1_87E8(void) { }
+void fn_1_8860(int playerNo) { }
+void fn_1_9134(HU3D_MODEL *modelP, MBPARTICLE *particleP, Mtx mtx) { }
+void fn_1_939C(HU3D_MODELID modelId, int no, HuVecF *pos) { }
+void fn_1_950C(BOOL flag) { }
+void fn_1_9574(void) { }
+void fn_1_99E4(void) { }
+void fn_1_9AEC(int playerNo, s16 masuId) { }
+void fn_1_A82C(int arg0) { }
+void fn_1_ACDC(OMOBJ *obj) { }
+void fn_1_AFD4(int arg0, int arg1) { }
+void fn_1_B01C(int arg0, int arg1) { }
+void fn_1_B3F8(int arg0) { }
+u32 fn_1_B434(u32 *arg0) { return 0; }
+void fn_1_B7D8(int arg0) { }
+void fn_1_B97C(int arg0) { }
+void fn_1_B9A8(int arg0, int arg1) { }
+void fn_1_BB44(int arg0, int arg1, float f0) { }
+void fn_1_BFA0(HU3D_MODEL *modelP, Mtx *mtx) { }
+void fn_1_C694(int arg0, int arg1) { }
+u32 fn_1_C7DC(u32 *arg0) { return 0; }
+u32 fn_1_CAA4(u32 *arg0) { return 0; }
+int fn_1_CCEC(int arg0, int arg1, int arg2, float f0) { return 0; }
+int fn_1_D080(int arg0, float f0) { return 0; }
+int fn_1_D1D0(int arg0, int arg1, float f0) { return 0; }
+void fn_1_D320(int arg0, int arg1, int arg2) { }
+void fn_1_D50C(int arg0, int arg1, int arg2) { }
+void fn_1_DEA4(void) { }
+void fn_1_E234(int playerNo) { }
+void fn_1_ED00(void) { }
+void fn_1_F06C(void) { }
+void fn_1_F0D0(void) { }
+void fn_1_F1F4(int playerNo, s16 masuId) { }
+void fn_1_F66C(int arg0) { }
+BOOL fn_1_1089C(void) { return 0; }
+void fn_1_10900(int arg0) { }
+void fn_1_10998(int arg0) { }
+void fn_1_10AA8(void) { }
+void fn_1_10C68(void) { }
+void fn_1_10CB8(int playerNo, s16 masuId) { }
+void fn_1_11C14(HuVecF *pos) { }
+void fn_1_11C84(HU3D_MODEL *modelP, MBPARTICLE *particleP, Mtx mtx) { }
+void fn_1_12090(void) { }
+void fn_1_12454(void) { }
+void fn_1_124C8(void) { }
+void fn_1_126EC(int playerNo, s16 masuId) { }
+void fn_1_12A4C(void) { }
+void fn_1_12CF0(void) { }
+void fn_1_12D58(HU3D_MODEL *modelP, Mtx *mtx) { }
+u32 fn_1_130C4(void **arg0) { return 0; }
+void fn_1_1330C(void) { }
+void fn_1_139E8(int arg0) { }
+void fn_1_139F8(void) { }
+void fn_1_13B38(void) { }
+void fn_1_13BC4(void) { }
+void fn_1_13CBC(int arg0) { }
+void fn_1_13D04(void) { }
+void fn_1_13D8C(HuVecF *pos, int num) { }
+void fn_1_13F50(void) { }
+void fn_1_14108(int arg0, int arg1, int arg2, int arg3, int arg4, float f0) { }
+void fn_1_142B0(int arg0, int arg1, int arg2, int arg3, int arg4, float f0) { }
+void fn_1_144C0(int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, float f0, float f1) { }
+void fn_1_147DC(int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, float f0, float f1) { }
+float fn_1_14A90(HuVecF *a, HuVecF *b, HuVecF *c, HuVecF *d, float t) { return 0; }
+void fn_1_14B34(int arg0, int arg1, int arg2, int arg3, float f0) { }
+void fn_1_14BF0(int arg0, int arg1, int arg2, int arg3, float f0) { }
+void fn_1_14CAC(float f0, float f1, float f2, float f3, float f4) { }
+void fn_1_14D34(float f0, float f1, float f2, float f3, float f4) { }
+void fn_1_14E0C(int arg0, int arg1, int arg2, int arg3, int arg4, float f0) { }
+void fn_1_150CC(int arg0, int arg1, int arg2, int arg3, int arg4, float f0) { }
+void fn_1_1547C(int arg0, int arg1, int arg2, float f0) { }
+void fn_1_155EC(int arg0, int arg1, float f0) { }
+void fn_1_15B60(int arg0, int arg1, int arg2, float f0) { }
+void fn_1_15E1C(int arg0, int arg1, int arg2) { }
+void fn_1_15FF8(int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6) { }
+void fn_1_16148(int arg0, int arg1, int arg2, float f0) { }
+void fn_1_161AC(int arg0, int arg1, int arg2, float f0, float f1) { }
+void fn_1_1644C(void) { }
+int fn_1_16478(void) { return 0; }
 /* @@END@@ */

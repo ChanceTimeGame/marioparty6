@@ -39,7 +39,8 @@ typedef struct mbParticle_s MBPARTICLE;
 typedef void (*MBPARTICLEHOOK)(HU3D_MODEL *modelP, MBPARTICLE *particleP, Mtx mtx);
 
 struct mbParticle_s {
-    u8 unk00[0x1C];
+    s16 unk00; /* 0x00: board hooks use it as their init state */
+    u8 unk02[0x1A];
     void *work; /* 0x1C */
     u8 blendMode; /* 0x20 */
     u8 attr; /* 0x21 */
