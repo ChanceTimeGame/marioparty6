@@ -1,5 +1,10 @@
 /* @@HEAD@@ */
+/* capevent.h declares mbev_CapCall with an s16 capsule number for its callers (masu.c passes
+   mbMasuCapsuleGet's s16 unconverted); the definition takes an int. */
+#define mbev_CapCall mbev_CapCall_s16
 #include "game/board/capevent.h"
+#undef mbev_CapCall
+int mbev_CapCall(int playerNo, int capsuleNo, BOOL trapF, BOOL moveF);
 #include "game/board/capsule.h"
 #include "game/board/capmove.h"
 #include "game/board/capthrow.h"

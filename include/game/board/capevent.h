@@ -72,7 +72,7 @@ extern s16 *mbCapEffData; /* read as s16[mbCapEffNum] by capsule.c, captrap.c */
 
 /* Prototypes from the MP6 asm: argument/return classes from register use, names after MP5 where
    the function exists there; argN/fN are placeholder names. */
-int mbev_CapCall(int playerNo, int capsuleNo, BOOL trapF, BOOL moveF);
+int mbev_CapCall(int playerNo, s16 capsuleNo, BOOL trapF, BOOL moveF);
 int mbev_CapCallTrap(int playerNo, int masuId, int trapMasuId);
 void mbev_CapCallKettou(int playerNo, int masuId, int kettouF);
 void mbev_CapCircuitCallKettou(void);
