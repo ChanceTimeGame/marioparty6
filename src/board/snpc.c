@@ -227,6 +227,11 @@ static SNPCNEXTMOT *snpcNextMotTbl[2] = { snpcDonkeyNextMotTbl, snpcKoopaNextMot
 static SNPCMOT *snpcMotTbl[2] = { snpcDonkeyMotTbl, snpcKoopaMotTbl };
 static u32 starMdlTbl[2] = { 0x50005, 0xE0020 };
 
+static inline BOOL GWTeamGet(void)
+{
+    return GwSystem.tagF;
+}
+
 /* Part 2's functions, defined later in the unit. */
 static void SNpcEffectExec(void);
 static void SNpcPlayerMoveFunc(int playerNo);
@@ -636,9 +641,10 @@ void mbSNpcStarExec(int playerNo, int masuId)
 /* Every player in a -1 terminated list plays a motion, with a voice when seNo is set. */
 #define SNPC_LIST_MOT(list, motNo, setup) \
     { \
+        int seNo; \
         u32 attr = 0; \
-        int seNo = -1; \
         int k; \
+        seNo = -1; \
         setup; \
         for(k = 0; list[k] >= 0; k++) { \
             if(seNo >= 0) { \
@@ -747,12 +753,12 @@ static int SNpcMoveExec(void)
                     hitTbl[i] = TRUE;
                 }
             }
-            if(GwSystem.tagF) {
+            if(GWTeamGet()) {
                 for(j = 0; j < 2; j++) {
                     team0 = mbPlayerTeamFindPlayer(j, 0);
                     team1 = mbPlayerTeamFindPlayer(j, 1);
                     if(hitTbl[team0] && hitTbl[team1]) {
-                        starTbl[team0] = coinTbl[team1] = 0;
+                        coinTbl[team1] = starTbl[team0] = 0;
                         if(coinTbl[team0] > 20) {
                             coinTbl[team1] = coinTbl[team0] - 20;
                             coinTbl[team0] = 20;
