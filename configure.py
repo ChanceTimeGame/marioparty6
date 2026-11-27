@@ -767,6 +767,9 @@ config.libs = [
         "resultDll",
         objects={
             Object(NonMatching, "REL/resultDll/result.c"),
+            Object(NonMatching, "REL/resultDll/team.c"),
+            Object(Matching, "REL/resultDll/battle.c"),
+            Object(NonMatching, "REL/resultDll/effect.c"),
         },
     ),
     Rel(

@@ -1,4 +1,3 @@
-/* @@HEAD@@ */
 #include "game/audio.h"
 #include "game/charman.h"
 #include "game/data.h"
@@ -24,29 +23,41 @@ s32 GWPlayerStarGet(GW_PLAYER_ID playerNo);
 #include "dolphin.h"
 
 #include "datadir_enum.h"
+#include "REL/resultDll.h"
+#include "game/saveload.h"
 
 /* The esp* sprite calls (game/esprite.h) and CharFXPlay/CharFXStop are called
  * unprototyped: their headers stay out of this unit. */
+
+void ObjectSetup(void);
+void fn_1_1074(void);
+void fn_1_1E8C(void);
+void fn_1_2068(void);
+void fn_1_2878(void);
+void fn_1_2EBC(void);
+void fn_1_31F0(s32 playerNo, s32 num);
+void fn_1_333C(s32 playerNo, s32 num);
+void fn_1_3488(s32 playerNo, s32 num);
+s32 fn_1_356C(void);
+void fn_1_3640(s32 statId);
+void fn_1_3698(void);
+void fn_1_3FB0(s16 *coinNum);
+s32 fn_1_45D0(s32 playerNo);
+void fn_1_4694(void);
+void fn_1_47A8(void);
+void fn_1_560(void);
+void fn_1_940(void);
+
+/* other files of resultDll */
+void fn_1_49C4(void);
+void fn_1_4D48(void);
+void fn_1_7A18(void);
+s32 fn_1_C45C(s32 dataNum);
 
 typedef void (*VoidFunc)(void);
 extern const VoidFunc _ctors[];
 extern const VoidFunc _dtors[];
 
-/* lbl_1_bss_488: one result row per player (0x58 each) */
-typedef struct ResultPlayer_s {
-    s32 rankEspId; /* 0x00 rank before the minigame */
-    s32 rankNewEspId; /* 0x04 rank after the minigame */
-    s32 charEspId; /* 0x08 bank = rank */
-    s32 coinAddEspId; /* 0x0C */
-    s32 coinAddNumEspId[3]; /* 0x10 */
-    s32 starNumEspId[4]; /* 0x1C */
-    s32 coinNumEspId[4]; /* 0x2C */
-    s32 charMdlId; /* 0x3C */
-    s32 charMotId[3]; /* 0x40 */
-    s32 crownMdlId; /* 0x4C */
-    s32 starMdlId; /* 0x50 */
-    s32 coinMdlId; /* 0x54 */
-} RESULT_PLAYER; /* size 0x58 */
 
 static inline s16 GWMgCoinGet(s32 playerNo)
 {
@@ -63,29 +74,9 @@ static inline BOOL GWTeamGet(void)
     return GwSystem.tagF;
 }
 
-void ObjectSetup(void);
-void fn_1_560(void);
-void fn_1_940(void);
-void fn_1_1074(void);
-void fn_1_1E8C(void);
-void fn_1_2068(void);
-void fn_1_2878(void);
-void fn_1_2EBC(void);
-void fn_1_31F0(s32 playerNo, s32 num);
-void fn_1_333C(s32 playerNo, s32 num);
-void fn_1_3488(s32 playerNo, s32 num);
-s32 fn_1_356C(void);
-void fn_1_3640(s32 statId);
-void fn_1_3698(void);
-void fn_1_3FB0(s16 *coinNum);
-s32 fn_1_45D0(s32 playerNo);
-void fn_1_4694(void);
-void fn_1_47A8(void);
-void fn_1_49C4(void);
-void fn_1_7A18(void);
-s32 fn_1_C45C(s32 dataNum);
 
 /* .bss of the first source file (0x0-0x634), laid out in reverse definition order */
+/* .bss in reverse definition order */
 OMOBJ *lbl_1_bss_630;
 OMOBJMAN *lbl_1_bss_62C;
 s16 lbl_1_bss_628;
@@ -132,7 +123,6 @@ HuVecF lbl_1_data_1A4[4] = { { 179, 221, 9000 }, { 417, 221, 9000 }, { 179, 384,
 HuVecF lbl_1_data_1D4[4] = { { 1, 1, 1 }, { 0.75f, 0.75f, 0.75f }, { 0.5f, 0.5f, 0.5f }, { 0.3f, 0.3f, 0.3f } };
 float lbl_1_data_204[4] = { 1, 0.98f, 0.96f, 0.94f };
 
-/* @@PART1@@ */
 int _prolog(void)
 {
     const VoidFunc *ctors = _ctors;
@@ -801,7 +791,430 @@ void fn_1_2EBC(void)
     }
 }
 
-/* @@PART2@@ */
-/* @@PART3@@ */
-/* @@PART4@@ */
-/* @@END@@ */
+/* part 2 needs, beyond part 1's HEAD: .data 0x248 (BG dirs) and the strings 0x278-0x3E2 of
+ * the first file; the team file (0x4D48-0x7A17) starts in this part at fn_1_4D48, so its
+ * RESULT_TEAM, .bss (0x638-0xB9F) and .data 0x3F8-0x513 are defined here. */
+#pragma dont_inline off
+#pragma auto_inline off
+
+static inline s16 ResultCoinBattleGet(s32 playerNo)
+{
+    return GwPlayer[playerNo].coinBattle;
+}
+
+
+void fn_1_31F0(s32 playerNo, s32 num)
+{
+    s32 digit[3];
+    RESULT_PLAYER spr = lbl_1_bss_488[playerNo];
+    s32 rest;
+
+    if (num > 999) {
+        num = 999;
+    }
+    rest = num;
+    digit[0] = num / 100;
+    if (digit[0] == 0) {
+        espAttrSet(spr.coinNumEspId[1], HUSPR_ATTR_DISPOFF);
+    } else {
+        espAttrReset(spr.coinNumEspId[1], HUSPR_ATTR_DISPOFF);
+        espBankSet(spr.coinNumEspId[1], digit[0]);
+    }
+    rest = num - digit[0] * 100;
+    digit[1] = rest / 10;
+    if (digit[1] == 0 && digit[0] == 0) {
+        espAttrSet(spr.coinNumEspId[2], HUSPR_ATTR_DISPOFF);
+    } else {
+        espAttrReset(spr.coinNumEspId[2], HUSPR_ATTR_DISPOFF);
+        espBankSet(spr.coinNumEspId[2], digit[1]);
+    }
+    rest = rest - digit[1] * 10;
+    espBankSet(spr.coinNumEspId[3], rest);
+}
+
+void fn_1_333C(s32 playerNo, s32 num)
+{
+    s32 digit[3];
+    RESULT_PLAYER spr = lbl_1_bss_488[playerNo];
+    s32 rest;
+
+    if (num > 999) {
+        num = 999;
+    }
+    rest = num;
+    digit[0] = num / 100;
+    if (digit[0] == 0) {
+        espAttrSet(spr.starNumEspId[1], HUSPR_ATTR_DISPOFF);
+    } else {
+        espAttrReset(spr.starNumEspId[1], HUSPR_ATTR_DISPOFF);
+        espBankSet(spr.starNumEspId[1], digit[0]);
+    }
+    rest = num - digit[0] * 100;
+    digit[1] = rest / 10;
+    if (digit[1] == 0 && digit[0] == 0) {
+        espAttrSet(spr.starNumEspId[2], HUSPR_ATTR_DISPOFF);
+    } else {
+        espAttrReset(spr.starNumEspId[2], HUSPR_ATTR_DISPOFF);
+        espBankSet(spr.starNumEspId[2], digit[1]);
+    }
+    rest = rest - digit[1] * 10;
+    espBankSet(spr.starNumEspId[3], rest);
+}
+
+void fn_1_3488(s32 playerNo, s32 num)
+{
+    s32 digit[3];
+    RESULT_PLAYER spr = lbl_1_bss_488[playerNo];
+    s32 rest;
+
+    if (num > 99) {
+        num = 99;
+    }
+    rest = num;
+    digit[0] = num / 10;
+    if (digit[0] == 0) {
+        espAttrSet(spr.coinAddNumEspId[1], HUSPR_ATTR_DISPOFF);
+    } else {
+        espAttrReset(spr.coinAddNumEspId[1], HUSPR_ATTR_DISPOFF);
+        espBankSet(spr.coinAddNumEspId[1], digit[0]);
+    }
+    rest = rest - digit[0] * 10;
+    espBankSet(spr.coinAddNumEspId[2], rest);
+}
+
+u32 lbl_1_data_248[6][2] = {
+    { DATA_w01, DATA_w01n },
+    { DATA_w02, DATA_w02n },
+    { DATA_w03, DATA_w03n },
+    { DATA_w04, DATA_w04n },
+    { DATA_w05, DATA_w05n },
+    { DATA_w06, DATA_w06n }
+};
+
+s32 fn_1_356C(void)
+{
+    s32 statId = -1;
+    s32 timeNo;
+
+    if (GwSystem.curTime == 0) {
+        timeNo = 0;
+    } else {
+        timeNo = 1;
+    }
+    if (!_CheckFlag(FLAG_BOARD_SAVEINIT)) {
+        return -1;
+    }
+    if (GwSystem.boardNo <= 5) {
+        statId = HuDataDirReadAsync(lbl_1_data_248[GwSystem.boardNo][timeNo]);
+        OSReport("/----------------Result_BGRead----------------/\n");
+    }
+    return statId;
+}
+
+void fn_1_3640(s32 statId)
+{
+    OSReport("/----------------Result_BGReadWait----------------/\n");
+    if (statId != -1) {
+        while (!HuDataGetAsyncStat(statId)) {
+            HuPrcVSleep();
+        }
+    }
+}
+
+void fn_1_3698(void)
+{
+    s16 coinNum[5];
+    s16 rank[4];
+    s16 sortRank[4];
+    s16 order[4];
+    s16 coin = 0;
+    s16 teamPlayer[2] = { -1, -1 };
+    s16 teamCoin[2] = { 0, 0 };
+    s16 i;
+    s16 j;
+    s16 k;
+    s16 count;
+    s16 temp;
+    s16 randomPlayer;
+
+    for (i = 0; i < 5; i++) {
+        coinNum[i] = 0;
+    }
+    if (MgDataTbl[GwSystem.mgNo].type == 3) {
+        for (i = 0; i < 4; i++) {
+            for (j = count = 0; j < 4; j++) {
+                if (i != j && GWMgCoinBonusGet(i) > GWMgCoinBonusGet(j)) {
+                    count++;
+                }
+            }
+            sortRank[i] = rank[i] = count;
+            order[i] = i;
+        }
+        for (k = 1; k < 4; k++) {
+            for (i = 0; i < 4 - k; i++) {
+                if (sortRank[i] > sortRank[i + 1]) {
+                    temp = sortRank[i];
+                    sortRank[i] = sortRank[i + 1];
+                    sortRank[i + 1] = temp;
+                    temp = order[i];
+                    order[i] = order[i + 1];
+                    order[i + 1] = temp;
+                }
+            }
+        }
+        for (i = 0; i < 4; i++) {
+            if (lbl_1_bss_61C == i) {
+                randomPlayer = order[i];
+            }
+        }
+        fn_1_3FB0(coinNum);
+        if (GWTeamGet()) {
+            for (i = 0; i < 4; i++) {
+                coin = coinNum[rank[i]];
+                if (randomPlayer == i) {
+                    coin += coinNum[4];
+                }
+                teamCoin[GwPlayer[i].team] += coin;
+            }
+            for (i = 0; i < 2; i++) {
+                if (teamPlayer[i] == -1) {
+                    for (j = 0; j < 4; j++) {
+                        if (i == GwPlayer[j].team) {
+                            teamPlayer[i] = j;
+                            break;
+                        }
+                    }
+                }
+            }
+            for (i = 0; i < 2; i++) {
+                GWPlayerCoinAdd(teamPlayer[i], teamCoin[i]);
+                GwPlayer[teamPlayer[i]].coinTotalMg += teamCoin[i];
+                if (GwPlayer[teamPlayer[i]].coinTotalMg > 9999) {
+                    GwPlayer[teamPlayer[i]].coinTotalMg = 9999;
+                }
+            }
+            for (i = 0; i < 4; i++) {
+                GWMgCoinBonusSet(i, 0);
+                GWMgCoinSet(i, 0);
+            }
+        } else {
+            for (i = 0; i < 4; i++) {
+                coin = coinNum[rank[i]];
+                if (randomPlayer == i) {
+                    coin += coinNum[4];
+                }
+                GWPlayerCoinAdd(i, coin);
+                GWMgCoinBonusSet(i, 0);
+                GWMgCoinSet(i, 0);
+                GwPlayer[i].coinTotalMg += coin;
+                if (GwPlayer[i].coinTotalMg > 9999) {
+                    GwPlayer[i].coinTotalMg = 9999;
+                }
+            }
+        }
+    } else {
+        fn_1_3FB0(coinNum);
+        if (GWTeamGet()) {
+            for (i = 0; i < 4; i++) {
+                teamCoin[GwPlayer[i].team] += coinNum[i];
+            }
+            for (i = 0; i < 2; i++) {
+                if (teamPlayer[i] == -1) {
+                    for (j = 0; j < 4; j++) {
+                        if (i == GwPlayer[j].team) {
+                            teamPlayer[i] = j;
+                            break;
+                        }
+                    }
+                }
+            }
+            for (i = 0; i < 2; i++) {
+                GWPlayerCoinAdd(teamPlayer[i], teamCoin[i]);
+                GwPlayer[teamPlayer[i]].coinTotalMg += teamCoin[i];
+                if (GwPlayer[teamPlayer[i]].coinTotalMg > 9999) {
+                    GwPlayer[teamPlayer[i]].coinTotalMg = 9999;
+                }
+            }
+            for (i = 0; i < 4; i++) {
+                GWMgCoinBonusSet(i, 0);
+                GWMgCoinSet(i, 0);
+            }
+        } else {
+            for (i = 0; i < 4; i++) {
+                GWPlayerCoinAdd(i, coinNum[i]);
+                GWMgCoinBonusSet(i, 0);
+                GWMgCoinSet(i, 0);
+                GwPlayer[i].coinTotalMg += coinNum[i];
+                if (GwPlayer[i].coinTotalMg > 9999) {
+                    GwPlayer[i].coinTotalMg = 9999;
+                }
+            }
+        }
+    }
+}
+
+void fn_1_3FB0(s16 *coinNum)
+{
+    float scale[4];
+    s16 coinBonus[4];
+    s16 rank[4];
+    s16 i;
+    s16 j;
+    s16 temp;
+    s16 mgType;
+    u32 coinBattle;
+    u32 coin;
+    u32 coinMul;
+
+    mgType = MgDataTbl[GwSystem.mgNo].type;
+    switch (mgType) {
+        case 3:
+            for (i = coinBattle = 0; i < 4; i++) {
+                coinBattle += ResultCoinBattleGet(i);
+            }
+            coinBonus[0] = coinBonus[1] = coinBonus[2] = coinBonus[3] = 0;
+            rank[0] = rank[1] = rank[2] = rank[3] = 0;
+            for (i = 0; i < 4; i++) {
+                coinBonus[i] = GWMgCoinBonusGet(i);
+            }
+            for (i = 0; i < 4; i++) {
+                for (j = i + 1; j < 4; j++) {
+                    if (coinBonus[i] > coinBonus[j]) {
+                        temp = coinBonus[i];
+                        coinBonus[i] = coinBonus[j];
+                        coinBonus[j] = temp;
+                    }
+                }
+            }
+            temp = 0;
+            for (i = 1; i < 4; i++) {
+                if (coinBonus[i] != coinBonus[i - 1]) {
+                    temp++;
+                }
+                rank[i] = temp;
+            }
+            scale[0] = scale[1] = scale[2] = scale[3] = 0.0f;
+            if (rank[0] == 0 && rank[1] == 1 && rank[2] == 2 && rank[3] == 3) {
+                scale[0] = 0.7f;
+                scale[1] = 0.25f;
+                scale[2] = 0.05f;
+            } else if (rank[0] == 0 && rank[1] == 0 && rank[2] == 1 && rank[3] == 2) {
+                scale[0] = 0.5f;
+                scale[1] = 0.5f;
+            } else if (rank[0] == 0 && rank[1] == 0 && rank[2] == 1 && rank[3] == 1) {
+                scale[0] = 0.5f;
+                scale[1] = 0.5f;
+            } else if (rank[0] == 0 && rank[1] == 0 && rank[2] == 0 && rank[3] == 1) {
+                scale[0] = 0.3f;
+                scale[1] = 0.3f;
+                scale[2] = 0.3f;
+            } else if (rank[0] == 0 && rank[1] == 1 && rank[2] == 1 && rank[3] == 2) {
+                scale[0] = 0.6f;
+                scale[1] = 0.2f;
+                scale[2] = 0.2f;
+            } else if (rank[0] == 0 && rank[1] == 1 && rank[2] == 1 && rank[3] == 1) {
+                scale[0] = 0.7f;
+                scale[1] = 0.1f;
+                scale[2] = 0.1f;
+                scale[3] = 0.1f;
+            } else if (rank[0] == 0 && rank[1] == 1 && rank[2] == 2 && rank[3] == 2) {
+                scale[0] = 0.7f;
+                scale[1] = 0.3f;
+            } else if (rank[0] == 0 && rank[1] == 0 && rank[2] == 0 && rank[3] == 0) {
+                scale[0] = 0.25f;
+                scale[1] = 0.25f;
+                scale[2] = 0.25f;
+                scale[3] = 0.25f;
+            }
+            for (i = coin = 0; i < 4; i++) {
+                coinMul = coinBattle * scale[i];
+                coinNum[i] = coinMul;
+                coin += coinMul;
+            }
+            if (coin < coinBattle) {
+                coinNum[4] = coinBattle - coin;
+            } else {
+                coinNum[4] = 0;
+            }
+            break;
+
+        default:
+            for (i = 0; i < 4; i++) {
+                coin = GWMgCoinBonusGet(i) + GWMgCoinGet(i);
+                coinNum[i] = coin;
+            }
+            break;
+    }
+}
+
+s32 fn_1_45D0(s32 playerNo)
+{
+    s32 score[4];
+    s32 i;
+    s32 rank;
+
+    for (i = 0; i < 4; i++) {
+        score[i] = GWPlayerCoinGet(i) | (GWPlayerStarGet(i) << 10);
+    }
+    rank = 0;
+    for (i = 0; i < 4; i++) {
+        if (i != playerNo && score[playerNo] < score[i]) {
+            rank++;
+        }
+    }
+    return rank;
+}
+
+void fn_1_4694(void)
+{
+    s16 i;
+    s16 turnNo;
+
+    if (GwSystem.turnNo < 52) {
+        turnNo = GwSystem.turnNo;
+        for (i = 0; i < 4; i++) {
+            ((u16 *)GwPlayer[i].starGraph)[turnNo - 1] = GwPlayer[i].star;
+            ((u16 *)GwPlayer[i].coinGraph)[turnNo - 1] = GwPlayer[i].coin;
+        }
+        if (!SLSaveFlagGet()) {
+            GwSystem.saveMode = 1;
+        }
+    }
+    SLSaveBoardTurnExec();
+}
+
+void fn_1_47A8(void)
+{
+    int i;
+    s16 total;
+    s16 coinNum[5];
+    s16 rank[4];
+
+    if (MgDataTbl[GwSystem.mgNo].type != 3) {
+        OSReport("\n");
+        OSReport("--------------Result BonusCoin-------------- \n");
+        for (i = 0; i < 4; i++) {
+            coinNum[i] = GWMgCoinBonusGet(i) + GWMgCoinGet(i);
+            OSReport("Player=%d  BonusCoin=%d \n", i, coinNum[i]);
+        }
+        OSReport("-------------------------------------------- \n");
+        OSReport("\n");
+    } else {
+        OSReport("\n");
+        OSReport("--------------BATTLE_MINIGAME------------- \n");
+        OSReport("--------------Result GetCoin-------------- \n");
+        fn_1_3FB0(coinNum);
+        for (i = total = 0; i < 5; i++) {
+            total += coinNum[i];
+        }
+        OSReport("TotalCoin=%d \n", total);
+        for (i = 0; i < 4; i++) {
+            rank[i] = GWMgCoinBonusGet(i);
+            OSReport("Player=%d  Rank=%d  GetCoin=%d \n", i, rank[i], coinNum[rank[i]]);
+        }
+        OSReport("RandomCoin=%d \n", coinNum[4]);
+        OSReport("-------------------------------------------- \n");
+        OSReport("\n");
+    }
+}
+
