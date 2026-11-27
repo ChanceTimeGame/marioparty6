@@ -159,7 +159,7 @@ static void SingleEffMgStop(s16 id, int type);
 static void ev_SingleMg(int playerNo, s16 masuId);
 static void ev_SingleMgEnd(int playerNo);
 static void ev_SingleRareMg(int playerNo, s16 effId);
-static void ev_SingleKoopaMg();
+static void ev_SingleKoopaMg(int playerNo, s16 masuId);
 static void ev_SingleKoopaMgSkip(s16 guideObj);
 static void ev_SingleKoopaMgEnd(int playerNo);
 static void ev_SingleMKoopaMg(int playerNo, s16 masuId);
