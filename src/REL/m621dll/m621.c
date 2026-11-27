@@ -19,6 +19,8 @@
 
 #include "datadir_enum.h"
 
+#pragma dont_inline on
+
 typedef void (*VoidFunc)(void);
 extern const VoidFunc _ctors[];
 extern const VoidFunc _dtors[];
@@ -53,7 +55,8 @@ typedef struct M621Item_s {
     s16 timer;
     u32 unk4;
     HuVecF vel;
-    u32 unk14;
+    HU3D_MODELID itemMdlId;
+    s16 unk16;
     MGACTOR *actor;
     s16 unk1C;
     s16 mdlId;
@@ -66,9 +69,13 @@ typedef struct M621Target_s {
     int timer;
     s16 unk8;
     s16 itemNum;
-    u8 unkC[0x10];
+    s16 unkC;
+    s16 unkE;
+    float rotY;
+    float unk14;
+    float unk18;
     HuVecF pos;
-    u8 unk28[4];
+    float height;
     s16 unk2C;
     HU3D_MODELID mdlId;
     MGACTOR *actor;
@@ -147,9 +154,6 @@ void fn_1_2C6C(M621_PLAYER *player, M621_TARGET *target, s16 itemNo);
 void fn_1_3678(OMOBJ *obj);
 void fn_1_5054(OMOBJ *obj);
 void fn_1_51F4(s16 playerNo, HuVecF *pos);
-void fn_1_52D4(int playerNo, s16 coin);
-void fn_1_5328(int playerNo, int coin);
-s16 fn_1_5340(void);
 
 MGSEQ_PARAM lbl_1_data_0 = {
     30, MGSEQ_TIMER_BOTTOM,
@@ -260,16 +264,18 @@ void fn_1_140(OMOBJ *obj, OMOBJ_FUNC func)
 void fn_1_148(void)
 {
     HU3D_LIGHTID lightId;
-    HuVecF pos = { -100.0f, 8000.0f, 0.0f };
-    HuVecF up = { 0.0f, 1.0f, 0.0f };
-    HuVecF target = { 0.0f, 0.0f, 0.0f };
     lbl_1_bss_0 = MgActorObjectSetup();
     lightId = Hu3DGLightCreate(0, 1000, 1000, 1, -1, -1, 255, 255, 255);
     Hu3DGLightInfinitytSet(lightId);
-    Hu3DShadowCreate(15, 10, 10000);
-    Hu3DShadowColSet(16, 16, 16);
-    Hu3DShadowPosSet(&pos, &up, &target);
-    Hu3DShadowTPLvlSet(0.3f);
+    {
+        HuVecF pos = { -100.0f, 8000.0f, 0.0f };
+        HuVecF up = { 0.0f, 1.0f, 0.0f };
+        HuVecF target = { 0.0f, 0.0f, 0.0f };
+        Hu3DShadowCreate(15, 10, 10000);
+        Hu3DShadowColSet(16, 16, 16);
+        Hu3DShadowPosSet(&pos, &up, &target);
+        Hu3DShadowTPLvlSet(0.3f);
+    }
     HuPrcChildCreate(fn_1_2BC, 100, 0x3000, 0, lbl_1_bss_0);
 }
 
@@ -332,8 +338,8 @@ void fn_1_41C(s16 mode, s16 frameNo)
 void fn_1_420(HuVecF *pos, s16 seNo)
 {
     HuVecF pos2D;
-    int pan;
-    int vol;
+    s16 pan;
+    s16 vol;
     Hu3D3Dto2D(pos, 1, &pos2D);
     if (pos2D.x > 608.0f) {
         pan = 80;
@@ -421,7 +427,7 @@ void fn_1_778(OMOBJ *obj)
             }
             for (i = 0; i < winNum; i++) {
                 winner[i]->winF = 1;
-                fn_1_52D4(winner[i]->playerNo, 10);
+                GWMgCoinBonusSet(winner[i]->playerNo, 10);
             }
             switch (winNum) {
                 case 0:
@@ -455,7 +461,7 @@ void fn_1_A5C(OMOBJ *obj)
     if ((lbl_1_bss_C >= 4 && work->timer >= 60) || work->timer >= 180) {
         if (lbl_1_bss_8) {
             for (i = 0; i < 4; i++) {
-                fn_1_5328(lbl_1_bss_10[i]->playerNo, lbl_1_bss_10[i]->score);
+                GWMgScoreSet(lbl_1_bss_10[i]->playerNo, lbl_1_bss_10[i]->score);
             }
             MgSeqModeSet(MGSEQ_MODE_FADEOUT);
         } else {
@@ -504,15 +510,15 @@ void fn_1_D28(OMOBJ *obj)
     COL_ATTRPARAM attrParam;
     work->obj = omAddObjEx(lbl_1_bss_0, 0x7FDA, 5, 2, -1, NULL);
     for (i = 0; i < 5; i++) {
-        if (lbl_1_data_3C[fn_1_5340()][i] != -1) {
-            work->obj->mdlId[i] = Hu3DModelCreateData(lbl_1_data_3C[fn_1_5340()][i]);
+        if (lbl_1_data_3C[GWMgTimeGet()][i] != -1) {
+            work->obj->mdlId[i] = Hu3DModelCreateData(lbl_1_data_3C[GWMgTimeGet()][i]);
         } else {
             work->obj->mdlId[i] = 0;
         }
     }
     for (i = 0; i < 2; i++) {
-        if (lbl_1_data_64[fn_1_5340()][i] != -1) {
-            work->obj->mtnId[i] = Hu3DJointMotionData(work->obj->mdlId[i], lbl_1_data_64[fn_1_5340()][i]);
+        if (lbl_1_data_64[GWMgTimeGet()][i] != -1) {
+            work->obj->mtnId[i] = Hu3DJointMotionData(work->obj->mdlId[i], lbl_1_data_64[GWMgTimeGet()][i]);
             Hu3DMotionSet(work->obj->mdlId[i], work->obj->mtnId[i]);
         } else {
             work->obj->mtnId[i] = 0;
@@ -566,9 +572,9 @@ int fn_1_10E8(HuVecF *in, HuVecF *out)
 int fn_1_1240(COL_NARROW_PARAM *a, COL_NARROW_PARAM *b)
 {
     M621_PLAYER *player;
-    HuVecF ofs;
-    HuVecF up;
     HuVecF dir;
+    HuVecF up;
+    HuVecF ofs;
     float dot;
     if (a->type != 0 || b->type < 5 || b->type >= 8 || b->paramB == 0) {
         return FALSE;
@@ -670,9 +676,9 @@ void fn_1_175C(OMOBJ *obj)
 void fn_1_1844(OMOBJ *obj)
 {
     M621_PLAYER *work = obj->data;
-    HuVecF end;
-    HuVecF start;
     HuVecF pos;
+    HuVecF start;
+    HuVecF end;
     MGACTOR_COLMAP_POLY poly;
     work->vibTimer--;
     if (work->player->mode == MGPLAYER_MODE_PUNCH || work->player->mode == MGPLAYER_MODE_KICK) {
@@ -860,11 +866,11 @@ void fn_1_215C(OMOBJ *obj)
 {
     M621_PLAYER *work = obj->data;
     float dy;
-    HuVecF stick;
-    HuVecF dir;
-    HuVecF targetPos;
-    HuVecF pos;
     HuVecF actorPos;
+    HuVecF pos;
+    HuVecF targetPos;
+    HuVecF dir;
+    HuVecF stick;
     if (work->target == NULL || work->target->state != 1) {
         work->target = fn_1_1D08(work);
         work->comWait = fn_1_1F9C(work) / 2;
@@ -975,9 +981,9 @@ void fn_1_27A0(void)
     lbl_1_bss_3E = Hu3DModelCreateData(DATANUM(DATA_m621, 0x0C));
     lbl_1_bss_3C = Hu3DModelCreateData(DATANUM(DATA_m621, 0x0D));
     lbl_1_bss_3A = Hu3DModelCreateData(DATANUM(DATA_m621, 0x0E));
-    lbl_1_bss_38 = Hu3DModelCreateData(lbl_1_data_74[fn_1_5340()][0]);
-    lbl_1_bss_36 = Hu3DModelCreateData(lbl_1_data_74[fn_1_5340()][1]);
-    lbl_1_bss_34 = Hu3DJointMotionData(lbl_1_bss_36, lbl_1_data_74[fn_1_5340()][2]);
+    lbl_1_bss_38 = Hu3DModelCreateData(lbl_1_data_74[GWMgTimeGet()][0]);
+    lbl_1_bss_36 = Hu3DModelCreateData(lbl_1_data_74[GWMgTimeGet()][1]);
+    lbl_1_bss_34 = Hu3DJointMotionData(lbl_1_bss_36, lbl_1_data_74[GWMgTimeGet()][2]);
     Hu3DModelAttrSet(lbl_1_bss_3E, HU3D_ATTR_DISPOFF);
     Hu3DModelAttrSet(lbl_1_bss_3C, HU3D_ATTR_DISPOFF);
     Hu3DModelAttrSet(lbl_1_bss_38, HU3D_ATTR_DISPOFF);
@@ -1006,8 +1012,8 @@ void fn_1_29E8(OMOBJ *obj)
 void fn_1_2A54(M621_PLAYER *player, M621_TARGET *target)
 {
     M621_ITEM *item;
-    int num;
     int delay;
+    int num;
     int i;
     HuVecF pos;
     delay = 0;
@@ -1086,6 +1092,9 @@ void fn_1_2C6C(M621_PLAYER *player, M621_TARGET *target, s16 itemNo)
         }
     }
 }
+
+s16 lbl_1_data_37E = 1;
+s16 lbl_1_data_380 = 1;
 
 /* @@PART2@@ */
 
