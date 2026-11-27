@@ -17,6 +17,7 @@ int mbMasuCapsuleGet(s16 id);
 #include "game/board/object.h"
 #include "game/board/player.h"
 #include "game/board/status.h"
+#include "game/board/telop.h"
 #include "game/board/window.h"
 #include "game/gamework.h"
 #include "game/memory.h"
@@ -27,6 +28,8 @@ int mbMasuCapsuleGet(s16 id);
 #include "game/esprite.h"
 #include "game/object.h"
 #include "game/process.h"
+#include "game/pad.h"
+#include "game/printfunc.h"
 
 #include "string.h"
 
@@ -1384,7 +1387,156 @@ void mbev_CapNullKill(void)
 
 void mbev_CapDebugCam(void)
 {
-    /* TODO */
+    CAPWORK *work = HuPrcCurrentGet()->property;
+    MBCAMERA *camera;
+    HuVecF eye;
+    HuVecF rot;
+    HuVecF eyeOrig;
+    HuVecF rotOrig;
+    float zoomOrig;
+    float zoom;
+    float x;
+    float y;
+    float speed;
+    int objId;
+    int mode;
+    int dispF;
+    int frame;
+
+    mbCapEffUseCreate(work->playerNo, work->capsuleNo);
+    while(mbCapEffUseModeGet(work->playerNo) >= 0) {
+        HuPrcVSleep();
+    }
+    mbCameraMoveWait();
+    camera = mbCameraGet();
+    eye.x = eyeOrig.x = camera->target.x+camera->offset.x;
+    eye.y = eyeOrig.y = camera->target.y+camera->offset.y;
+    eye.z = eyeOrig.z = camera->target.z+camera->offset.z;
+    rot.x = rotOrig.x = camera->rot.x;
+    rot.y = rotOrig.y = camera->rot.y;
+    rot.z = rotOrig.z = camera->rot.z;
+    zoom = zoomOrig = camera->zoom;
+    mode = 0;
+    dispF = FALSE;
+    x = 32.0f;
+    y = 50.0f;
+    speed = 1.0f;
+    frame = 0;
+    objId = mbev_CapObjCreate(&work->objWork, 0xC0044, NULL, FALSE, 5, FALSE);
+    mbObjPosSet(objId, eye.x, eye.y, eye.z);
+    mbObjDispSet(objId, FALSE);
+    mbCameraFocusObjSet(objId);
+    do {
+        if(HuPadBtnDown[0] & PAD_BUTTON_X) {
+            mode++;
+            if(mode > 2) {
+                mode = 0;
+            }
+        }
+        if(HuPadBtnDown[0] & PAD_BUTTON_Y) {
+            dispF ^= TRUE;
+        }
+        frame++;
+        mbObjDispSet(objId, dispF);
+        switch(mode) {
+            case 0:
+                if(HuPadBtn[0] & PAD_TRIGGER_L) {
+                    speed = 2.0f;
+                } else if(HuPadBtn[0] & PAD_TRIGGER_R) {
+                    speed = 0.5f;
+                } else {
+                    speed = 1.0f;
+                }
+                if(fabs(mbPadStkXGet(0)) > 8.0) {
+                    eye.x += speed*(0.05f*mbPadStkXGet(0));
+                }
+                if(fabs(mbPadStkYGet(0)) > 8.0) {
+                    eye.z -= speed*(0.05f*mbPadStkYGet(0));
+                }
+                if(HuPadBtn[0] & PAD_BUTTON_UP) {
+                    eye.y += 25.0f*speed;
+                }
+                if(HuPadBtn[0] & PAD_BUTTON_DOWN) {
+                    eye.y -= 25.0f*speed;
+                }
+                if(HuPadBtn[0] & PAD_BUTTON_A) {
+                    zoom += 25.0f*speed;
+                }
+                if(HuPadBtn[0] & PAD_BUTTON_B) {
+                    zoom -= 25.0f*speed;
+                }
+                if(HuPadBtnDown[0] & PAD_BUTTON_START) {
+                    eye = eyeOrig;
+                    rot = rotOrig;
+                    zoom = zoomOrig;
+                }
+                fontcolor = 15;
+                print8(36.0+x, 84.0+y, 1.5f, "\xFD\x01POSITION MODE");
+                break;
+
+            case 1:
+                if(HuPadBtn[0] & PAD_TRIGGER_L) {
+                    speed = 2.0f;
+                } else if(HuPadBtn[0] & PAD_TRIGGER_R) {
+                    speed = 0.5f;
+                } else {
+                    speed = 1.0f;
+                }
+                if(fabs(mbPadStkXGet(0)) > 8.0) {
+                    rot.y += speed*(0.05f*mbPadStkXGet(0));
+                }
+                if(fabs(mbPadStkYGet(0)) > 8.0) {
+                    rot.x += speed*(0.05f*mbPadStkYGet(0));
+                }
+                if(rot.x >= 360.0f) {
+                    rot.x -= 360.0f;
+                } else if(rot.x < 0.0f) {
+                    rot.x += 360.0f;
+                }
+                if(rot.y >= 360.0f) {
+                    rot.y -= 360.0f;
+                } else if(rot.y < 0.0f) {
+                    rot.y += 360.0f;
+                }
+                if(HuPadBtn[0] & PAD_BUTTON_A) {
+                    zoom += 25.0f*speed;
+                }
+                if(HuPadBtn[0] & PAD_BUTTON_B) {
+                    zoom -= 25.0f*speed;
+                }
+                if(HuPadBtnDown[0] & PAD_BUTTON_START) {
+                    eye = eyeOrig;
+                    rot = rotOrig;
+                    zoom = zoomOrig;
+                }
+                fontcolor = 15;
+                print8(36.0+x, 84.0+y, 1.5f, "\xFD\x01ROTATE MODE");
+                break;
+
+            default:
+                if(fabs(mbPadStkXGet(0)) > 8.0) {
+                    x += 0.05f*mbPadStkXGet(0);
+                }
+                if(fabs(mbPadStkYGet(0)) > 8.0) {
+                    y += 0.05f*mbPadStkYGet(0);
+                }
+                fontcolor = 14;
+                print8(36.0+x, 84.0+y, 1.5f, "\xFD\x01""DISP MODE");
+                break;
+        }
+        print8(36.0+x, 96.0+y, 1.5f, "\xFD\x01RX:%.4f RY:%.4f RZ:%.4f", rot.x, rot.y, rot.z);
+        print8(36.0+x, 108.0+y, 1.5f, "\xFD\x01""CX:%.4f CY:%.4f CZ:%.4f", eye.x, eye.y, eye.z);
+        print8(36.0+x, 120.0+y, 1.5f, "\xFD\x01ZM:%.4f", zoom);
+        mbObjPosSet(objId, eye.x, eye.y, eye.z);
+        mbCameraEyeSet(eye.x, eye.y, eye.z);
+        mbCameraRotSet(rot.x, rot.y, rot.z);
+        mbCameraZoomSet(zoom);
+        HuPrcVSleep();
+    } while(!(HuPadBtn[0] & PAD_TRIGGER_L) || !(HuPadBtn[0] & PAD_TRIGGER_R));
+    mbCameraMoveOnSet(TRUE);
+    mbCameraMovePos(&eyeOrig, &rotOrig, NULL, zoomOrig, -1.0f, 1);
+    mbCameraFocusPlayerSet(work->playerNo);
+    HuPrcEnd();
 }
 
 /* Data the later parts use; defined here so it follows mbev_CapDebugCam's strings. */
