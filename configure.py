@@ -695,7 +695,7 @@ config.libs = [
             Object(Matching, "board/roulette.c"),
             Object(NonMatching, "board/capselect.c"),
             Object(NonMatching, "board/capmove.c"),
-            Object(NonMatching, "board/capthrow.c"),
+            Object(Matching, "board/capthrow.c"),
             Object(Matching, "board/captrap.c"),
             Object(NonMatching, "board/capspecial.c"),
             Object(NonMatching, "board/capsule.c"),
