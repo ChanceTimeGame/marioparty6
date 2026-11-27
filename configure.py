@@ -745,7 +745,10 @@ config.libs = [
     Rel(
         "m616dll",
         objects={
-            Object(NonMatching, "REL/m616dll/m616.c"),
+            Object(Matching, "REL/m616dll/m616.c"),
+            Object(Matching, "REL/m616dll/setup.c"),
+            Object(Matching, "REL/m616dll/motion.c"),
+            Object(Matching, "REL/m616dll/com.c"),
         },
     ),
     Rel(
@@ -757,7 +760,7 @@ config.libs = [
     Rel(
         "m612dll",
         objects={
-            Object(NonMatching, "REL/m612dll/m612.c"),
+            Object(Matching, "REL/m612dll/m612.c"),
         },
     ),
     Rel(
