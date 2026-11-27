@@ -7,10 +7,10 @@
    the function exists there; argN/fN are placeholder names. */
 void mbev_CapTeresa(void);
 void mbev_CapTeresaKill(void);
-void mbev_CapTeresaStealSet(int arg0, int arg1, int arg2, int arg3);
-void mbev_CapTeresaFadeCreate(s16 arg0);
-void mbev_CapTeresaFadeKill(s16 arg0);
-void mbev_CapTeresaFadeSet(float f0);
+void mbev_CapTeresaStealSet(int mesId, int coinNum, void *beginHook, void *hook);
+void mbev_CapTeresaFadeCreate(int objId);
+void mbev_CapTeresaFadeKill(int objId);
+void mbev_CapTeresaFadeSet(float alpha);
 void mbev_CapMiracle(void);
 void mbev_CapMiracleKill(void);
 void mbev_CapKettou(void);
