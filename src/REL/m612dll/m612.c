@@ -112,7 +112,8 @@ void fn_1_54D4(OMOBJ *obj);
 void fn_1_5924(OMOBJ *obj);
 float fn_1_5E00(s32 dir);
 
-/* Defined by part 2, after fn_1_5924: .data keeps definition order */
+/* Defined by part 2, after fn_1_5924: .data keeps definition order.
+   lbl_1_data_198 needs ATTRIBUTE_ALIGN(8): the target has a 4-byte gap at .data 0x194 before it. */
 extern s8 lbl_1_data_198[][60];
 extern s8 lbl_1_data_16B0[][7];
 
@@ -1068,7 +1069,7 @@ void fn_1_51D8(void) { }
 void fn_1_54D4(OMOBJ *obj) { }
 void fn_1_5924(OMOBJ *obj) { }
 float fn_1_5E00(s32 dir) { return 0.0f; }
-s8 lbl_1_data_198[90][60] = {
+s8 lbl_1_data_198[90][60] ATTRIBUTE_ALIGN(8) = {
     { 3, 1, 3, 3, 2, 2, 3, 3, 1, 3, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
     { 3, 1, 3, 3, 2, 2, 3, 3, 3, 1, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
     { 3, 1, 3, 3, 2, 2, 3, 3, 3, 3, 1, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
