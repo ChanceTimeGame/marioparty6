@@ -13,6 +13,14 @@
 #include "game/board/status.h"
 #include "game/board/window.h"
 #include "game/board/wipe.h"
+#include "game/board/dice.h"
+#include "game/board/effect.h"
+#include "game/board/guide.h"
+#include "game/board/mgcall.h"
+#include "game/board/pause.h"
+#include "game/board/scroll.h"
+#include "game/board/telop.h"
+#include "game/esprite.h"
 #include "game/charman.h"
 #include "game/data.h"
 #include "game/gamework.h"
@@ -69,6 +77,9 @@ static inline BOOL GWTeamGet(void)
 {
     return GwSystem.tagF;
 }
+
+/* stdlib.h is left out: retail calls abs unprototyped-style (part 3). */
+int abs(int x);
 
 #define CAP_RANDF() (0.0000000037252903f*mbRandMod(0x10000000))
 
@@ -1322,10 +1333,6 @@ static void ev_CapMiracleMasu(CAPWORK *work)
 }
 
 /* @@PART2@@ */
-#include "game/board/dice.h"
-#include "game/board/guide.h"
-#include "game/board/status.h"
-#include "game/esprite.h"
 
 /* capevent.c; local prototypes (part 2) */
 
@@ -2196,15 +2203,6 @@ static void ev_CapMiracleSprUpdate(OMOBJ *obj)
 }
 
 /* @@PART3@@ */
-#include "game/board/dice.h"
-#include "game/board/guide.h"
-#include "game/board/mgcall.h"
-#include "game/board/pause.h"
-#include "game/board/scroll.h"
-#include "game/board/status.h"
-#include "game/board/telop.h"
-#include "game/esprite.h"
-int abs(int x);
 /* Part 3: the miracle trade sprites' tail, Kettou (duel) and Donkey. */
 
 
@@ -3247,7 +3245,7 @@ static int ev_CapDonkeyStart(CAPWORK *work)
             t = 1.0f;
         }
         Hu3DMotionCalc(mbObjModelIDGet(barrelObjId));
-        Hu3DModelObjMtxGet(mbObjModelIDGet(barrelObjId), "itemhook_R", mtx);
+        Hu3DModelObjMtxGet(mbObjModelIDGet(barrelObjId), "tree_fook", mtx);
         playerPos.x = mtx[0][3];
         playerPos.y = mtx[1][3];
         playerPos.z = mtx[2][3];
@@ -3274,7 +3272,7 @@ static int ev_CapDonkeyStart(CAPWORK *work)
     mbPlayerMotionShiftSet(playerNo, 9, 0.0f, 8.0f, HU3D_MOTATTR_NONE);
     for(i = 1; i <= 30.0f; i++) {
         t = i/30.0f;
-        Hu3DModelObjMtxGet(mbObjModelIDGet(barrelObjId), "itemhook_R", mtx);
+        Hu3DModelObjMtxGet(mbObjModelIDGet(barrelObjId), "tree_fook", mtx);
         playerPos.x = mtx[0][3]-(80.0f*t);
         playerPos.y = mtx[1][3]+(1.5*(100.0*HuSin(180.0f*t)));
         playerPos.z = mtx[2][3]+(80.0f*t);
@@ -3284,7 +3282,7 @@ static int ev_CapDonkeyStart(CAPWORK *work)
         HuPrcVSleep();
     }
     while(!obj->work[2]) {
-        Hu3DModelObjMtxGet(mbObjModelIDGet(barrelObjId), "itemhook_R", mtx);
+        Hu3DModelObjMtxGet(mbObjModelIDGet(barrelObjId), "tree_fook", mtx);
         playerPos.x = mtx[0][3]-80.0f;
         playerPos.y = mtx[1][3];
         playerPos.z = 80.0f+mtx[2][3];
@@ -3491,13 +3489,6 @@ static int ev_CapDonkeyStart(CAPWORK *work)
 }
 
 /* @@PART4@@ */
-#include "game/board/dice.h"
-#include "game/board/effect.h"
-#include "game/board/mgcall.h"
-#include "game/board/pause.h"
-#include "game/board/status.h"
-#include "game/board/telop.h"
-#include "game/esprite.h"
 
 /* capevent.c; local prototypes as retail calls them here. */
 
@@ -3507,7 +3498,6 @@ static int ev_CapKoopaReturn(CAPWORK *work);
 static u16 ev_CapKoopaDicePadBtnHook(int playerNo);
 static void ev_CapKoopaDiceMotHook(int playerNo);
 
-#define CAPSP_RANDF() (0.0000000037252903f*mbRandMod(0x10000000))
 
 static inline s16 CapSpMgCoinBonusGet(int playerNo)
 {
@@ -3606,7 +3596,7 @@ static void ev_CapDonkeyCoin(CAPWORK *work)
                 mbPlayerPosGet(i, &ofs);
                 coinPos = ofs;
                 coinPos.y += 1500.0f;
-                coinPos.x += 0.5f*(100.0f*(-0.5f+CAPSP_RANDF()));
+                coinPos.x += 0.5f*(100.0f*(-0.5f+CAP_RANDF()));
                 vel.x = vel.y = vel.z = 0.0f;
                 no = mbev_CapEffCoinAdd(work->effCoin, &coinPos, &vel, 0.75f, 4.9f, 30, 4);
                 if(no >= 0) {
@@ -3977,7 +3967,7 @@ static int ev_CapKoopaStart(CAPWORK *work)
     HuPrcSleep(30);
     mbEffFadeOutSet(30);
     HuPrcSleep(30);
-    if(CAPSP_RANDF() < 0.3f) {
+    if(CAP_RANDF() < 0.3f) {
         gameNo = 0;
     } else {
         gameNo = 1;
@@ -4041,7 +4031,7 @@ static int ev_CapKoopaStart(CAPWORK *work)
         dicePos.x = pos.x;
         dicePos.y = pos.y += 50.0f;
         dicePos.z = pos.z;
-        diceHitTimer = 60.0f*(0.33f+CAPSP_RANDF());
+        diceHitTimer = 60.0f*(0.33f+CAP_RANDF());
         koopaMdlId = objId;
         if(mbBoardNoGet() != 3) {
             result = mbRandMod(5);
