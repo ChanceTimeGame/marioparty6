@@ -9,6 +9,7 @@
 #include "game/board/math.h"
 #include "game/board/object.h"
 #include "game/board/player.h"
+#include "game/board/status.h"
 #include "game/board/window.h"
 #include "game/board/wipe.h"
 #include "game/charman.h"
@@ -31,12 +32,16 @@ typedef struct CapWork_s {
     /* 0x010 */ int masuId;
     /* 0x014 */ u8 unk14[0xC];
     /* 0x020 */ u8 objWork[0xB48]; /* mbev_CapObjCreate's object list */
-    /* 0xB68 */ u8 unkB68[0x68];
+    /* 0xB68 */ u8 unkB68[4];
+    /* 0xB6C */ int arg[2]; /* passed to the event's sub-steps */
+    /* 0xB74 */ u8 unkB74[0x5C];
     /* 0xBD0 */ void *explodeEff;
     /* 0xBD4 */ u8 unkBD4[8];
     /* 0xBDC */ void *glowEff;
     /* 0xBE0 */ void *ringHitEff;
     /* 0xBE4 */ void *coinEff;
+    /* 0xBE8 */ void *coinMan;
+    /* 0xBEC */ void *starMan;
 } CAPWORK;
 
 /* The Teresa screen fade (mbev_CapTeresaFadeCreate). */
@@ -67,6 +72,11 @@ int mbev_CapPlayerCheck(int playerNo, int otherNo);
 int mbev_CapPlayerComSelKettouGet(int playerNo, int mode, int *choiceList, int num);
 void mbev_CapPlayerMotShiftWait(int playerNo, int motNo, int attr, int arg3);
 void mbev_CapCoinAdd(void *coinEff, int playerNo, int coinNum, int arg3);
+void mbev_CapPlayerRotate(int playerNo, float rotY);
+void mbev_CapObjClose(void *objWork, int objId);
+void mbev_CapPlayerPosSet(void *objWork, int playerNo, int masuId, HuVecF *ofs);
+void *mbev_CapCoinManCreate(void);
+void *mbev_CapStarManCreate(void);
 
 /* star.h; retail calls mbStarGetExec with only the player (see report) */
 int mbStarObjCreate(void);
@@ -88,6 +98,7 @@ static inline BOOL GWTeamGet(void)
 static void ev_CapTeresaFadeMatHook(HU3D_DRAW_OBJ *drawObj, HSF_MATERIAL *material);
 static void ev_CapTeresaFadeOMExec(OMOBJ *obj);
 static void ev_CapMiracleMasu(CAPWORK *work);
+static void ev_CapMiracleRun(CAPWORK *work);
 
 static HuVecF capsuleCameraOfs = { 0.0f, 100.0f, 0.0f };
 static HuVecF teresaCameraRot = { -30.0f, 0.0f, 0.0f };
@@ -1069,7 +1080,139 @@ void mbev_CapTeresaFadeSet(float alpha)
     }
 }
 
+void mbev_CapMiracle(void)
+{
+    CAPWORK *work;
+    int playerNo;
+    int masuId;
+    int i;
+    int startMasuId;
+    int guideObjId;
+    HuVecF playerPosTbl[4];
+    HuVecF playerPos;
+    HuVecF rot;
+    HuVecF ofs;
+    HuVecF masuPos;
+    HuVecF objPos;
+    HuVecF cameraRot;
+    int objId[2];
+
+    work = HuPrcCurrentGet()->property;
+    mbev_CapWait(work);
+    work->glowEff = mbev_CapEffGlowCreate();
+    playerNo = work->playerNo;
+    masuId = GwPlayer[playerNo].masuId;
+    mbPlayerPosGet(playerNo, &playerPos);
+    mbMasuPosGet(masuId, &masuPos);
+    for(i = 0; i < 4; i++) {
+        mbPlayerPosGet(i, &playerPosTbl[i]);
+    }
+    mbCameraPlayerViewSet(playerNo, 0);
+    mbev_CapPlayerRotate(playerNo, 0.0f);
+    objId[0] = mbev_CapObjCreate(work->objWork, 0x110000, MiracleGuideMotTbl[0], 0, 5, 0);
+    mbObjMotionSet(objId[0], 3, 0);
+    mbObjDispSet(objId[0], FALSE);
+    objId[1] = mbev_CapObjCreate(work->objWork, 0x11001B, MiracleGuideMotTbl[1], 0, 5, 0);
+    mbObjHookSet(objId[1], "itemhook_R", mbev_CapObjCreate(work->objWork, 0x110035, NULL, 0, 5, 0));
+    HuPrcVSleep();
+    mbObjMotionSet(objId[1], 3, 0);
+    mbObjDispSet(objId[1], FALSE);
+    work->arg[0] = objId[0];
+    work->arg[1] = objId[1];
+    ev_CapMiracleMasu(work);
+    mbWipeDissolveFadeOutTime(1);
+    for(i = 1; i < mbMasuNumGet(); i++) {
+        if(mbMasuAttrGet(i) & 0x8000) {
+            break;
+        }
+    }
+    if(i < mbMasuNumGet()) {
+        startMasuId = i;
+    } else {
+        startMasuId = 1;
+    }
+    if(!GwSystem.curTime) {
+        guideObjId = objId[0];
+    } else {
+        guideObjId = objId[1];
+    }
+    for(i = 0; i < 2; i++) {
+        if(guideObjId != objId[i]) {
+            mbev_CapObjClose(work->objWork, objId[i]);
+        }
+    }
+    HuPrcSleep(3);
+    for(i = 0; i < 4; i++) {
+        if(i != playerNo) {
+            mbPlayerDispSet(i, FALSE);
+        }
+    }
+    mbMasuPosGet(startMasuId, &masuPos);
+    mbPlayerPosSetV(playerNo, &masuPos);
+    mbPlayerMotionSet(playerNo, 1, HU3D_MOTATTR_LOOP);
+    ofs.x = 200.0f;
+    ofs.y = 0.0f;
+    ofs.z = 0.0f;
+    mbev_CapPlayerPosSet(work->objWork, playerNo, startMasuId, &ofs);
+    objPos.x = masuPos.x-200.0f;
+    objPos.y = 200.0f+masuPos.y;
+    objPos.z = 0.0f;
+    mbObjPosSetV(guideObjId, &objPos);
+    mbObjRotSet(guideObjId, 0.0f, 0.0f, 0.0f);
+    mbObjMotionSet(guideObjId, 1, HU3D_MOTATTR_LOOP);
+    mbCameraRotGet(&cameraRot);
+    ofs.x = 0.0f;
+    ofs.y = 150.0f;
+    ofs.z = 0.0f;
+    rot.x = -20.0f;
+    rot.y = rot.z = 0.0f;
+    mbCameraMoveMasu(startMasuId, &rot, &ofs, 1500.0f, -1.0f, -1);
+    mbCameraMoveWait();
+    work->coinMan = mbev_CapCoinManCreate();
+    work->starMan = mbev_CapStarManCreate();
+    mbStatusDispForceSetAll(FALSE);
+    work->arg[0] = guideObjId;
+    work->arg[1] = startMasuId;
+    ev_CapMiracleRun(work);
+    mbWipeSpecialFadeInCreate(3, 1);
+    for(i = 0; i < 2; i++) {
+        mbObjDispSet(objId[i], FALSE);
+    }
+    mbMasuPosGet(masuId, &masuPos);
+    mbPlayerPosSetV(playerNo, &masuPos);
+    mbPlayerMotionSet(playerNo, 1, HU3D_MOTATTR_LOOP);
+    mbev_CapPlayerPosSet(work->objWork, playerNo, masuId, NULL);
+    mbPlayerColSnapPlayerSet(playerNo, TRUE);
+    for(i = 0; i < 4; i++) {
+        mbPlayerMotionSet(i, 1, HU3D_MOTATTR_LOOP);
+        mbPlayerPosSetV(i, &playerPosTbl[i]);
+        mbPlayerRotSet(i, 0.0f, 0.0f, 0.0f);
+        mbPlayerColSnapPlayerSet(i, TRUE);
+        mbPlayerDispSet(i, TRUE);
+    }
+    ofs.x = 0.0f;
+    ofs.y = 100.0f;
+    ofs.z = 0.0f;
+    mbCameraMoveMasu(masuId, &cameraRot, &ofs, -1.0f, -1.0f, -1);
+    mbCameraMoveWait();
+    mbWipeSpecialFadeOutCreate(3, 60);
+    HuPrcEnd();
+}
+
+void mbev_CapMiracleKill(void)
+{
+}
+
+static void ev_CapMiracleMasu(CAPWORK *work)
+{
+}
+
 /* @@PART2@@ */
+/* placeholder: part 2 owns this */
+static void ev_CapMiracleRun(CAPWORK *work)
+{
+}
+
 /* @@PART3@@ */
 /* @@PART4@@ */
 /* @@END@@ */
