@@ -7,7 +7,7 @@ by hand.
 *bytes*: size of the original function. Functions at 0% either have no C yet or have C whose
 shape differs from the original (functions merged or split, wrong inlining).
 
-**Summary:** 2,698 functions short of 100%: 45 at 95% or better, 29 at 80-95%, 15 below 80%, 2,609 at 0%; in 195 units.
+**Summary:** 2,812 functions short of 100%: 45 at 95% or better, 31 at 80-95%, 18 below 80%, 2,718 at 0%; in 199 units.
 
 ## Started, not matching yet
 
@@ -67,6 +67,7 @@ order or one wrong type.
 | 94.19% | `MdPartyRuleConfirm` | `mdpartydll/REL/mdpartydll/mdparty` | 6,884 |
 | 94.09% | `FileselBoxInit` | `fileseldll/REL/fileseldll/filesel` | 2,368 |
 | 93.59% | `MdPartyComSelect` | `mdpartydll/REL/mdpartydll/mdparty` | 5,612 |
+| 93.55% | `fn_1_C45C` | `resultDll/REL/resultDll/effect` | 124 |
 | 93.16% | `msmSysDelGroupBase` | `main/msm/msmsys` | 760 |
 | 92.87% | `SNpcMoveExec` | `main/board/snpc` | 4,488 |
 | 92.70% | `msmStreamSlotInit` | `main/msm/msmstream` | 548 |
@@ -86,6 +87,7 @@ order or one wrong type.
 | 86.30% | `CapEffTrailOMExec` | `main/board/capsule` | 1,748 |
 | 86.11% | `ConfigPadMain` | `main/board/config` | 2,444 |
 | 85.97% | `ev_SingleKoopaMgEnd` | `main/board/single` | 6,116 |
+| 85.46% | `fn_1_B5D8` | `resultDll/REL/resultDll/effect` | 3,656 |
 | 84.97% | `fn_1_147DC` | `w01Dll/REL/w01Dll/w01` | 692 |
 | 84.92% | `fn_1_144C0` | `w01Dll/REL/w01Dll/w01` | 796 |
 | 84.14% | `MdPartyPlayerJumpUpdate` | `mdpartydll/REL/mdpartydll/mdparty` | 1,412 |
@@ -93,17 +95,20 @@ order or one wrong type.
 | 79.46% | `GetBiriQEffectRadius` | `main/board/player` | 1,032 |
 | 79.12% | `ObjectCullHook` | `main/board/math` | 728 |
 | 75.45% | `ParticleDraw` | `main/board/effect` | 2,668 |
+| 75.40% | `fn_1_523C` | `resultDll/REL/resultDll/team` | 3,772 |
 | 74.51% | `mbCapListRead` | `main/board/capsule` | 408 |
 | 74.26% | `mbPlayerInit` | `main/board/player` | 2,284 |
 | 72.64% | `fn_1_15C8` | `instDll/REL/instDll/inst` | 5,204 |
 | 71.48% | `ev_Shop` | `main/board/shopevent` | 5,876 |
 | 71.14% | `ev_OpeningSingle` | `main/board/opening` | 4,244 |
 | 67.97% | `CapSelectMasuCom` | `main/board/capsule` | 1,536 |
+| 65.35% | `fn_1_1074` | `resultDll/REL/resultDll/result` | 3,608 |
 | 62.86% | `mbBezierCalcV` | `main/board/math` | 140 |
 | 62.86% | `mbBezierCalcVList` | `main/board/math` | 140 |
 | 62.75% | `mbNormPosto3D` | `main/board/math` | 404 |
 | 55.10% | `MdPartyResume` | `mdpartydll/REL/mdpartydll/mdparty` | 6,432 |
 | 54.72% | `mbHermiteCalcV` | `main/board/math` | 212 |
+| 41.22% | `fn_1_B404` | `resultDll/REL/resultDll/effect` | 468 |
 | 15.25% | `ParticleColorCopy` | `main/board/effect` | 468 |
 
 ## By unit
@@ -166,12 +171,15 @@ Every unit with a function short of 100%, largest remaining code first.
 | `main/gssdk_lib/asrpho/common/blocks/flfxblks/trigglr` | (no source yet) | 5 | 5 | 4,292 |
 | `main/gssdk_lib/asrpho/common/blocks/flblocks/gender` | (no source yet) | 12 | 12 | 4,264 |
 | `main/board/math` | (no source yet) | 8 | 56 | 4,260 |
+| `resultDll/REL/resultDll/effect` | (no source yet) | 3 | 12 | 4,248 |
 | `main/board/opening` | (no source yet) | 1 | 22 | 4,244 |
 | `main/dolphin/gx/GXTexture` | (no source yet) | 20 | 20 | 4,196 |
 | `main/gssdk_lib/asrpho/common/tos/mqueue` | (no source yet) | 16 | 16 | 4,140 |
 | `main/dolphin/gx/GXPerf` | (no source yet) | 12 | 12 | 3,952 |
 | `main/dolphin/card/CARDCheck` | (no source yet) | 7 | 7 | 3,944 |
+| `resultDll/REL/resultDll/team` | (no source yet) | 1 | 13 | 3,772 |
 | `main/dolphin/dvd/dvdlow` | (no source yet) | 21 | 21 | 3,708 |
+| `resultDll/REL/resultDll/result` | (no source yet) | 1 | 20 | 3,608 |
 | `main/board/dice` | (no source yet) | 4 | 68 | 3,528 |
 | `main/dolphin/demo/DEMOStats` | (no source yet) | 3 | 3 | 3,416 |
 | `main/dolphin/mic/m2s` | (no source yet) | 14 | 14 | 3,408 |
@@ -188,6 +196,7 @@ Every unit with a function short of 100%, largest remaining code first.
 | `m621dll/REL/runtime` | (no source yet) | 109 | 109 | 3,100 |
 | `mdpartydll/REL/runtime` | (no source yet) | 109 | 109 | 3,100 |
 | `mdseldll/REL/runtime` | (no source yet) | 109 | 109 | 3,100 |
+| `resultDll/REL/runtime` | (no source yet) | 109 | 109 | 3,100 |
 | `w01Dll/REL/runtime` | (no source yet) | 109 | 109 | 3,100 |
 | `main/dolphin/os/OSRtc` | (no source yet) | 18 | 18 | 3,068 |
 | `main/gssdk_lib/asrpho/common/blocks/flblocks/window` | (no source yet) | 5 | 5 | 3,068 |
