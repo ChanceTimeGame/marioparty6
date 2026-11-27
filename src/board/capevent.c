@@ -9,7 +9,10 @@
 #include "game/board/audio.h"
 #include "game/board/camera.h"
 #include "game/board/exit.h"
+#define mbMasuCapsuleGet mbMasuCapsuleGet_s16
 #include "game/board/masu.h"
+#undef mbMasuCapsuleGet
+int mbMasuCapsuleGet(s16 id);
 #include "game/board/object.h"
 #include "game/board/player.h"
 #include "game/board/status.h"
@@ -25,13 +28,22 @@
 #include "game/process.h"
 
 #include "string.h"
-#include "stdio.h"
 
 /* Later-defined statics the early parts call. */
 static void ev_CapCoinAdd(void *eff, int playerNo, int coinNum, int arg3, void (*winFunc)(void));
 static void ev_CapCall(CAPWORK *work, BOOL waitF);
 static void ev_CapWorkInit(CAPOBJWORK *objWork, int capsuleNo);
 static void ev_CapWorkClose(CAPOBJWORK *objWork);
+
+static inline void *CapMalloc(s32 size)
+{
+    return HuMemDirectMallocNum(HEAP_HEAP, size, HU_MEMNUM_OVL);
+}
+
+static inline void CapFree(void *ptr)
+{
+    HuMemDirectFree(ptr);
+}
 
 static CAPEVENT_DATA ev_CapsuleData[60] = {
     { mbev_CapKinoko, mbev_CapKinokoKill, NULL, 2, 0, -1, 0 },
@@ -354,7 +366,7 @@ int mbev_CapCallTrap(int playerNo, int masuId, int trapMasuId)
     return TRUE;
 }
 
-void mbev_CapCallKettou(int playerNo, int masuId, u8 kettouF)
+void mbev_CapCallKettou(int playerNo, int masuId, int kettouF)
 {
     CAPWORK work;
     memset(&work, 0, sizeof(CAPWORK));
@@ -440,7 +452,7 @@ void mbev_CapCallMiracle(int playerNo, int masuId)
     memset(&work, 0, sizeof(CAPWORK));
     work.playerNo = playerNo;
     work.masuPlayer = -1;
-    work.capsuleNo = 46;
+    work.capsuleNo = 42;
     work.trapF = FALSE;
     work.unk1C = FALSE;
     work.moveF = FALSE;
@@ -566,7 +578,7 @@ void mbev_CapBonusCoin(int playerNo, int coinNum, BOOL waitF, int arg3)
     CAPBONUSCOINWORK *work;
     proc = ev_CapBonusCoinProc[playerNo] = HuPrcChildCreate(ev_CapBonusCoin, 8196, 24576, 0, mbMainProc);
     HuPrcDestructorSet2(proc, ev_CapBonusCoinKill);
-    work = proc->property = HuMemDirectMallocNum(HEAP_HEAP, sizeof(CAPBONUSCOINWORK), HU_MEMNUM_OVL);
+    work = proc->property = CapMalloc(sizeof(CAPBONUSCOINWORK));
     memset(work, 0, sizeof(CAPBONUSCOINWORK));
     work->playerNo = playerNo;
     work->coinNum = coinNum;
@@ -654,13 +666,13 @@ void mbev_CapDonkeyEndCall(int playerNo)
     memset(&work, 0, sizeof(CAPWORK));
     work.playerNo = playerNo;
     work.masuPlayer = -1;
-    work.capsuleNo = 41;
+    work.capsuleNo = 44;
     work.trapF = FALSE;
     work.unk1C = FALSE;
     work.moveF = FALSE;
     work.masuId = GwPlayer[playerNo].masuId;
     work.trapMasuId = -1;
-    work.flag.kettouEndF = TRUE;
+    work.flag.donkeyEndF = TRUE;
     mbPlayerColSnapSet(TRUE);
     ev_CapCall(&work, TRUE);
 }
@@ -671,13 +683,13 @@ void mbev_CapKoopaEndCall(int playerNo)
     memset(&work, 0, sizeof(CAPWORK));
     work.playerNo = playerNo;
     work.masuPlayer = -1;
-    work.capsuleNo = 41;
+    work.capsuleNo = 43;
     work.trapF = FALSE;
     work.unk1C = FALSE;
     work.moveF = FALSE;
     work.masuId = GwPlayer[playerNo].masuId;
     work.trapMasuId = -1;
-    work.flag.kettouEndF = TRUE;
+    work.flag.koopaEndF = TRUE;
     mbPlayerColSnapSet(TRUE);
     ev_CapCall(&work, TRUE);
 }
@@ -832,7 +844,7 @@ void mbev_CapInit(void)
     electricEffAnim = HuSprAnimRead(HuDataReadNum(0xC0037, HU_MEMNUM_OVL));
     HuSprAnimLock(electricEffAnim);
     mbCapEffNum = 0;
-    mbCapEffData = HuMemDirectMallocNum(HEAP_HEAP, 1024 * sizeof(s16), HU_MEMNUM_OVL);
+    mbCapEffData = CapMalloc(1024 * sizeof(s16));
     for(i = 0; i < 1024; i++) {
         mbCapEffData[i] = frand() & 0x7FFF;
     }
@@ -919,7 +931,7 @@ static void ev_CapCall(CAPWORK *work, BOOL waitF)
             break;
         }
     }
-    newWork = HuMemDirectMallocNum(HEAP_HEAP, sizeof(CAPWORK), HU_MEMNUM_OVL);
+    newWork = CapMalloc(sizeof(CAPWORK));
     memset(newWork, 0, sizeof(CAPWORK));
     newWork->playerNo = work->playerNo;
     newWork->masuPlayer = work->masuPlayer;
@@ -1018,7 +1030,7 @@ static void ev_CapWorkClose(CAPOBJWORK *objWork)
                 espKill(objWork->sprId[i]);
             }
             if(objWork->mem[i] != NULL) {
-                HuMemDirectFree(objWork->mem[i]);
+                CapFree(objWork->mem[i]);
             }
         }
     }
@@ -1177,7 +1189,7 @@ void *mbev_CapMalloc(CAPOBJWORK *objWork, s32 size)
     if(i >= 64) {
         return NULL;
     }
-    objWork->mem[i] = HuMemDirectMallocNum(HEAP_HEAP, size, HU_MEMNUM_OVL);
+    objWork->mem[i] = CapMalloc(size);
     return objWork->mem[i];
 }
 
@@ -1208,18 +1220,18 @@ void mbev_CapEffOpenCreate(int playerNo, int masuId, BOOL effF, BOOL openF, BOOL
 {
     HUPROCESS *proc;
     CAPEFFOPENWORK *work;
-    s16 value;
+    int value;
     if(effF) {
         proc = HuPrcChildCreate(ev_CapEffOpen, 8196, 24576, 0, mbMainProc);
         HuPrcDestructorSet2(proc, ev_CapEffOpenKill);
-        work = HuMemDirectMallocNum(HEAP_HEAP, sizeof(CAPEFFOPENWORK), HU_MEMNUM_OVL);
+        work = CapMalloc(sizeof(CAPEFFOPENWORK));
         proc->property = work;
         memset(work, 0, sizeof(CAPEFFOPENWORK));
         work->masuId = masuId;
         work->time = 25;
         work->ofs.x = work->ofs.y = work->ofs.z = 0.0f;
         if(!openF) {
-            work->ofs.y += 50.0f;
+            work->ofs.y += 100.0f;
             work->openF = FALSE;
         } else {
             work->openF = TRUE;

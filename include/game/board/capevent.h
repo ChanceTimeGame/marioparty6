@@ -21,8 +21,8 @@ typedef struct CapFlag_s {
     u8 unk80F : 1;
     u8 kettouF : 1;
     u8 kettouEndF : 1;
-    u8 unk10F : 1;
-    u8 unk08F : 1;
+    u8 donkeyEndF : 1;
+    u8 koopaEndF : 1;
     u8 unk04F : 1;
     u8 unk02F : 1;
     u8 shockNoWaitF : 1;
@@ -74,7 +74,7 @@ extern s16 *mbCapEffData; /* read as s16[mbCapEffNum] by capsule.c, captrap.c */
    the function exists there; argN/fN are placeholder names. */
 int mbev_CapCall(int playerNo, int capsuleNo, BOOL trapF, BOOL moveF);
 int mbev_CapCallTrap(int playerNo, int masuId, int trapMasuId);
-void mbev_CapCallKettou(int playerNo, int masuId, u8 kettouF);
+void mbev_CapCallKettou(int playerNo, int masuId, int kettouF);
 void mbev_CapCircuitCallKettou(void);
 void mbev_CapCallDonkey(int playerNo);
 void mbev_CapCallKoopa(int playerNo);
