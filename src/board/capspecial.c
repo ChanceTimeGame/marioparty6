@@ -1204,12 +1204,12 @@ void mbev_CapMiracleKill(void)
 
 static void ev_CapMiracleMasu(CAPWORK *work)
 {
-    int playerNo;
+    int glowId;
     int masuId;
     int i;
     int j;
     int k;
-    int glowId;
+    int playerNo;
     float t;
     HuVecF objPos[2];
     HuVecF objRot[2];
