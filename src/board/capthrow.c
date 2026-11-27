@@ -2,6 +2,8 @@
 #include "game/board/capthrow.h"
 #include "game/board/audio.h"
 #include "game/board/camera.h"
+#include "game/board/capselect.h"
+#include "game/board/capsule.h"
 #include "game/board/coin.h"
 #include "game/board/dice.h"
 #include "game/board/exit.h"
@@ -72,11 +74,13 @@ void *mbev_CapEffSnowCreate(void);
 void *mbev_CapEffCapLoseCreate(void);
 void mbev_CapEffColorSet(GXColor *color, int no);
 int mbev_CapEffGlowAdd(void *eff, HuVecF pos, HuVecF vel, int time, float scale, float speed, float decay, GXColor color);
-int mbev_CapEffGlowKinokoTimeSet(void *eff, int no, s16 arg2, s16 time);
+int mbev_CapEffGlowKinokoTimeSet(void *eff, int no, int arg2, int time);
 void mbev_CapEffDustHeavyAdd(void *eff, HuVecF pos);
 int mbev_CapEffSnowAdd(void *eff, HuVecF *pos, int time);
 void mbev_CapEffCapLoseAdd(void *eff, int playerNo, int num, float speed);
 int mbev_CapEffCapLoseNumGet(void *eff);
+int mbev_CapCullCheck(int, int);
+void mbev_CapPlayerMotShiftSet(int objId, int motNo, u32 attr, BOOL waitF);
 void mbev_CapPlayerMoveObjInit(void);
 s16 mbev_CapPlayerMotionCreate(void *objList, int playerNo, int dataNum);
 int mbev_CapObjCreate(void *objList, int dataNum, int *motData, int arg3, int arg4, int arg5);
@@ -108,6 +112,7 @@ typedef struct TogezoWork_s {
 } TOGEZOWORK;
 
 static void ev_CapTogezoOMExec(OMOBJ *obj);
+static void KokamekkuObjUpdate(float t, float angle, int *objId, int num, int curNo, int skipNo, HuVecF *center, HuVecF *playerPos);
 
 /* @@PART1@@ */
 void mbev_CapTogezo(void)
