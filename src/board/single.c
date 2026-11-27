@@ -1,4 +1,6 @@
 /* @@HEAD@@ */
+/* Retail calls mbMasuCapsuleGet as returning int (no extsh on the result), as capevent.c does. */
+#define mbMasuCapsuleGet mbMasuCapsuleGet_s16
 #include "game/board/single.h"
 #include "game/board/audio.h"
 #include "game/board/camera.h"
@@ -23,6 +25,8 @@
 #include "game/sprite.h"
 #include "math.h"
 #include "string.h"
+#undef mbMasuCapsuleGet
+int mbMasuCapsuleGet(s16 id);
 
 /* Not declared by game/mic.h. */
 void HuMCListenerCreate(HUMC_CONTEXTID ctxId, HUMC_CONTEXT_CALLBACK cb, u8 flag);
@@ -117,7 +121,7 @@ static void SingleEffOMExec(OMOBJ *obj);
 static void SingleEffMgStop(s16 id, int type);
 static void ev_SingleMg(int playerNo, s16 masuId);
 static void ev_SingleMgEnd(int playerNo);
-static void ev_SingleRareMg(int playerNo, int effId);
+static void ev_SingleRareMg(int playerNo, s16 effId);
 static void ev_SingleKoopaMg(int playerNo, s16 masuId);
 static void ev_SingleKoopaMgSkip(void);
 static void ev_SingleKoopaMgEnd(int playerNo);
@@ -144,7 +148,7 @@ void mbSingleInit(void)
     static int boardNo[4] = { 6, 7, 8, 10 };
     int i;
     int masuNum;
-    s16 masuList[14];
+    s16 masuList[8];
 
     singleMicF = FALSE;
     singleListenerCreateF = FALSE;
@@ -350,7 +354,7 @@ void mbSingleMgUnlockWrite(void)
     for (i = 0; i < 4; i++) {
         for (j = 0; j < 32; j++) {
             if ((1 << j) & singleMgUnlock[i]) {
-                GWMgUnlockSet((i * 32) + j + 0x259);
+                GWMgUnlockSet((i * 32) + 0x259 + j);
             }
         }
     }
@@ -440,12 +444,12 @@ static void SingleEffInit(void)
         effP->subMdlId[0] = SingleParticleCreate(singleEffAnim[1], 20, SingleEffMgHook);
         mbParticleAttrSet(effP->subMdlId[0], MB_PARTICLE_ATTR_ANIM);
         Hu3DModelAttrSet(effP->subMdlId[0], HU3D_ATTR_DISPOFF);
-        mbParticleBlendModeSet(effP->subMdlId[0], MB_PARTICLE_BLEND_ADDCOL);
+        mbParticleBlendModeSet((s16)effP->subMdlId[0], MB_PARTICLE_BLEND_ADDCOL);
         particleP = SingleParticleGet(effP->subMdlId[0]);
         particleP->work = effP;
         effP->subMdlId[1] = SingleParticleCreate(singleEffAnim[1], 100, SingleEffMgExplodeHook);
         Hu3DModelAttrSet(effP->subMdlId[1], HU3D_ATTR_DISPOFF);
-        mbParticleBlendModeSet(effP->subMdlId[1], MB_PARTICLE_BLEND_ADDCOL);
+        mbParticleBlendModeSet((s16)effP->subMdlId[1], MB_PARTICLE_BLEND_ADDCOL);
         effP->obj = omAddObjEx(mbObjMan, 0x200C, 0, 0, -1, SingleEffOMExec);
         effP->obj->work[0] = i;
         effP->seNo = -1;
@@ -556,13 +560,13 @@ static void SingleEffMgMasuHook(HU3D_MODEL *modelP, MBPARTICLE *particleP, Mtx m
 
 static void SingleEffMgHook(HU3D_MODEL *modelP, MBPARTICLE *particleP, Mtx mtx)
 {
+    float angle;
+    float speed;
     GXColor color = { 255, 255, 192, 192 };
     SINGLEEFF *effP;
     MBPARTICLEDATA *dataP;
     int i;
     int num;
-    float speed;
-    float angle;
     float alpha;
 
     effP = particleP->work;
@@ -790,10 +794,10 @@ static void SingleEffMgFireHook(HU3D_MODEL *modelP, MBPARTICLE *particleP, Mtx m
             }
             dataP->pos.x *= value;
             dataP->pos.z *= value;
-            speed = scale * (2.5000002f + (100.0f * (0.016666668f * (1.5f * frandf()))));
-            dataP->vel.x = dataP->pos.x * speed;
-            dataP->vel.z = dataP->pos.z * speed;
-            dataP->vel.y = dataP->pos.y * speed;
+            value = scale * (2.5000002f + (100.0f * (0.016666668f * (1.5f * frandf()))));
+            dataP->vel.x = dataP->pos.x * value;
+            dataP->vel.z = dataP->pos.z * value;
+            dataP->vel.y = dataP->pos.y * value;
             dataP->aliveF = 20;
             PSVECScale(&dataP->pos, &dataP->pos, 30.000002f * scale);
             if (dataP->pos.y > 0.0f) {
@@ -965,9 +969,8 @@ static void SingleEffOMExec(OMOBJ *obj)
     SINGLEEFF *effP;
     float t;
     float tInv;
-    float wobble;
-    HuVecF pos3D;
     HuVecF pos2D;
+    HuVecF pos3D;
 
     effP = &singleEffData[obj->work[0]];
     if (mbExitCheck()) {
@@ -1021,7 +1024,7 @@ static void SingleEffOMExec(OMOBJ *obj)
             effP->pos.x = effP->basePos.x + (t * (pos3D.x - effP->basePos.x));
             effP->pos.y = effP->basePos.y + (t * (pos3D.y - effP->basePos.y));
             effP->pos.z = effP->basePos.z + (t * (pos3D.z - effP->basePos.z));
-            if (effP->time == effP->maxTime - 12) {
+            if (effP->time == effP->maxTime - 12U) {
                 effP->emitF = FALSE;
             }
             if (effP->time > effP->maxTime) {
@@ -1035,17 +1038,16 @@ static void SingleEffOMExec(OMOBJ *obj)
             if (effP->time > effP->maxTime) {
                 effP->mode = 0;
                 Hu3DModelAttrSet(effP->mdlId, HU3D_ATTR_DISPOFF);
-                mbParticleBlendModeSet(effP->mdlId, MB_PARTICLE_BLEND_NORMAL);
+                mbParticleBlendModeSet((s16)effP->mdlId, MB_PARTICLE_BLEND_NORMAL);
             }
             break;
         case 5:
             t = effP->time++ / (float)effP->maxTime;
-            wobble = 0.5f * mbSinDeg(1440.0f * t);
-            effP->scale.x = effP->scale.y = 1.0f + (1.5f * mbSinDeg(90.0f * t)) + wobble;
+            effP->scale.x = effP->scale.y = (1.0f + (1.5f * mbSinDeg(90.0f * t))) + (0.5f * mbSinDeg(1440.0f * t));
             effP->bobScale = 1.0f - t;
             effP->rotSpeed += 0.4f;
             effP->tevLevel = t;
-            if (effP->time == effP->maxTime - 12) {
+            if (effP->time == effP->maxTime - 12U) {
                 effP->emitF = FALSE;
             }
             if (effP->time > effP->maxTime) {
@@ -1145,10 +1147,10 @@ static void ev_SingleMg(int playerNo, s16 masuId)
 {
     SINGLEEFF *effP;
     int type;
-    int effId;
+    s16 effId;
     int seNo;
-    HuVecF pos;
     HuVecF effPos;
+    HuVecF pos;
 
     type = mbMasuTypeGet(masuId);
     mbPlayerPosGet(playerNo, &pos);
@@ -1156,7 +1158,7 @@ static void ev_SingleMg(int playerNo, s16 masuId)
     effPos.y = 100.0f + pos.y;
     effPos.z = pos.z;
     effId = SingleEffCreate(&effPos, type);
-    effP = SingleEffGet(effId);
+    effP = &singleEffData[effId-1];
     effP->mode = 1;
     effP->pos = effPos;
     effP->basePos = effP->pos;
@@ -1196,22 +1198,40 @@ static void ev_SingleMg(int playerNo, s16 masuId)
     mbAudFXStop(seNo);
 }
 
+static inline BOOL SingleMgUnlockCheck(int mgNo)
+{
+    if (GWMgUnlockGet(mgNo) || mbSingleMgUnlockGet(mgNo)) {
+        return TRUE;
+    } else {
+        return FALSE;
+    }
+}
+
+static inline int SingleCoinSum(s16 a, s16 b)
+{
+    return a + b;
+}
+
 static void ev_SingleMgEnd(int playerNo)
 {
     SINGLEEFF *effP;
     SINGLEEFF *winEffP;
     SINGLEEFF *loseEffP;
     int mgNo;
+    s16 winId;
     int seNo;
     int type;
-    int effId;
+    s16 effId;
     u32 i;
     int j;
-    s16 winId;
-    s16 masuId;
     BOOL unlockF;
-    HuVecF pos;
+    s16 masuId;
+    s16 coin;
+    s16 bonus;
+    s16 bonus2;
+    s16 coin2;
     HuVecF effPos;
+    HuVecF pos;
 
     mgNo = GwSystem.mgNo;
     seNo = mbAudFXPlay(0x606);
@@ -1244,10 +1264,10 @@ static void ev_SingleMgEnd(int playerNo)
         HuPrcVSleep();
     }
     if ((MgDataTbl[mgNo].type == 3 && GwPlayer[playerNo].mgCoinBonus == 0)
-        || (MgDataTbl[mgNo].type != 3 && GwPlayer[playerNo].mgCoinBonus + GwPlayer[playerNo].mgCoin > 0)) {
+        || (MgDataTbl[mgNo].type != 3 && (coin = GwPlayer[playerNo].mgCoin, bonus = GwPlayer[playerNo].mgCoinBonus, bonus + coin > 0))) {
         mbSingleCall(10, MgDataTbl[mgNo].type);
         mbAudFXStop(seNo);
-        winEffP = SingleEffGet(effId);
+        winEffP = &singleEffData[effId-1];
         winEffP->mode = 3;
         winEffP->basePos = winEffP->pos;
         winEffP->time = 0;
@@ -1260,8 +1280,7 @@ static void ev_SingleMgEnd(int playerNo)
         }
         mbAudFXPlay(0x607);
         HuPrcSleep(60);
-        unlockF = GWMgUnlockGet(mgNo + 0x259) || mbSingleMgUnlockGet(mgNo + 0x259);
-        if (!unlockF) {
+        if (!(unlockF = SingleMgUnlockCheck(mgNo + 0x259))) {
             mbSingleMgUnlockSet(mgNo + 0x259);
             GWSingleMgFlagSet(mgNo + 0x259);
             masuType[masuTypeNum++] = (s16)type;
@@ -1277,7 +1296,9 @@ static void ev_SingleMgEnd(int playerNo)
         if (!(MgDataTbl[mgNo].flag & 0x40)) {
             mbCoinAddExec(playerNo, 10);
         } else {
-            mbCoinAddExec(playerNo, GwPlayer[playerNo].mgCoin + GwPlayer[playerNo].mgCoinBonus);
+            bonus2 = GwPlayer[playerNo].mgCoinBonus;
+            coin2 = GwPlayer[playerNo].mgCoin;
+            mbCoinAddExec(playerNo, coin2 + bonus2);
         }
         mbPlayerMotionShiftSet(playerNo, 7, 0.0f, 8.0f, HU3D_MOTATTR_NONE);
         mbPlayerWinLoseVoicePlay(playerNo, 7, 0x243);
@@ -1297,7 +1318,7 @@ static void ev_SingleMgEnd(int playerNo)
         HuPrcSleep(60);
     } else {
         mbAudFXStop(seNo);
-        loseEffP = SingleEffGet(effId);
+        loseEffP = &singleEffData[effId-1];
         loseEffP->mode = 5;
         loseEffP->basePos = loseEffP->pos;
         loseEffP->time = 0;
