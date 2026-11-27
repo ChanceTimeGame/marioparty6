@@ -164,7 +164,7 @@ void mbev_CapEffExplodeCircleAdd(void *eff, HuVecF *pos, float scale, float radi
 void mbev_CapEffDustCloudAdd(void *eff, HuVecF *pos);
 void mbev_CapEffDustExplodeAdd(OMOBJ *obj, HuVecF pos);
 void mbev_CapEffDustHeavyAdd(OMOBJ *obj, HuVecF pos);
-void mbev_CapEffDustMultiAdd(OMOBJ *obj, HuVecF *pos, HuVecF *dir, int num);
+void mbev_CapEffDustMultiAdd(OMOBJ *obj, HuVecF *pos, HuVecF *rot, int num);
 OMOBJ *mbev_CapEffBoostCreate(void);
 void mbev_CapEffBoostOMExec(OMOBJ *obj);
 void mbev_CapEffBoostKill(OMOBJ *obj);
@@ -185,7 +185,7 @@ void mbev_CapEffGlowPatSet(OMOBJ *obj, int pat);
 void mbev_CapEffGlowBlendModeSet(OMOBJ *obj, int blendMode);
 void mbev_CapEffGlowAnimSet(OMOBJ *obj, int dataNum);
 int mbev_CapEffGlowAdd(OMOBJ *obj, HuVecF pos, HuVecF vel, int time, float scale, float rotSpeed, float gravity, GXColor color);
-int mbev_CapEffGlowKinokoAdd(OMOBJ *obj, HuVecF pos, int time, float scale, float rangeX, float rangeY, float rangeZ, int type, GXColor *color);
+int mbev_CapEffGlowKinokoAdd(OMOBJ *obj, HuVecF pos, int time, float scale, float rangeX, float rangeY, float rangeZ, int type, GXColor *colorP);
 void mbev_CapEffGlowKinokoAddAlt(OMOBJ *obj, HuVecF pos, int time, float scale, float rangeX, float rangeY, float rangeZ, int type);
 BOOL mbev_CapEffGlowKinokoTimeSet(OMOBJ *obj, int no, int mode, int maxTime);
 void mbev_CapEffGlowCoinAdd(OMOBJ *obj, HuVecF *pos, HuVecF *rot);
@@ -290,6 +290,6 @@ void mbev_CapHermiteGetV(float t, HuVecF *p0, HuVecF *p1, HuVecF *p2, HuVecF *p3
 float mbev_CapBezierGet(float t, float p0, float p1, float p2);
 void mbev_CapBezierGetV(float t, float *p0, float *p1, float *p2, float *out);
 float mbev_CapBezierSlopeGet(float t, float p0, float p1, float p2);
-void mbev_CapBezierNormGetV(float *p0, float *p1, float *p2, float *out, float t);
+void mbev_CapBezierNormGetV(float t, float *p0, float *p1, float *p2, float *out);
 
 #endif
