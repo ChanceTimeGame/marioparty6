@@ -11,6 +11,7 @@
 #include "game/board/exit.h"
 #define mbMasuCapsuleGet mbMasuCapsuleGet_s16
 #include "game/board/masu.h"
+#include "game/board/math.h"
 #undef mbMasuCapsuleGet
 int mbMasuCapsuleGet(s16 id);
 #include "game/board/object.h"
@@ -1251,9 +1252,117 @@ void mbev_CapEffOpenCreate(int playerNo, int masuId, BOOL effF, BOOL openF, BOOL
     }
 }
 
+#define CAP_RANDF() (0.0000000037252903f*mbRandMod(0x10000000))
+
 static void ev_CapEffOpen(void)
 {
-    /* TODO */
+    HUPROCESS *proc = HuPrcCurrentGet();
+    CAPEFFOPENWORK *work = proc->property;
+    HuVecF pos;
+    HuVecF effPos;
+    HuVecF rot;
+    HuVecF vel;
+    HuVecF scale;
+    GXColor color;
+    void *rayEff;
+    void *ringEff;
+    void *masuHitEff;
+    int i;
+    int j;
+    float alpha;
+
+    rayEff = mbev_CapEffRayCreate(1.0f, 0.0f);
+    ringEff = mbev_CapEffRingCreate();
+    masuHitEff = mbev_CapEffMasuHitCreate();
+    mbMasuPosGet(work->masuId, &pos);
+    VECAdd(&pos, &work->ofs, &pos);
+    scale.x = scale.z = 0.0f;
+    scale.y = 5.0f;
+    VECAdd(&pos, &scale, &pos);
+    if(work->openF) {
+        rot.x = -90.0f;
+        rot.y = rot.z = 0.0f;
+        scale.x = 1.0f;
+        scale.y = 2.0f;
+        scale.z = 100.0f;
+        mbev_CapEffColorSet(&color, mbRandMod(32768));
+        mbev_CapEffRingAdd(ringEff, pos, rot, scale, 1, 10, 0, color);
+        scale.x = 2.0f;
+        scale.y = 2.5f;
+        scale.z = 200.0f;
+        mbev_CapEffColorSet(&color, mbRandMod(32768));
+        mbev_CapEffRingAdd(ringEff, pos, rot, scale, 3, 10, 1, color);
+        for(i = 0; i <= work->time; i++) {
+            alpha = HuCos(90.0f*((float)i/work->time));
+            mbMasuPosGet(work->masuId, &pos);
+            VECAdd(&pos, &work->ofs, &pos);
+            for(j = 0; j < 3; j++) {
+                effPos = pos;
+                rot.x = 180.0f*(-0.5f+CAP_RANDF());
+                rot.y = 360.0f*CAP_RANDF();
+                rot.z = 180.0f*(-0.5f+CAP_RANDF());
+                vel.x = 180.0f*(-0.5f+CAP_RANDF());
+                vel.y = rot.y+(60.0f*CAP_RANDF());
+                vel.z = 180.0f*(-0.5f+CAP_RANDF());
+                mbev_CapEffRayAdd(rayEff, &effPos, &rot, &vel, 200.0f*(1.0f+(0.25f*CAP_RANDF())), 10.0f+(5.0f*CAP_RANDF()));
+            }
+            mbev_CapEffRayAlphaSet(rayEff, alpha);
+            for(j = 0; j < 5.0f*alpha; j++) {
+                effPos = pos;
+                rot.x = 180.0f*(-0.5f+CAP_RANDF());
+                rot.y = 360.0f*CAP_RANDF();
+                rot.z = 180.0f*(-0.5f+CAP_RANDF());
+                vel.x = 180.0f*(-0.5f+CAP_RANDF());
+                vel.y = 360.0f*CAP_RANDF();
+                vel.z = 180.0f*(-0.5f+CAP_RANDF());
+                mbev_CapEffMasuHitAdd(masuHitEff, &effPos, &rot, &vel, 100.0f*(2.0f+CAP_RANDF()), alpha*(50.0f*(1.0f+(0.5f*CAP_RANDF()))), 10.0f+(5.0f*CAP_RANDF()));
+            }
+            HuPrcVSleep();
+        }
+    } else {
+        mbCameraRotGet(&rot);
+        scale.x = 1.0f;
+        scale.y = 2.0f;
+        scale.z = 100.0f;
+        mbev_CapEffColorSet(&color, mbRandMod(32768));
+        mbev_CapEffRingAdd(ringEff, pos, rot, scale, 1, 10, 0, color);
+        scale.x = 2.0f;
+        scale.y = 2.5f;
+        scale.z = 200.0f;
+        mbev_CapEffColorSet(&color, mbRandMod(32768));
+        mbev_CapEffRingAdd(ringEff, pos, rot, scale, 3, 10, 1, color);
+        for(i = 0; i <= work->time; i++) {
+            alpha = HuCos(90.0f*((float)i/work->time));
+            mbMasuPosGet(work->masuId, &pos);
+            VECAdd(&pos, &work->ofs, &pos);
+            for(j = 0; j < 3; j++) {
+                effPos = pos;
+                rot.x = 360.0f*CAP_RANDF();
+                rot.y = 360.0f*CAP_RANDF();
+                rot.z = 360.0f*CAP_RANDF();
+                vel.x = rot.x+(60.0f*(-0.5f+CAP_RANDF()));
+                vel.y = rot.y+(60.0f*(-0.5f+CAP_RANDF()));
+                vel.z = rot.z+(60.0f*(-0.5f+CAP_RANDF()));
+                mbev_CapEffRayAdd(rayEff, &effPos, &rot, &vel, 200.0f*(1.0f+(0.25f*CAP_RANDF())), 10.0f+(5.0f*CAP_RANDF()));
+            }
+            mbev_CapEffRayAlphaSet(rayEff, alpha);
+            for(j = 0; j < 5.0f*alpha; j++) {
+                effPos = pos;
+                rot.x = 360.0f*CAP_RANDF();
+                rot.y = 360.0f*CAP_RANDF();
+                rot.z = 360.0f*CAP_RANDF();
+                vel.x = 360.0f*(-0.5f+CAP_RANDF());
+                vel.y = 360.0f*(-0.5f+CAP_RANDF());
+                vel.z = 360.0f*(-0.5f+CAP_RANDF());
+                mbev_CapEffMasuHitAdd(masuHitEff, &effPos, &rot, &vel, 100.0f*(2.0f+CAP_RANDF()), alpha*(50.0f*(1.0f+(0.5f*CAP_RANDF()))), 10.0f+(5.0f*CAP_RANDF()));
+            }
+            HuPrcVSleep();
+        }
+    }
+    mbev_CapEffRayKill(rayEff);
+    mbev_CapEffRingKill(ringEff);
+    mbev_CapEffMasuHitKill(masuHitEff);
+    HuPrcEnd();
 }
 
 static void ev_CapEffOpenKill(void)
