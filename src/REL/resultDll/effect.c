@@ -55,15 +55,16 @@ s32 fn_1_C45C(s32 dataNum);
 
 
 #pragma dont_inline off
+#pragma auto_inline on
 
 typedef struct ResultParticleSort_s {
     s32 key;
     s32 idx;
 } RESULT_PARTICLESORT;
 
-/* .bss in reverse definition order */
-s32 lbl_1_bss_14AC;
-RESULT_PARTICLESORT *lbl_1_bss_14A8;
+/* .bss: defined at the end of the file (after the function statics) */
+extern s32 lbl_1_bss_14AC;
+extern RESULT_PARTICLESORT *lbl_1_bss_14A8;
 
 void *fn_1_AB3C(s32 size)
 {
@@ -286,10 +287,22 @@ static void fn_1_B404(RESULT_PARTICLESORT *buf, int num)
     }
 }
 
-static inline void ParticleVtxSet(register float *scale, register float *pos, register HuVecF *src, register HuVecF *dst)
+static inline void ParticleVtxSet(register HuVecF *dst, HuVecF *srcIn, HuVecF *posIn, float scaleIn)
 {
+    float posBuf[4];
+    float scaleBuf[2];
+    register HuVecF *src;
+    register float *pos;
+    register float *scale;
     register float pxy, pzx, pyz, sc;
     register float v0, v1, v2;
+    posBuf[0] = posBuf[3] = posIn->x;
+    posBuf[1] = posIn->y;
+    posBuf[2] = posIn->z;
+    scaleBuf[0] = scaleBuf[1] = scaleIn;
+    src = srcIn;
+    pos = posBuf;
+    scale = scaleBuf;
     asm {
         psq_l sc, 0(scale), 0, 0
         psq_l pxy, 0(pos), 0, 0
@@ -345,9 +358,12 @@ static inline void ParticleSTCopy(register HuVec2f *src, register HuVec2f *dst)
     }
 }
 
-static inline float ParticleVecSum(HuVecF *v)
+static inline float ParticleDepthGet(float dirX, float dirY, float dirZ, float vz, float vy, float vx)
 {
-    return v->x+v->y+v->z;
+    vx *= dirX;
+    vy *= dirY;
+    vz *= dirZ;
+    return vx+vy+vz;
 }
 
 static void fn_1_B5D8(HU3D_MODEL *modelP, Mtx *mtx)
@@ -369,8 +385,6 @@ static void fn_1_B5D8(HU3D_MODEL *modelP, Mtx *mtx)
     HuVecF tempVtx[4];
     HuVecF initVtx[4];
     ROMtx basePosMtx;
-    float pos[4];
-    float scale[2];
     HuVecF *vtxBuf;
     u32 j;
     RESULT_PARTICLEHOOK hook;
@@ -406,14 +420,7 @@ static void fn_1_B5D8(HU3D_MODEL *modelP, Mtx *mtx)
         dataP = particleP->data;
         sortP = lbl_1_bss_14A8;
         for(i=0; i<num; i++, dataP++, sortP++) {
-            HuVecF tmp;
-            tmp.x = dataP->pos.x;
-            tmp.y = dataP->pos.y;
-            tmp.z = dataP->pos.z;
-            tmp.x *= x;
-            tmp.y *= y;
-            tmp.z *= z;
-            depth = ParticleVecSum(&tmp);
+            depth = ParticleDepthGet(x, y, z, dataP->pos.z, dataP->pos.y, dataP->pos.x);
             key = *(s32 *)&depth;
             if(key < 0) {
                 key = -(key & 0x7FFFFFFF);
@@ -439,8 +446,6 @@ static void fn_1_B5D8(HU3D_MODEL *modelP, Mtx *mtx)
             particleP->colorBuf[i] = dataP->color;
         }
         if(dataP->scale && (dataP->cameraBit & Hu3DCameraBit) && dataP->dispF) {
-            float sc;
-            register HuVecF *dst;
             if(!flag3D) {
                 if(0.0f == dataP->rot.z) {
                     vtxSrc = initVtx;
@@ -470,13 +475,7 @@ static void fn_1_B5D8(HU3D_MODEL *modelP, Mtx *mtx)
                     vtxSrc = tempVtx;
                 }
             }
-            sc = dataP->scale;
-            dst = vtxBuf;
-            pos[0] = pos[3] = dataP->pos.x;
-            pos[1] = dataP->pos.y;
-            pos[2] = dataP->pos.z;
-            scale[0] = scale[1] = sc;
-            ParticleVtxSet(scale, pos, vtxSrc, dst);
+            ParticleVtxSet(vtxBuf, vtxSrc, &dataP->pos, dataP->scale);
         } else {
             ParticleVtxClear(nullVec, vtxBuf);
         }
@@ -631,3 +630,6 @@ s32 fn_1_C45C(s32 dataNum)
     }
     return dataNum;
 }
+
+s32 lbl_1_bss_14AC;
+RESULT_PARTICLESORT *lbl_1_bss_14A8;

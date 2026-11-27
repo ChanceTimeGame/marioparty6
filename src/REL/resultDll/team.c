@@ -97,7 +97,9 @@ float lbl_1_bss_65C;
 float lbl_1_bss_658;
 s16 lbl_1_bss_654;
 s32 lbl_1_bss_64C[2];
+s32 lbl_1_bss_644[2]; /* unreferenced */
 s32 lbl_1_bss_640;
+s32 lbl_1_bss_63C; /* unreferenced */
 s32 lbl_1_bss_638;
 
 void fn_1_49C4(void)
@@ -463,26 +465,12 @@ void fn_1_60F8(void)
 
 #pragma auto_inline reset
 #pragma dont_inline reset
-#define lbl_1_bss_AB8 ((RESULT_TEAM3 *)lbl_1_bss_AB8) /* integration: part 3 names the team row fields differently */
 /* part 3 needs, beyond part 1's HEAD:
  * - team file (0x4D48-0x7A17): RESULT_TEAM for lbl_1_bss_AB8 (part 2 uses it too), part 3's own
  *   .bss 640/654-664 and the team-name table (.data 0x514, string 0x582);
  * - battle file (0x7A18 on, with part 4): its structs, .bss 0xBA0-0x14A4 and .data 0x590-0x7AB. */
 #pragma auto_inline off
 
-typedef struct ResultTeam3_s {
-    s32 unk0; /* 0x00 */
-    s32 esp4; /* 0x04 */
-    s32 esp8; /* 0x08 */
-    s32 espC[4]; /* 0x0C */
-    s32 esp1C[4]; /* 0x1C */
-    s32 esp2C[4]; /* 0x2C */
-    s32 mdl[2]; /* 0x3C */
-    s32 mot[2][3]; /* 0x44 */
-    s32 mdl5C; /* 0x5C */
-    s32 unk60; /* 0x60 */
-    s32 unk64; /* 0x64 */
-} RESULT_TEAM3; /* size 0x68 */
 
 
 
@@ -510,32 +498,32 @@ void fn_1_62F0(void)
     }
     for(i = 0; i < 2; i++) {
         for(j = 0; j < 3; j++) {
-            espAttrReset(lbl_1_bss_AB8[i].espC[j], 4);
+            espAttrReset(lbl_1_bss_AB8[i].coinNumSprId[j], 4);
         }
         fn_1_766C(i, addNum[i]);
-        espAttrReset(lbl_1_bss_AB8[i].esp8, 4);
+        espAttrReset(lbl_1_bss_AB8[i].coinSprId, 4);
     }
     maxTime = (lbl_1_bss_624) ? 3 : 10;
     for(time = 0; time <= maxTime; time++) {
         scale = HuSin((90.0 / maxTime) * time);
         for(i = 0; i < 2; i++) {
-            espScaleSet(lbl_1_bss_AB8[i].esp8, scale, scale);
+            espScaleSet(lbl_1_bss_AB8[i].coinSprId, scale, scale);
             for(j = 0; j < 3; j++) {
-                espScaleSet(lbl_1_bss_AB8[i].espC[j], scale, scale);
+                espScaleSet(lbl_1_bss_AB8[i].coinNumSprId[j], scale, scale);
             }
         }
         HuPrcVSleep();
     }
     for(i = 0; i < 2; i++) {
-        espScaleSet(lbl_1_bss_AB8[i].esp8, 1.0, 1.0);
+        espScaleSet(lbl_1_bss_AB8[i].coinSprId, 1.0, 1.0);
     }
     for(crownTime = 0; crownTime <= 14;) {
         for(i = 0; i < 2; i++) {
             if(addNum[i] >= 10) {
-                Hu3DModelAttrReset(lbl_1_bss_AB8[i].mdl5C, HU3D_ATTR_DISPOFF);
+                Hu3DModelAttrReset(lbl_1_bss_AB8[i].mdlId[0], HU3D_ATTR_DISPOFF);
             }
             scale = 0.1f + HuSin((120.0f / 14.0f) * crownTime) * (0.8 * (1.0 / sin((M_PI * 2) / 3)));
-            Hu3DModelScaleSet(lbl_1_bss_AB8[i].mdl5C, scale, scale, scale);
+            Hu3DModelScaleSet(lbl_1_bss_AB8[i].mdlId[0], scale, scale, scale);
         }
         crownTime += (lbl_1_bss_624) ? 2 : 1;
         HuPrcVSleep();
@@ -577,19 +565,19 @@ void fn_1_62F0(void)
     for(time = 0; time <= maxTime; time++) {
         scale = HuCos((90.0 / maxTime) * time);
         for(i = 0; i < 2; i++) {
-            espScaleSet(lbl_1_bss_AB8[i].esp8, scale, scale);
-            Hu3DModelScaleSet(lbl_1_bss_AB8[i].mdl5C, scale, scale, scale);
+            espScaleSet(lbl_1_bss_AB8[i].coinSprId, scale, scale);
+            Hu3DModelScaleSet(lbl_1_bss_AB8[i].mdlId[0], scale, scale, scale);
             for(j = 0; j < 3; j++) {
-                espScaleSet(lbl_1_bss_AB8[i].espC[j], scale, scale);
+                espScaleSet(lbl_1_bss_AB8[i].coinNumSprId[j], scale, scale);
             }
         }
         HuPrcVSleep();
     }
     for(i = 0; i < 2; i++) {
-        espAttrSet(lbl_1_bss_AB8[i].esp8, 4);
-        Hu3DModelAttrSet(lbl_1_bss_AB8[i].mdl5C, HU3D_ATTR_DISPOFF);
+        espAttrSet(lbl_1_bss_AB8[i].coinSprId, 4);
+        Hu3DModelAttrSet(lbl_1_bss_AB8[i].mdlId[0], HU3D_ATTR_DISPOFF);
         for(j = 0; j < 3; j++) {
-            espAttrSet(lbl_1_bss_AB8[i].espC[j], 4);
+            espAttrSet(lbl_1_bss_AB8[i].coinNumSprId[j], 4);
         }
     }
 }
@@ -611,12 +599,12 @@ void fn_1_6B78(void)
     for(i = 0; i < 2; i++) {
         if(lbl_1_bss_66C[i] > lbl_1_bss_668[i]) {
             motF[i] = 1;
-            Hu3DMotionShiftSet(lbl_1_bss_AB8[i].mdl[0], lbl_1_bss_AB8[i].mot[0][1], 0.0f, 8.0f, HU3D_MOTATTR_NONE);
-            Hu3DMotionShiftSet(lbl_1_bss_AB8[i].mdl[1], lbl_1_bss_AB8[i].mot[1][1], 0.0f, 8.0f, HU3D_MOTATTR_NONE);
+            Hu3DMotionShiftSet(lbl_1_bss_AB8[i].charMdlId[0], lbl_1_bss_AB8[i].charMotId[0][1], 0.0f, 8.0f, HU3D_MOTATTR_NONE);
+            Hu3DMotionShiftSet(lbl_1_bss_AB8[i].charMdlId[1], lbl_1_bss_AB8[i].charMotId[1][1], 0.0f, 8.0f, HU3D_MOTATTR_NONE);
         } else if(lbl_1_bss_66C[i] < lbl_1_bss_668[i]) {
             motF[i] = 1;
-            Hu3DMotionShiftSet(lbl_1_bss_AB8[i].mdl[0], lbl_1_bss_AB8[i].mot[0][2], 0.0f, 8.0f, HU3D_MOTATTR_NONE);
-            Hu3DMotionShiftSet(lbl_1_bss_AB8[i].mdl[1], lbl_1_bss_AB8[i].mot[1][2], 0.0f, 8.0f, HU3D_MOTATTR_NONE);
+            Hu3DMotionShiftSet(lbl_1_bss_AB8[i].charMdlId[0], lbl_1_bss_AB8[i].charMotId[0][2], 0.0f, 8.0f, HU3D_MOTATTR_NONE);
+            Hu3DMotionShiftSet(lbl_1_bss_AB8[i].charMdlId[1], lbl_1_bss_AB8[i].charMotId[1][2], 0.0f, 8.0f, HU3D_MOTATTR_NONE);
         } else {
             motF[i] = 0;
             doneNum++;
@@ -641,8 +629,8 @@ void fn_1_6B78(void)
             for(i = 0; i < 2; i++) {
                 if(motF[i]) {
                     scale[i] += speed[i];
-                    Hu3DModelScaleSet(lbl_1_bss_AB8[i].mdl[0], scale[i], scale[i], scale[i]);
-                    Hu3DModelScaleSet(lbl_1_bss_AB8[i].mdl[1], scale[i], scale[i], scale[i]);
+                    Hu3DModelScaleSet(lbl_1_bss_AB8[i].charMdlId[0], scale[i], scale[i], scale[i]);
+                    Hu3DModelScaleSet(lbl_1_bss_AB8[i].charMdlId[1], scale[i], scale[i], scale[i]);
                 }
             }
             fn_1_71F0();
@@ -652,8 +640,8 @@ void fn_1_6B78(void)
             for(i = 0; i < 2; i++) {
                 if(motF[i]) {
                     scale[i] -= speed[i];
-                    Hu3DModelScaleSet(lbl_1_bss_AB8[i].mdl[0], scale[i], scale[i], scale[i]);
-                    Hu3DModelScaleSet(lbl_1_bss_AB8[i].mdl[1], scale[i], scale[i], scale[i]);
+                    Hu3DModelScaleSet(lbl_1_bss_AB8[i].charMdlId[0], scale[i], scale[i], scale[i]);
+                    Hu3DModelScaleSet(lbl_1_bss_AB8[i].charMdlId[1], scale[i], scale[i], scale[i]);
                 }
             }
             fn_1_71F0();
@@ -661,9 +649,9 @@ void fn_1_6B78(void)
         }
     }
     for(i = 0; i < 2; i++) {
-        espScaleSet(lbl_1_bss_AB8[i].esp4, 1.0, 1.0);
-        Hu3DMotionShiftSet(lbl_1_bss_AB8[i].mdl[0], lbl_1_bss_AB8[i].mot[0][0], 0.0f, 8.0f, HU3D_MOTATTR_LOOP);
-        Hu3DMotionShiftSet(lbl_1_bss_AB8[i].mdl[1], lbl_1_bss_AB8[i].mot[1][0], 0.0f, 8.0f, HU3D_MOTATTR_LOOP);
+        espScaleSet(lbl_1_bss_AB8[i].teamSprId, 1.0, 1.0);
+        Hu3DMotionShiftSet(lbl_1_bss_AB8[i].charMdlId[0], lbl_1_bss_AB8[i].charMotId[0][0], 0.0f, 8.0f, HU3D_MOTATTR_LOOP);
+        Hu3DMotionShiftSet(lbl_1_bss_AB8[i].charMdlId[1], lbl_1_bss_AB8[i].charMotId[1][0], 0.0f, 8.0f, HU3D_MOTATTR_LOOP);
     }
     lbl_1_bss_640 = 1;
 }
@@ -691,9 +679,9 @@ void fn_1_71F0(void)
         for(i = 0; i < 2; i++) {
             if(lbl_1_bss_66C[i] != lbl_1_bss_668[i]) {
                 if(bankF) {
-                    espBankSet(lbl_1_bss_AB8[i].esp4, lbl_1_bss_668[i] + (i * 2));
+                    espBankSet(lbl_1_bss_AB8[i].teamSprId, lbl_1_bss_668[i] + (i * 2));
                 }
-                espScaleSet(lbl_1_bss_AB8[i].esp4, lbl_1_bss_65C, lbl_1_bss_65C);
+                espScaleSet(lbl_1_bss_AB8[i].teamSprId, lbl_1_bss_65C, lbl_1_bss_65C);
             }
         }
     }
@@ -702,7 +690,7 @@ void fn_1_71F0(void)
 void fn_1_73D4(s32 teamNo, s32 num)
 {
     s32 digit[3];
-    RESULT_TEAM3 team;
+    RESULT_TEAM team;
     s32 rest;
 
     team = lbl_1_bss_AB8[teamNo];
@@ -712,27 +700,27 @@ void fn_1_73D4(s32 teamNo, s32 num)
     rest = num;
     digit[0] = num / 100;
     if(digit[0] == 0) {
-        espAttrSet(team.esp2C[0], 4);
+        espAttrSet(team.starSprId[1], 4);
     } else {
-        espAttrReset(team.esp2C[0], 4);
-        espBankSet(team.esp2C[0], digit[0]);
+        espAttrReset(team.starSprId[1], 4);
+        espBankSet(team.starSprId[1], digit[0]);
     }
     rest = num - digit[0] * 100;
     digit[1] = rest / 10;
     if(digit[1] == 0 && digit[0] == 0) {
-        espAttrSet(team.esp2C[1], 4);
+        espAttrSet(team.starSprId[2], 4);
     } else {
-        espAttrReset(team.esp2C[1], 4);
-        espBankSet(team.esp2C[1], digit[1]);
+        espAttrReset(team.starSprId[2], 4);
+        espBankSet(team.starSprId[2], digit[1]);
     }
     rest = rest - digit[1] * 10;
-    espBankSet(team.esp2C[2], rest);
+    espBankSet(team.starSprId[3], rest);
 }
 
 void fn_1_7520(s32 teamNo, s32 num)
 {
     s32 digit[3];
-    RESULT_TEAM3 team;
+    RESULT_TEAM team;
     s32 rest;
 
     team = lbl_1_bss_AB8[teamNo];
@@ -742,27 +730,27 @@ void fn_1_7520(s32 teamNo, s32 num)
     rest = num;
     digit[0] = num / 100;
     if(digit[0] == 0) {
-        espAttrSet(team.esp1C[0], 4);
+        espAttrSet(team.coinTotalSprId[1], 4);
     } else {
-        espAttrReset(team.esp1C[0], 4);
-        espBankSet(team.esp1C[0], digit[0]);
+        espAttrReset(team.coinTotalSprId[1], 4);
+        espBankSet(team.coinTotalSprId[1], digit[0]);
     }
     rest = num - digit[0] * 100;
     digit[1] = rest / 10;
     if(digit[1] == 0 && digit[0] == 0) {
-        espAttrSet(team.esp1C[1], 4);
+        espAttrSet(team.coinTotalSprId[2], 4);
     } else {
-        espAttrReset(team.esp1C[1], 4);
-        espBankSet(team.esp1C[1], digit[1]);
+        espAttrReset(team.coinTotalSprId[2], 4);
+        espBankSet(team.coinTotalSprId[2], digit[1]);
     }
     rest = rest - digit[1] * 10;
-    espBankSet(team.esp1C[2], rest);
+    espBankSet(team.coinTotalSprId[3], rest);
 }
 
 void fn_1_766C(s32 teamNo, s32 num)
 {
     s32 digit[3];
-    RESULT_TEAM3 team;
+    RESULT_TEAM team;
     s32 rest;
 
     team = lbl_1_bss_AB8[teamNo];
@@ -772,13 +760,13 @@ void fn_1_766C(s32 teamNo, s32 num)
     rest = num;
     digit[0] = num / 10;
     if(digit[0] == 0) {
-        espAttrSet(team.espC[1], 4);
+        espAttrSet(team.coinNumSprId[1], 4);
     } else {
-        espAttrReset(team.espC[1], 4);
-        espBankSet(team.espC[1], digit[0]);
+        espAttrReset(team.coinNumSprId[1], 4);
+        espBankSet(team.coinNumSprId[1], digit[0]);
     }
     rest = rest - digit[0] * 10;
-    espBankSet(team.espC[2], rest);
+    espBankSet(team.coinNumSprId[2], rest);
 }
 
 /* team-name messages: retail indexes [charNo1 * 11 + charNo2] */
@@ -858,4 +846,3 @@ s16 fn_1_78B4(s32 team)
     return rank;
 }
 
-#undef lbl_1_bss_AB8

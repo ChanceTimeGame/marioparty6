@@ -527,6 +527,8 @@ void fn_1_924C(void)
     }
     HuPrcSleep(20);
 }
+
+/* Part 4 (battle file tail, then the effect file): data and prototypes it needs */
 float lbl_1_data_7AC[8][4] = {
     { 12, 22, 19, 5 },
     { 10, 24, 24, 8 },
@@ -843,3 +845,6 @@ void fn_1_A928(HU3D_MODEL *modelP, RESULT_PARTICLE *particleP, Mtx mtx)
 }
 
 /* Effect: REL copy of board/effect.c (retail file boundary: .text 0xAB3C, .rodata 0x2B8, .data 0x870) */
+#include "game/init.h"
+#include "game/main.h"
+
