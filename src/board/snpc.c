@@ -4,6 +4,7 @@
 #include "game/board/branch.h"
 #include "game/board/camera.h"
 #include "game/board/capselect.h"
+#include "game/board/capsule.h"
 #include "game/board/coin.h"
 #include "game/board/comchoice.h"
 #include "game/board/dice.h"
@@ -24,6 +25,7 @@
 #include "game/frand.h"
 #include "game/memory.h"
 #include "game/sprite.h"
+#include "humath.h"
 
 
 void HuSprTexLoad(ANIMDATA *anim, s16 bmpNo, s16 texMapId, GXTexWrapMode wrapS, GXTexWrapMode wrapT, GXTexFilter filter);
@@ -106,9 +108,8 @@ typedef struct SNpcWork_s {
     /* 0x040 */ s16 objId;
     /* 0x042 */ s16 unk42;
     /* 0x044 */ s16 masuEffObjId;
-    /* 0x046 */ u8 unk46[0x50 - 0x46];
-    /* 0x050 */ s16 motId[11];
-    /* 0x066 */ u8 unk66[0x76 - 0x66];
+    /* 0x046 */ s16 unk46[5]; /* 0x40-0x4F are eight s16 object ids: SNpcObjKill clears them as an array */
+    /* 0x050 */ s16 motId[19];
     /* 0x076 */ s16 path[(0x298 - 0x76) / 2]; /* the spaces to walk, ending with 0 */
 } SNPCWORK; /* 0x298 */
 
@@ -1419,31 +1420,1441 @@ static void SNpcPosFixSnap(void)
 }
 
 /* @@PART2@@ */
-#pragma dont_inline on
-static void SNpcEffectExec(void) { }
-static void SNpcPlayerMoveFunc(int playerNo) { }
-static void SNpcSePlay(int seNo, int arg1) { }
-static void SNpcMotSetNext(void) { }
-static void SNpcObjCreate(void) { }
-static void SNpcObjKill(void) { }
-static void SNpcObjDispSet(BOOL dispF) { }
-static void SNpcObjPosSet(float x, float y, float z) { }
-static void SNpcObjPosSetV(HuVecF *pos) { }
-static void SNpcObjPosGet(HuVecF *pos) { }
-static void SNpcObjRotSet(float x, float y, float z) { }
-static void SNpcObjRotSetV(HuVecF *rot) { }
-static void SNpcObjRotGet(HuVecF *rot) { }
-static void SNpcObjMotSet(int motNo) { }
-static void SNpcObjMotShiftSet(int motNo) { }
-static BOOL SNpcObjMotEndCheck(void) { return 0; }
-static void SNpcObjMotEndWait(void) { }
-static void SNpcObjMasuSet(int masuId) { }
-static void SNpcMasuEffDispSet(void) { }
-static int SNpcDiceValueGet(int masuId, int num, int *tbl, int level, s16 *path, float speed) { return 0; }
-int mbSNpcMasuStarNextGet(int masuId, int num, int *tbl, int level) { return 0; }
-static void SNpcStarCreate(int koopaF, BOOL coinF, HuVecF *pos) { }
-static void SNpcStarWait(void) { }
-#pragma dont_inline reset
+
+static inline float SNpcFireFabs(register float x)
+{
+    asm {
+        fabs x, x
+    }
+    return x;
+}
+
+static inline MBPARTICLE *SNpcParticleGet(s16 modelId)
+{
+    return Hu3DData[modelId].hookData;
+}
+
+static inline void *SNpcMalloc(s32 size)
+{
+    return HuMemDirectMallocNum(HEAP_HEAP, size, HU_MEMNUM_OVL);
+}
+
+static void SNpcKoopaFireHook(HU3D_MODEL *modelP, MBPARTICLE *particleP, Mtx mtx);
+static void SNpcKoopaFire2Hook(HU3D_MODEL *modelP, MBPARTICLE *particleP, Mtx mtx);
+static void SNpcKoopaFire3Hook(HU3D_MODEL *modelP, MBPARTICLE *particleP, Mtx mtx);
+
+static void SNpcKoopaFireExec(void)
+{
+    int smokeId;
+    int smoke2Id;
+    int fireId;
+    int fire2Id;
+    MBPARTICLE *particleP;
+    MBPARTICLE *smokeP;
+    MBPARTICLE *fireP;
+    int power;
+    int i;
+    float scale;
+    HuVecF ofs;
+    Mtx mtx;
+
+    SNpcObjMotShiftSet(10);
+    mbAudFXPlay(0x3CD);
+    smokeId = mbParticleCreate(HuSprAnimRead(HuDataReadNum(mbBoardDataNumGet(0x50066), HU_MEMNUM_OVL)), 88);
+    smoke2Id = mbParticleCreate(HuSprAnimRead(HuDataReadNum(mbBoardDataNumGet(0x50066), HU_MEMNUM_OVL)), 88);
+    mbParticleHookSet(smokeId, SNpcKoopaFire3Hook);
+    mbParticleHookSet(smoke2Id, SNpcKoopaFire2Hook);
+    Hu3DModelLayerSet(smokeId, 5);
+    Hu3DModelLayerSet(smoke2Id, 5);
+    smokeP = SNpcParticleGet(smokeId);
+    particleP = SNpcParticleGet(smoke2Id);
+    particleP->work = smokeP;
+    particleP->unk00 = 0;
+    fireId = mbParticleCreate(HuSprAnimRead(HuDataReadNum(mbBoardDataNumGet(0x50066), HU_MEMNUM_OVL)), 500);
+    fire2Id = mbParticleCreate(HuSprAnimRead(HuDataReadNum(mbBoardDataNumGet(0x50066), HU_MEMNUM_OVL)), 500);
+    mbParticleHookSet(fireId, SNpcKoopaFireHook);
+    mbParticleHookSet(fire2Id, SNpcKoopaFire2Hook);
+    Hu3DModelLayerSet(fireId, 5);
+    Hu3DModelLayerSet(fire2Id, 5);
+    fireP = SNpcParticleGet(fireId);
+    particleP = SNpcParticleGet(fire2Id);
+    particleP->work = fireP;
+    particleP->unk00 = 0;
+    power = 0;
+    fireP->unk00 = smokeP->unk00 = power;
+    for(i = 0; i < 260; i++) {
+        if(i > 30) {
+            if(i < 60) {
+                power = 16;
+            } else {
+                power += 4;
+                if(power > 256) {
+                    power = 256;
+                }
+            }
+            fireP->unk00 = power;
+            if(power > 64) {
+                smokeP->unk00 = power;
+            }
+        }
+        Hu3DModelObjMtxGet(mbObjModelIDGet(snpcWork->objId), "itemhook_M", mtx);
+        fireP->unk04.x = mtx[0][3];
+        fireP->unk04.y = mtx[1][3];
+        fireP->unk04.z = mtx[2][3];
+        mtx[0][3] = mtx[1][3] = mtx[2][3] = 0.0f;
+        ofs.x = 15.000001f;
+        ofs.y = 10.0f;
+        ofs.z = -25.0f;
+        PSMTXMultVec(mtx, &ofs, &ofs);
+        PSVECAdd(&fireP->unk04, &ofs, &fireP->unk04);
+        mbVecCopy(&fireP->unk04, &smokeP->unk04);
+        ofs.x = 0.2f;
+        ofs.y = 1.0f;
+        ofs.z = 0.0f;
+        PSMTXMultVec(mtx, &ofs, &fireP->unk10);
+        mbVecCopy(&fireP->unk10, &smokeP->unk10);
+        scale = power / 256.0f;
+        PSVECScale(&fireP->unk10, &ofs, 100.0f * (4.0f * scale));
+        PSVECAdd(&fireP->unk04, &ofs, &fireP->unk04);
+        HuPrcVSleep();
+    }
+    fireP->unk00 = 0;
+    smokeP->unk00 = 0;
+    SNpcObjMotEndWait();
+    SNpcObjMotShiftSet(0);
+    HuPrcSleep(30);
+    mbParticleKill(fireId);
+    mbParticleKill(fire2Id);
+    mbParticleKill(smokeId);
+    mbParticleKill(smoke2Id);
+    HuPrcSleep(4);
+}
+
+static void SNpcKoopaFireHook(HU3D_MODEL *modelP, MBPARTICLE *particleP, Mtx mtx)
+{
+    HuVecF vec;
+    HuVecF axisZ = { 0.0f, 0.0f, 1.0f };
+    HuVecF axisX = { 1.0f, 0.0f, 0.0f };
+    MBPARTICLEDATA *dataP;
+    int i;
+    HuVecF *axisP;
+    float t;
+    float power;
+    float weight;
+    float color;
+    Mtx rotMtx;
+
+    if(particleP->count == 0) {
+        for(dataP = particleP->data, i = 0; i < particleP->num; i++, dataP++) {
+            dataP->scale = 0.0f;
+            dataP->color.a = 0;
+            dataP->time = -(i >> 3);
+        }
+        particleP->count = 1;
+    }
+    for(dataP = particleP->data, i = 0; i < particleP->num; i++, dataP++) {
+        if(particleP->unk00 != 0) {
+            if(dataP->time < 0) {
+                dataP->time++;
+                continue;
+            }
+            if(dataP->time == 0) {
+                mbVecCopy(&particleP->unk10, &dataP->vel);
+                axisP = &axisZ;
+                if(SNpcFireFabs(dataP->vel.z) >= SNpcFireFabs(dataP->vel.y) && SNpcFireFabs(dataP->vel.z) >= SNpcFireFabs(dataP->vel.x)) {
+                    axisP = &axisX;
+                }
+                PSVECCrossProduct(axisP, &dataP->vel, &vec);
+                PSMTXRotAxisRad(rotMtx, &dataP->vel, 0.017453292f * (360.0f * frandf()));
+                PSMTXMultVec(rotMtx, &vec, &dataP->accel);
+                dataP->time = dataP->aliveF = 30;
+                mbVecCopy(&particleP->unk04, &dataP->pos);
+                t = 100.0f * (0.3f * frandf());
+                PSVECScale(&dataP->vel, &vec, t);
+                PSVECAdd(&dataP->pos, &vec, &dataP->pos);
+                t = 100.0f * (0.3f * frandf());
+                PSVECScale(&dataP->accel, &vec, t);
+                PSVECAdd(&dataP->pos, &vec, &dataP->pos);
+                power = particleP->unk00 / 256.0f;
+                t = (0.2f + 0.8f * power) * (0.3f + 0.7f * frandf());
+                weight = 10.000001f * t;
+                PSVECScale(&dataP->vel, &dataP->vel, weight);
+                weight = 6.666667f * t;
+                PSVECScale(&dataP->accel, &dataP->accel, weight);
+                dataP->colorIdx = 0.0f;
+                dataP->scaleBase = 0.55555564f;
+                dataP->scaleBase *= 0.5f + 0.5f * frandf();
+                dataP->rot.z = mbRandMod(360);
+                dataP->animBank = mbRandMod(8);
+                dataP->color.r = dataP->color.g = dataP->color.b = 100.0f + 155.0f * frandf();
+                weight = 0.5f + 0.5f * power;
+                dataP->color.a = mbRandMod(32) + 48;
+                dataP->scale = weight * (30.0f + 50.0f * frandf());
+            }
+        }
+        if(dataP->time > 0) {
+            t = 1.0f - (float)dataP->time / dataP->aliveF;
+            dataP->time--;
+            weight = mbSinDeg(100.0f + 320.0f * t);
+            PSVECScale(&dataP->vel, &vec, weight);
+            PSVECAdd(&dataP->pos, &vec, &dataP->pos);
+            weight = mbSinDeg(10.0f + 320.0f * t);
+            PSVECScale(&dataP->accel, &vec, weight);
+            PSVECAdd(&dataP->pos, &vec, &dataP->pos);
+            if(particleP->unk00 == 0) {
+                dataP->colorIdx += dataP->scaleBase;
+                dataP->pos.y += dataP->colorIdx;
+                if(t > 0.5f) {
+                    dataP->scale *= 0.9f;
+                }
+            }
+            if(t > 0.7f) {
+                weight = 3.3333333f * (t - 0.7f);
+                color = dataP->color.r;
+                dataP->color.r = color + (50.0f - color) * weight;
+                color = dataP->color.g;
+                dataP->color.g = color + (50.0f - color) * weight;
+                color = dataP->color.b;
+                dataP->color.b = color + (50.0f - color) * weight;
+            }
+            if(t > 0.85f) {
+                weight = 6.6666665f * (t - 0.85f);
+                color = dataP->color.a;
+                dataP->color.a = color + (3.0f - color) * weight;
+            }
+            if(dataP->time == 0) {
+                dataP->scale = 0.0f;
+                dataP->color.a = 0;
+            }
+        }
+    }
+}
+
+static void SNpcKoopaFire2Hook(HU3D_MODEL *modelP, MBPARTICLE *particleP, Mtx mtx)
+{
+    MBPARTICLE *srcP;
+    int alpha;
+    int i;
+    MBPARTICLEDATA *dataP;
+
+    if(particleP->unk00 == 0) {
+        for(dataP = particleP->data, i = 0; i < particleP->num; i++, dataP++) {
+            dataP->scale = 0.0f;
+            dataP->color.a = 0;
+            dataP->time = 0;
+        }
+        particleP->unk00 = 1;
+        particleP->blendMode = MB_PARTICLE_BLEND_ADDCOL;
+    }
+    srcP = particleP->work;
+    memcpy(particleP->data, srcP->data, particleP->num * sizeof(MBPARTICLEDATA));
+    for(dataP = particleP->data, i = 0; i < particleP->num; i++, dataP++) {
+        alpha = 0.8f * dataP->color.a;
+        if(alpha > 255) {
+            alpha = 255;
+        }
+        dataP->color.a = alpha;
+    }
+}
+
+static void SNpcKoopaFire3Hook(HU3D_MODEL *modelP, MBPARTICLE *particleP, Mtx mtx)
+{
+    HuVecF vec;
+    HuVecF axisZ = { 0.0f, 0.0f, 1.0f };
+    HuVecF axisX = { 1.0f, 0.0f, 0.0f };
+    MBPARTICLEDATA *dataP;
+    int i;
+    HuVecF *axisP;
+    float t;
+    float power;
+    float weight;
+    Mtx rotMtx;
+
+    if(particleP->count == 0) {
+        for(dataP = particleP->data, i = 0; i < particleP->num; i++, dataP++) {
+            dataP->scale = 0.0f;
+            dataP->color.a = 0;
+            dataP->time = -(i >> 3);
+        }
+        particleP->count = 1;
+    }
+    for(dataP = particleP->data, i = 0; i < particleP->num; i++, dataP++) {
+        if(particleP->unk00 != 0) {
+            if(dataP->time < 0) {
+                dataP->time++;
+                continue;
+            }
+            if(dataP->time == 0) {
+                mbVecCopy(&particleP->unk10, &dataP->vel);
+                axisP = &axisZ;
+                if(SNpcFireFabs(dataP->vel.z) >= SNpcFireFabs(dataP->vel.y) && SNpcFireFabs(dataP->vel.z) >= SNpcFireFabs(dataP->vel.x)) {
+                    axisP = &axisX;
+                }
+                PSVECCrossProduct(axisP, &dataP->vel, &vec);
+                PSMTXRotAxisRad(rotMtx, &dataP->vel, 0.017453292f * (360.0f * frandf()));
+                PSMTXMultVec(rotMtx, &vec, &dataP->accel);
+                power = particleP->unk00 / 256.0f;
+                dataP->time = dataP->aliveF = 10;
+                mbVecCopy(&particleP->unk04, &dataP->pos);
+                t = 100.0f * (0.3f * frandf());
+                PSVECScale(&dataP->vel, &vec, t * power);
+                PSVECAdd(&dataP->pos, &vec, &dataP->pos);
+                t = 100.0f * (0.05f * frandf());
+                PSVECScale(&dataP->accel, &vec, t * power);
+                PSVECAdd(&dataP->pos, &vec, &dataP->pos);
+                weight = 25.0f * power;
+                PSVECScale(&dataP->vel, &dataP->vel, weight);
+                weight = 3.0000002f * power;
+                PSVECScale(&dataP->accel, &dataP->accel, weight);
+                dataP->rot.z = mbRandMod(360);
+                dataP->animBank = mbRandMod(8);
+                dataP->color.r = dataP->color.g = dataP->color.b = 100.0f + 155.0f * frandf();
+                dataP->color.a = 0;
+                dataP->speedDecay = mbRandMod(62) + 58;
+                dataP->scale = 40.0f;
+                dataP->colorIdx = 40.0f + 30.0f * frandf();
+            }
+        }
+        if(dataP->time > 0) {
+            t = 1.0f - (float)dataP->time / dataP->aliveF;
+            dataP->time--;
+            PSVECAdd(&dataP->pos, &dataP->vel, &dataP->pos);
+            PSVECAdd(&dataP->pos, &dataP->accel, &dataP->pos);
+            weight = 2.0f * t;
+            if(weight > 1.0f) {
+                weight = 1.0f;
+            }
+            dataP->color.a = dataP->color.a + weight * (dataP->speedDecay - dataP->color.a);
+            dataP->scale = dataP->scale + weight * (dataP->colorIdx - dataP->scale);
+            if(dataP->time == 0) {
+                dataP->scale = 0.0f;
+                dataP->color.a = 0;
+            }
+        }
+    }
+}
+
+static void SNpcEffectExec(void)
+{
+    int objId;
+    int i;
+    float y;
+    HuVecF pos;
+
+    if(snpcSaveWork->koopaF == FALSE) {
+        HuVecF ofs = { -70.0f, 320.0f, 20.0f };
+        objId = mbObjCreate(0xE001E, NULL, FALSE);
+        mbObjPosGet(snpcWork->objId, &pos);
+        PSVECAdd(&pos, &ofs, &pos);
+        SNpcObjMotShiftSet(10);
+        for(i = 14; i >= 0; i--) {
+            y = i / 14.0f;
+            y = 100.0f * (7.0f * mbSinDeg(30.0f * y));
+            mbObjPosSet(objId, pos.x, pos.y + y, pos.z);
+            HuPrcVSleep();
+        }
+        mbObjDispSet(objId, FALSE);
+        SNpcObjMotEndWait();
+        mbObjKill(objId);
+    } else {
+        SNpcKoopaFireExec();
+    }
+}
+
+/* OMOBJ work of SNpcPlayerMoveObjExec (the layout of player.c's walk object). */
+typedef struct SNpcPlayerMoveWork_s {
+    u8 killF : 1;
+    u8 type : 2;
+    u8 playerNo : 2;
+    u8 unk0_0 : 3;
+    s16 time;
+    s16 maxTime;
+} SNPCPLAYERMOVEWORK;
+
+static inline void SNpcPlayerWalkStateSet(int playerNo, s16 state)
+{
+    mbPlayerWorkGet(playerNo)->unkC = state;
+}
+
+static inline void SNpcPlayerMoveTimeSet(int playerNo, int time)
+{
+    mbPlayerWorkGet(playerNo)->masuNext = time;
+}
+
+static inline void SNpcPlayerMoveFlagSet(int playerNo, BOOL flag)
+{
+    mbPlayerWorkGet(playerNo)->unk10_3 = flag;
+}
+
+static void SNpcPlayerMoveObjExec(OMOBJ *obj);
+
+static void SNpcPlayerMoveFunc(int playerNo)
+{
+    OMOBJ *obj;
+    SNPCPLAYERMOVEWORK *work;
+    s16 maxTime;
+    MASU *masuP;
+    MASU *masuPrevP;
+    int i;
+    int masuId;
+    s16 masuPrev;
+    int linkId;
+    BOOL rotF;
+    s16 masuNext;
+    float motSpeed;
+    float rotY;
+    Mtx mtx;
+    HuVecF moveDir;
+    HuVecF rotV;
+    HuVecF dir;
+    HuVecF pos;
+
+    motSpeed = 1.0f;
+    rotF = FALSE;
+    obj = snpcWork->playerMoveObj = omAddObjEx(mbObjMan, 256, 0, 0, -1, SNpcPlayerMoveObjExec);
+    work = omObjGetWork(obj, SNPCPLAYERMOVEWORK);
+    masuNext = GwPlayer[playerNo].masuIdNext;
+    masuPrev = GwPlayer[playerNo].masuIdPrev;
+    mbPlayerPosGet(playerNo, (HuVecF *)&obj->trans);
+    if(snpcMagic == SNPC_MAGIC) {
+        masuId = snpcSaveWork->masuId;
+        for(i = 0; i < mbMasuLinkNumGet(masuId); i++) {
+            linkId = mbMasuLinkGet(masuId, i);
+            if(!(mbMasuMAttrGet(linkId) & mbBranchMAttrGet())) {
+                break;
+            }
+        }
+        mbMasuPosGet(masuId, &pos);
+        mbMasuPosGet(linkId, &dir);
+        PSVECSubtract(&dir, &pos, &dir);
+        dir.y = 0.0f;
+        PSVECNormalize(&dir, &dir);
+        PSVECScale(&dir, &dir, -110.000015f);
+        mbMasuMtxGet(masuId, mtx);
+        PSMTXMultVec(mtx, &dir, (HuVecF *)&obj->rot);
+    }
+    work->type = 0;
+    maxTime = 20;
+    if(masuPrev > 0) {
+        masuPrevP = mbMasuGet(masuPrev);
+        masuP = mbMasuGet(masuNext);
+        if((masuPrevP->attr & 0x2) && (masuP->attr & 0x1)) {
+            work->type = 1;
+        }
+        if((masuPrevP->attr & 0x8) && (masuP->attr & 0x4)) {
+            work->type = 2;
+        }
+    }
+    switch(work->type) {
+        case 0:
+            SNpcPlayerWalkStateSet(playerNo, 1);
+            mbPlayerMotionShiftSet(playerNo, 3, 0.0f, 4.0f, HU3D_MOTATTR_LOOP);
+            break;
+
+        case 1:
+            SNpcPlayerWalkStateSet(playerNo, 2);
+            mbPlayerMotionShiftSet(playerNo, 4, 6.0f, 2.0f, HU3D_MOTATTR_NONE);
+            maxTime = 24;
+            break;
+
+        case 2:
+            SNpcPlayerWalkStateSet(playerNo, 3);
+            mbPlayerMotionShiftSet(playerNo, 14, 0.0f, 4.0f, HU3D_MOTATTR_LOOP);
+            maxTime = 100;
+            motSpeed = 2.0f;
+            PSVECSubtract((HuVecF *)&obj->rot, (HuVecF *)&obj->trans, &moveDir);
+            maxTime = PSVECMag(&moveDir) / 15.000001f;
+            if(obj->trans.y >= obj->rot.y) {
+                moveDir.x = -moveDir.x;
+                moveDir.y = -moveDir.y;
+                moveDir.z = -moveDir.z;
+                motSpeed = -motSpeed;
+            }
+            rotV.x = rotV.z = 0.0f;
+            rotV.y = HuAtan(moveDir.x, moveDir.z);
+            mbPlayerRotSetV(playerNo, &rotV);
+            rotF = TRUE;
+            break;
+    }
+    mbPlayerMotionSpeedSet(playerNo, motSpeed);
+    PSVECSubtract((HuVecF *)&obj->rot, (HuVecF *)&obj->trans, &rotV);
+    rotY = 90.0 - HuAtan(rotV.z, rotV.x);
+    mbPlayerRotYSet(playerNo, rotY);
+    obj->scale.x = obj->trans.x;
+    obj->scale.y = obj->trans.y;
+    obj->scale.z = obj->trans.z;
+    work->playerNo = playerNo;
+    work->time = 0;
+    work->maxTime = maxTime;
+    SNpcPlayerMoveTimeSet(work->playerNo, work->maxTime);
+    GwPlayer[playerNo].moveF = TRUE;
+    while(GwPlayer[playerNo].moveF) {
+        HuPrcVSleep();
+    }
+    SNpcPlayerWalkStateSet(playerNo, 0);
+    SNpcPlayerMoveFlagSet(playerNo, TRUE);
+}
+
+static void SNpcPlayerMoveObjExec(OMOBJ *obj)
+{
+    SNPCPLAYERMOVEWORK *work = omObjGetWork(obj, SNPCPLAYERMOVEWORK);
+    float t;
+    if(mbExitCheck() || work->killF) {
+        GwPlayer[work->playerNo].moveF = FALSE;
+        omDelObjEx(HuPrcCurrentGet(), obj);
+        snpcWork->playerMoveObj = NULL;
+        return;
+    }
+    work->time++;
+    t = (float)work->time / (float)work->maxTime;
+    obj->trans.x = obj->scale.x + (t * (obj->rot.x - obj->scale.x));
+    obj->trans.y = obj->scale.y + (t * (obj->rot.y - obj->scale.y));
+    obj->trans.z = obj->scale.z + (t * (obj->rot.z - obj->scale.z));
+    SNpcPlayerMoveTimeSet(work->playerNo, work->maxTime - work->time);
+    if(work->time >= work->maxTime) {
+        GwPlayer[work->playerNo].moveF = FALSE;
+        mbPlayerPosSet(work->playerNo, obj->rot.x, obj->rot.y, obj->rot.z);
+        omDelObjEx(HuPrcCurrentGet(), obj);
+        snpcWork->playerMoveObj = NULL;
+        return;
+    }
+    if(work->type != 1) {
+        mbPlayerPosSet(work->playerNo, obj->trans.x, obj->trans.y, obj->trans.z);
+    } else {
+        SNpcPlayerMoveFlagSet(work->playerNo, FALSE);
+        if(work->time >= work->maxTime - 2) {
+            t = 1.0f;
+            SNpcPlayerMoveFlagSet(work->playerNo, TRUE);
+        } else {
+            t = (float)work->time / (float)(work->maxTime - 2);
+        }
+        mbPlayerPosSet(work->playerNo, obj->trans.x, obj->trans.y + (100.0 * (2.0 * HuSin(180.0f * t))), obj->trans.z);
+        if(work->time == work->maxTime - 5) {
+            mbPlayerMotionShiftSet(work->playerNo, 5, 2.0f, 2.0f, HU3D_MOTATTR_NONE);
+        }
+    }
+}
+
+static void SNpcSePlay(int seNo, int arg1)
+{
+    if(snpcSeTbl[seNo][snpcSaveWork->koopaF] != 0) {
+        mbAudFXPlay(snpcSeTbl[seNo][snpcSaveWork->koopaF]);
+    }
+}
+
+static void SNpcMotSetNext(void)
+{
+    int time;
+    SNPCNEXTMOT *nextMot;
+    int i;
+
+    time = 0;
+    nextMot = snpcNextMotTbl[snpcSaveWork->koopaF];
+    nextMot += snpcWork->motNo;
+    if(nextMot->seNo != 0) {
+        if(mbObjMotionShiftIDGet(snpcWork->objId) != -1) {
+            time = Hu3DMotionShiftTimeGet(mbObjModelIDGet(snpcWork->objId));
+        } else {
+            time = mbObjMotionTimeGet(snpcWork->objId);
+        }
+        i = 0;
+        if(snpcWork->motTime >= 0) {
+            for(i = 0; i < 3; i++) {
+                if(snpcWork->motTime < nextMot->time[i]) {
+                    break;
+                }
+            }
+        }
+        if(i < 3 && nextMot->time[i] >= 0 && nextMot->time[i] <= time) {
+            SNpcSePlay(nextMot->seNo, 0);
+        }
+        snpcWork->motTime = time;
+    }
+}
+
+static void SNpcObjCreate(void)
+{
+    u32 dataNumTbl[2] = { 0xE001F, 0xE0000 };
+    int i;
+    HuVecF pos;
+
+    snpcWork->objId = mbObjCreate(dataNumTbl[snpcSaveWork->koopaF], NULL, TRUE);
+    mbObjLayerSet(snpcWork->objId, 3);
+    for(i = 0; i < 11; i++) {
+        snpcWork->motId[i] = mbObjMotionCreate(snpcWork->objId, snpcMotTbl[snpcSaveWork->koopaF][i].dataNum);
+    }
+    snpcWork->motNo = -1;
+    SNpcObjMotSet(0);
+    mbMasuPosGet(snpcSaveWork->masuId, &pos);
+    SNpcObjPosSetV(&pos);
+    SNpcObjRotSet(0.0f, 0.0f, 0.0f);
+    snpcWork->masuEffObjId = mbObjCreate(mbBoardDataNumGet(0x5005C), NULL, FALSE);
+    mbObjDispSet(snpcWork->masuEffObjId, FALSE);
+    mbObjLayerSet(snpcWork->masuEffObjId, 2);
+}
+
+static void SNpcObjKill(void)
+{
+    int i;
+
+    for(i = 0; i < 8; i++) {
+        if((&snpcWork->objId)[i] != 0) {
+            mbObjKill((&snpcWork->objId)[i]);
+            (&snpcWork->objId)[i] = 0;
+        }
+    }
+    for(i = 0; i < 19; i++) {
+        snpcWork->motId[i] = 0;
+    }
+}
+
+static void SNpcObjDispSet(BOOL dispF)
+{
+    mbObjDispSet(snpcWork->objId, dispF);
+}
+
+static void SNpcObjPosSet(float x, float y, float z)
+{
+    snpcWork->pos.x = x;
+    snpcWork->pos.y = y;
+    snpcWork->pos.z = z;
+    mbObjPosSetV(snpcWork->objId, &snpcWork->pos);
+}
+
+static void SNpcObjPosSetV(HuVecF *pos)
+{
+    mbVecCopy(pos, &snpcWork->pos);
+    mbObjPosSetV(snpcWork->objId, &snpcWork->pos);
+}
+
+static void SNpcObjPosGet(HuVecF *pos)
+{
+    mbVecCopy(&snpcWork->pos, pos);
+}
+
+static void SNpcObjRotSet(float x, float y, float z)
+{
+    snpcWork->rot.x = x;
+    snpcWork->rot.y = y;
+    snpcWork->rot.z = z;
+    mbObjRotSetV(snpcWork->objId, &snpcWork->rot);
+}
+
+static void SNpcObjRotSetV(HuVecF *rot)
+{
+    mbVecCopy(rot, &snpcWork->rot);
+    mbObjRotSetV(snpcWork->objId, &snpcWork->rot);
+}
+
+static void SNpcObjRotGet(HuVecF *rot)
+{
+    mbVecCopy(&snpcWork->rot, rot);
+}
+
+static void SNpcObjMotSet(int motNo)
+{
+    SNPCMOT *mot;
+    int start;
+    int end;
+    u32 attr;
+
+    mot = &snpcMotTbl[snpcSaveWork->koopaF][motNo];
+    if(mot->loopF) {
+        attr = HU3D_MOTATTR_LOOP;
+    } else {
+        attr = HU3D_MOTATTR_NONE;
+    }
+    mbObjMotionSet(snpcWork->objId, snpcWork->motId[motNo], attr);
+    mbObjMotionSpeedSet(snpcWork->objId, mot->speed);
+    if(mot->start || mot->end) {
+        start = end = -1;
+        if(mot->start) {
+            start = mot->start;
+        }
+        if(mot->end) {
+            end = mot->end;
+        }
+        mbObjMotionStartEndSet(snpcWork->objId, start, end);
+    }
+    snpcWork->motTime = -1;
+    snpcWork->motNo = motNo;
+}
+
+static void SNpcObjMotShiftSet(int motNo)
+{
+    SNPCMOT *mot;
+    int start;
+    int end;
+    u32 attr;
+
+    if(snpcWork->motNo != motNo) {
+        mot = &snpcMotTbl[snpcSaveWork->koopaF][motNo];
+        start = 0;
+        if(mot->start) {
+            start = mot->start;
+        }
+        if(mot->loopF) {
+            attr = HU3D_MOTATTR_LOOP;
+        } else {
+            attr = HU3D_MOTATTR_NONE;
+        }
+        mbObjMotionShiftSet(snpcWork->objId, snpcWork->motId[motNo], mot->start, 8.0f, attr);
+        mbObjMotionSpeedSet(snpcWork->objId, mot->speed);
+        if(mot->start || mot->end) {
+            end = Hu3DMotionShiftMaxTimeGet(mbObjModelIDGet(snpcWork->objId));
+            if(mot->end) {
+                end = mot->end;
+            }
+            Hu3DMotionShiftStartEndSet(mbObjModelIDGet(snpcWork->objId), start, end);
+        }
+        snpcWork->motTime = -1;
+        snpcWork->motNo = motNo;
+    }
+}
+
+static BOOL SNpcObjMotEndCheck(void)
+{
+    BOOL result = FALSE;
+    if(mbObjMotionEndCheck(snpcWork->objId) && mbObjMotionShiftIDGet(snpcWork->objId) == -1) {
+        result = TRUE;
+    }
+    return result;
+}
+
+static void SNpcObjMotEndWait(void)
+{
+    while(!SNpcObjMotEndCheck()) {
+        HuPrcVSleep();
+    }
+}
+
+static void SNpcObjMasuSet(int masuId)
+{
+    HuVecF pos;
+    mbMasuPosGet(masuId, &pos);
+    pos.y += 5.0f;
+    mbObjPosSetV(snpcWork->masuEffObjId, &pos);
+    mbObjDispSet(snpcWork->masuEffObjId, TRUE);
+    mbObjMotionTimeSet(snpcWork->masuEffObjId, 0.0f);
+}
+
+static void SNpcMasuEffDispSet(void)
+{
+    mbObjDispSet(snpcWork->masuEffObjId, FALSE);
+}
+
+/* One step of a depth-first walk over the board's links. */
+typedef struct SNpcMasuStack_s {
+    s16 masuId;
+    s16 linkNo;
+    s16 num;
+    u8 flag;
+} SNPCMASUSTACK;
+
+/* Reverse links of one space: where its entries start in the table, and how many. */
+typedef struct SNpcMasuLinkRev_s {
+    s16 ofs;
+    s16 num;
+} SNPCMASULINKREV;
+
+u8 *mbMasuChanceCreate(int masuId, int num, int revNum)
+{
+    SNPCMASUSTACK *stackP;
+    int i;
+    int cur;
+    int cnt;
+    int next;
+    s8 *masuFlag;
+    SNPCMASULINKREV *revP;
+    MASU *masuP;
+    int linkNo;
+    u8 *chance;
+    int rest;
+    int j;
+    BOOL found;
+    SNPCMASUSTACK *stack;
+    SNPCMASULINKREV *revCnt;
+    int masuNum;
+    int stackMax;
+    u8 *revTbl;
+    int linkNum;
+    int total;
+
+    stackMax = 256;
+    chance = mbMalloc(0x100);
+    masuFlag = mbMalloc(0x100);
+    stack = SNpcMalloc(stackMax * sizeof(SNPCMASUSTACK));
+    masuNum = mbMasuNumGet();
+    for(i = 1; i < masuNum; i++) {
+        masuFlag[i] = mbMasuDispCheck(i) | (mbBranchAttrCheck(i) ? 0 : -1);
+    }
+    if(num != 0) {
+        cur = masuId;
+        linkNo = 0;
+        cnt = num;
+        stackP = stack;
+        rest = stackMax;
+        chance[cur] = cnt;
+        if(masuFlag[cur] != 0) {
+            cnt--;
+        }
+        while(stackP >= stack) {
+            found = FALSE;
+            masuP = mbMasuGet(cur);
+            while(linkNo < masuP->linkNum && !found) {
+                next = masuP->linkTbl[linkNo++];
+                if(masuFlag[next] < 0) {
+                    continue;
+                }
+                if(chance[next] >= cnt) {
+                    continue;
+                }
+                chance[next] = cnt;
+                if(rest <= 0) {
+                    continue;
+                }
+                if(cnt <= 1 && masuFlag[next] == 0) {
+                    continue;
+                }
+                stackP->masuId = cur;
+                stackP->linkNo = linkNo;
+                stackP->num = cnt;
+                stackP++;
+                rest--;
+                cur = next;
+                linkNo = 0;
+                if(masuFlag[next] != 0) {
+                    cnt--;
+                }
+                found = TRUE;
+            }
+            if(!found) {
+                stackP--;
+                rest++;
+                if(stackP >= stack) {
+                    cur = stackP->masuId;
+                    linkNo = stackP->linkNo;
+                    cnt = stackP->num;
+                }
+            }
+        }
+    }
+    if(revNum != 0) {
+        revCnt = mbMalloc(0x400);
+        for(i = 1; i < masuNum; i++) {
+            masuP = mbMasuGet(i);
+            linkNum = masuP->linkNum;
+            for(j = 0; j < linkNum; j++) {
+                revCnt[masuP->linkTbl[j]].num++;
+            }
+        }
+        total = 0;
+        for(revP = &revCnt[1], i = 1; i < masuNum; i++, revP++) {
+            revP->ofs = total;
+            total += revP->num;
+            revP->num = 0;
+        }
+        revTbl = SNpcMalloc((total + 16) * 4);
+        for(i = 1; i < masuNum; i++) {
+            masuP = mbMasuGet(i);
+            linkNum = masuP->linkNum;
+            for(j = 0; j < linkNum; j++) {
+                revP = &revCnt[masuP->linkTbl[j]];
+                revTbl[revP->ofs + revP->num++] = i;
+            }
+        }
+        cur = masuId;
+        linkNo = 0;
+        cnt = revNum;
+        stackP = stack;
+        rest = stackMax;
+        chance[cur] = cnt;
+        if(masuFlag[cur] != 0) {
+            cnt--;
+        }
+        while(stackP >= stack) {
+            found = FALSE;
+            revP = &revCnt[cur];
+            while(linkNo < revP->num && !found) {
+                next = revTbl[revP->ofs + linkNo++];
+                if(masuFlag[cur] < 0) {
+                    continue;
+                }
+                if(chance[next] >= cnt) {
+                    continue;
+                }
+                chance[next] = cnt;
+                if(rest <= 0) {
+                    continue;
+                }
+                if(cnt <= 1 && masuFlag[cur] == 0) {
+                    continue;
+                }
+                stackP->masuId = cur;
+                stackP->linkNo = linkNo;
+                stackP->num = cnt;
+                stackP++;
+                rest--;
+                cur = next;
+                linkNo = 0;
+                if(masuFlag[next] != 0) {
+                    cnt--;
+                }
+                found = TRUE;
+            }
+            if(!found) {
+                stackP--;
+                rest++;
+                if(stackP >= stack) {
+                    cur = stackP->masuId;
+                    linkNo = stackP->linkNo;
+                    cnt = stackP->num;
+                }
+            }
+        }
+        HuMemDirectFree(revTbl);
+        HuMemDirectFree(revCnt);
+    }
+    HuMemDirectFree(masuFlag);
+    HuMemDirectFree(stack);
+    return chance;
+}
+
+void mbMasuChanceKill(void *chance)
+{
+    HuMemDirectFree(chance);
+}
+
+void mbMasuChanceTypeSet(u8 *chance, char value, int *typeTbl, BOOL flag)
+{
+    int masuNum;
+    int type;
+    BOOL setF;
+    u8 *chanceP;
+    int i;
+    int j;
+
+    masuNum = mbMasuNumGet();
+    setF = (flag) ? TRUE : FALSE;
+    for(chanceP = &chance[1], i = 1; i < masuNum; i++, chanceP++) {
+        if(*chanceP == 0) {
+            type = mbMasuGet(i)->type;
+            for(j = 0; typeTbl[j] >= 0; j++) {
+                if(type == typeTbl[j]) {
+                    break;
+                }
+            }
+            if(setF == (typeTbl[j] < 0)) {
+                *chanceP = value;
+            }
+        }
+    }
+}
+
+void mbMasuChanceFlagSet(u8 *chance, char value, u32 attr, u32 mAttr, BOOL flag)
+{
+    int masuNum;
+    BOOL setF;
+    u8 *chanceP;
+    int i;
+    MASU *masuP;
+
+    masuNum = mbMasuNumGet();
+    setF = (flag) ? TRUE : FALSE;
+    for(chanceP = &chance[1], i = 1; i < masuNum; i++, chanceP++) {
+        if(*chanceP == 0) {
+            masuP = mbMasuGet(i);
+            if(setF == !((masuP->attr & attr) | (masuP->mAttr & mAttr))) {
+                *chanceP = value;
+            }
+        }
+    }
+}
+
+void mbMasuChancePlayerSet(u8 *chance, char value)
+{
+    int i;
+    for(i = 0; i < GW_PLAYER_MAX; i++) {
+        chance[GwPlayer[i].masuId] = value;
+    }
+}
+
+int mbMasuChanceSet(u8 *chance, int masuId)
+{
+    int i;
+    int j;
+    int masuNo;
+    u8 *masuTbl;
+    int num;
+    int maxNum;
+    int masuNum;
+    float *distTbl;
+    float dist;
+    float minDist;
+    HuVecF pos;
+    HuVecF diff;
+
+    maxNum = 28;
+    mbMasuPosGet(masuId, &pos);
+    pos.y = 0.0f;
+    if(mbMasuAttrGet(masuId) & 0x8000) {
+        if(mbRandMod(100) < 50) {
+            pos.x = 1300.0f;
+            pos.z = -3000.0f;
+            maxNum = 20;
+        } else {
+            maxNum = 50;
+        }
+    }
+    masuTbl = SNpcMalloc(0x102);
+    distTbl = SNpcMalloc(0x408);
+    masuNum = mbMasuNumGet();
+    for(i = 1, num = 0; i < masuNum; i++) {
+        if(chance[i] == 0) {
+            mbMasuPosGet(i, &diff);
+            PSVECSubtract(&diff, &pos, &diff);
+            diff.y = 0.0f;
+            diff.z *= 0.8f;
+            dist = PSVECMag(&diff);
+            if(num < maxNum) {
+                distTbl[num] = dist;
+                masuTbl[num++] = i;
+            } else {
+                minDist = 1000000.0f;
+                for(j = 0, masuNo = -1; j < num; j++) {
+                    if(distTbl[j] < minDist) {
+                        masuNo = j;
+                        minDist = distTbl[j];
+                    }
+                }
+                if(minDist < dist) {
+                    distTbl[masuNo] = dist;
+                    masuTbl[masuNo] = i;
+                }
+            }
+        }
+    }
+    for(i = 0; i < 20; i++) {
+        j = mbRandMod(num);
+        masuNo = masuTbl[j];
+        if(mbCapMasuDispTypeGet(masuNo) == 0) {
+            break;
+        }
+    }
+    HuMemDirectFree(masuTbl);
+    HuMemDirectFree(distTbl);
+    return masuNo;
+}
+
+/* One space of a candidate route. */
+typedef struct SNpcRoute_s {
+    u8 flag;
+    u8 masuId;
+    s16 num;
+} SNPCROUTE;
+
+static int SNpcDiceValueGet(int masuId, int num, int *tbl, int level, s16 *path, float speed)
+{
+    SNPCROUTE *routeTbl[64];
+    int scoreTbl[64];
+    int dist[GW_PLAYER_MAX];
+    int passF[GW_PLAYER_MAX];
+    int i;
+    int j;
+    SNPCROUTE *route;
+    SNPCMASUSTACK *stackP;
+    s8 *masuFlag;
+    int cur;
+    SNPCMASUSTACK *stack;
+    int next;
+    int depth;
+    int routeNum;
+    int cnt;
+    int linkNo;
+    int score;
+    s8 *depthCnt;
+    int masuNum;
+    int stackNum;
+    int type;
+    int maxDepth;
+    int minDepth;
+    BOOL found;
+    MASU *masuP;
+    int maxStar;
+    int last;
+
+    maxDepth = num + 10;
+    stackNum = maxDepth + 2;
+    masuFlag = mbMalloc(0x100);
+    stack = mbMalloc(stackNum * sizeof(SNPCMASUSTACK));
+    depthCnt = mbMalloc(stackNum);
+    routeNum = 0;
+    for(i = 0; i < 64; i++) {
+        routeTbl[i] = NULL;
+    }
+    masuNum = mbMasuNumGet();
+    for(i = 1; i < masuNum; i++) {
+        masuFlag[i] = (mbMasuDispCheck(i) ? 1 : 0) | (mbBranchAttrCheck(i) ? 0 : -1);
+    }
+    for(i = 0; i < GW_PLAYER_MAX; i++) {
+        cur = GwPlayer[i].masuId;
+        masuFlag[cur] |= 2;
+    }
+    if(num != 0) {
+        cur = masuId;
+        linkNo = 0;
+        cnt = 0;
+        stackP = stack;
+        depth = 0;
+        minDepth = stackNum;
+        while(stackP >= stack) {
+            found = FALSE;
+            masuP = mbMasuGet(cur);
+            while(linkNo < masuP->linkNum && !found) {
+                next = masuP->linkTbl[linkNo++];
+                if(masuFlag[next] < 0) {
+                    continue;
+                }
+                if(depth < maxDepth) {
+                    depthCnt[depth]++;
+                    stackP->masuId = cur;
+                    stackP->linkNo = linkNo;
+                    stackP->num = cnt;
+                    stackP++;
+                    stackP->flag = FALSE;
+                    depth++;
+                    cur = next;
+                    linkNo = 0;
+                    if(masuFlag[cur] & 1) {
+                        cnt++;
+                    }
+                    if(!(masuFlag[cur] & 0xE) && !(mbMasuMAttrGet(cur) & level)) {
+                        type = mbMasuTypeGet(cur);
+                        for(j = 0; tbl[j] >= 0; j++) {
+                            if(type == tbl[j]) {
+                                stackP->flag = TRUE;
+                                break;
+                            }
+                        }
+                    }
+                    found = TRUE;
+                    continue;
+                }
+                for(i = 1, j = 0; i < depth && stack[i].num <= num; i++) {
+                    if(stack[i].flag) {
+                        j++;
+                    }
+                }
+                if(j != 0 && routeNum < 64) {
+                    route = SNpcMalloc((depth + 1) * sizeof(SNPCROUTE));
+                    routeTbl[routeNum++] = route;
+                    for(i = 1; i < depth; i++, route++) {
+                        route->masuId = stack[i].masuId;
+                        route->flag = stack[i].flag;
+                        route->num = stack[i].num;
+                    }
+                    route->num = -1;
+                    for(i = 0; i < depth - 1; i++) {
+                        if(depthCnt[i] > 1) {
+                            break;
+                        }
+                    }
+                    if(minDepth > i) {
+                        minDepth = i;
+                    }
+                }
+            }
+            if(!found) {
+                stackP--;
+                depth--;
+                if(stackP >= stack) {
+                    cur = stackP->masuId;
+                    linkNo = stackP->linkNo;
+                    cnt = stackP->num;
+                }
+            }
+        }
+    }
+    cnt = 0;
+    if(routeNum != 0) {
+        maxStar = 0;
+        for(j = 0; j < GW_PLAYER_MAX; j++) {
+            next = mbPlayerStarGet(j);
+            if(maxStar < next) {
+                maxStar = next;
+            }
+            passF[j] = FALSE;
+        }
+        route = routeTbl[0];
+        for(i = 0; i < minDepth && route->num >= 0; i++, route++) {
+            if(masuFlag[route->masuId] & 0xE) {
+                for(j = 0; j < GW_PLAYER_MAX; j++) {
+                    if(route->masuId == GwPlayer[j].masuId) {
+                        passF[j] = TRUE;
+                    }
+                }
+            }
+        }
+        for(i = 0; i < routeNum; i++) {
+            for(j = 0; j < GW_PLAYER_MAX; j++) {
+                dist[j] = 0;
+            }
+            for(route = routeTbl[i] + minDepth; route->num >= 0; route++) {
+                if(masuFlag[route->masuId] & 0xE) {
+                    for(j = 0; j < GW_PLAYER_MAX; j++) {
+                        if(route->masuId == GwPlayer[j].masuId && dist[j] == 0 && passF[j] == 0) {
+                            if(route->num < num + 1) {
+                                dist[j] = route->num;
+                            } else {
+                                passF[j] = TRUE;
+                            }
+                        }
+                    }
+                }
+            }
+            score = 1000000;
+            for(j = 0; j < GW_PLAYER_MAX; j++) {
+                if(dist[j] != 0) {
+                    if(snpcSaveWork->koopaF == FALSE) {
+                        next = dist[j] + mbPlayerStarGet(j) * 20;
+                    } else {
+                        next = dist[j] + (maxStar - mbPlayerStarGet(j)) * 20;
+                    }
+                    if(score > next) {
+                        score = next;
+                    }
+                }
+            }
+            scoreTbl[i] = score;
+        }
+        for(i = 0; i < routeNum - 1; i++) {
+            for(j = i + 1; j < routeNum; j++) {
+                if(scoreTbl[i] > scoreTbl[j]) {
+                    next = scoreTbl[i];
+                    route = routeTbl[i];
+                    scoreTbl[i] = scoreTbl[j];
+                    routeTbl[i] = routeTbl[j];
+                    scoreTbl[j] = next;
+                    routeTbl[j] = route;
+                }
+            }
+        }
+        score = 10000000;
+        for(i = 0; i < routeNum && score >= scoreTbl[i]; i++) {
+            score = scoreTbl[i];
+        }
+        next = i;
+        routeNum = mbRandMod(next);
+        route = routeTbl[routeNum];
+        for(i = 0, j = 0; route[i].num >= 0 && route[i].num <= num; i++) {
+            if(route[i].flag) {
+                j++;
+            }
+        }
+        last = -1;
+        for(i = 0; j > 0; i++) {
+            path[i] = route[i].masuId;
+            if(route[i].flag) {
+                j--;
+                if(masuFlag[path[i]] > 0 && route[i].num >= (int)(0.5f + num * speed)) {
+                    j = 0;
+                } else {
+                    last = i;
+                }
+            }
+        }
+        if(last > 0 && mbCapMasuDispTypeGet(path[i - 1]) != 0 && mbCapMasuDispTypeGet(path[last]) == 0) {
+            i = last + 1;
+        }
+        cnt = route[i - 1].num;
+        path[i] = 0;
+    }
+    for(i = 0; i < 64; i++) {
+        if(routeTbl[i]) {
+            mbMasuChanceKill(routeTbl[i]);
+            routeTbl[i] = NULL;
+        }
+    }
+    HuMemDirectFree(masuFlag);
+    HuMemDirectFree(stack);
+    HuMemDirectFree(depthCnt);
+    return cnt;
+}
+
+int mbSNpcMasuStarNextGet(int masuId, int num, int *tbl, int level)
+{
+    u8 *chance;
+    int result;
+
+    chance = mbMasuChanceCreate(masuId, num + 1, (num / 4) + 1);
+    mbMasuChanceTypeSet(chance, 100, tbl, TRUE);
+    mbMasuChanceFlagSet(chance, 100, 0, level, FALSE);
+    mbMasuChancePlayerSet(chance, 100);
+    result = mbMasuChanceSet(chance, masuId);
+    mbMasuChanceKill(chance);
+    return result;
+}
+
+/* OMOBJ work of SNpcStarObjExec. */
+typedef struct SNpcStarWork_s {
+    u8 initF : 1;
+    u8 killF : 1;
+    u8 koopaF : 1;
+    u8 coinF : 1;
+    s16 time;
+    s16 maxTime;
+    s16 unk6;
+    s16 mode;
+    int seNo;
+} SNPCSTARWORK;
+
+static void SNpcStarObjExec(OMOBJ *obj);
+static s16 SNpcStarEffCreate(ANIMDATA *anim, int koopaF);
+static void SNpcStarEffKill(s16 modelId);
+
+static void SNpcStarCreate(int koopaF, BOOL coinF, HuVecF *pos)
+{
+    OMOBJ *obj;
+
+    if(koopaF == FALSE) {
+        obj = omAddObjEx(mbObjMan, 256, 4, 0, -1, SNpcStarObjExec);
+        snpcWork->starObj = obj;
+        omObjGetWork(snpcWork->starObj, SNPCSTARWORK)->koopaF = FALSE;
+    } else {
+        obj = omAddObjEx(mbObjMan, 256, 4, 0, -1, SNpcStarObjExec);
+        snpcWork->starObj = obj;
+        omObjGetWork(snpcWork->starObj, SNPCSTARWORK)->koopaF = TRUE;
+    }
+    omSetStatBit(obj, 0x100);
+    if(coinF) {
+        omObjGetWork(snpcWork->starObj, SNPCSTARWORK)->coinF = TRUE;
+    }
+    mbVecCopy(pos, (HuVecF *)&obj->trans);
+    obj->mdlId[0] = mbObjCreate(mbBoardDataNumGet(starMdlTbl[koopaF]), NULL, TRUE);
+    mbObjDispSet(obj->mdlId[0], FALSE);
+    obj->mdlId[1] = SNpcStarEffCreate(HuSprAnimDataRead(0x210001), koopaF);
+}
+
+static void SNpcStarWait(void)
+{
+    while(snpcWork->starObj != NULL) {
+        HuPrcVSleep();
+    }
+}
+
+static void SNpcStarObjExec(OMOBJ *obj)
+{
+    SNPCSTARWORK *work = omObjGetWork(obj, SNPCSTARWORK);
+    float t;
+
+    if(mbExitCheck() || work->killF) {
+        mbObjKill(obj->mdlId[0]);
+        SNpcStarEffKill(obj->mdlId[1]);
+        obj->mdlId[0] = 0;
+        obj->mdlId[1] = 0;
+        omDelObjEx(HuPrcCurrentGet(), obj);
+        snpcWork->starObj = NULL;
+        return;
+    }
+    if(!work->initF) {
+        work->initF = TRUE;
+        work->time = 0;
+        work->maxTime = 0;
+        work->mode = 0;
+        obj->trans.y += 300.0f;
+        if(!work->coinF) {
+            obj->trans.y += 70.0f;
+        }
+        obj->rot.z = 0.0f;
+        mbObjDispSet(obj->mdlId[0], TRUE);
+        if(!work->koopaF) {
+            work->seNo = mbAudFXPlay(0x447);
+        } else {
+            work->seNo = mbAudFXPlay(0x45E);
+        }
+    }
+    work->time++;
+    if(work->time > work->maxTime) {
+        work->time = work->maxTime;
+    }
+    switch(work->mode) {
+        case 0:
+            work->maxTime = 120;
+            work->mode++;
+
+        case 1:
+            t = (float)work->time / work->maxTime;
+            t = 1.0f - t;
+            obj->rot.z = 500.0f * t;
+            if(work->time >= work->maxTime) {
+                work->mode++;
+                work->time = 0;
+                work->maxTime = 60;
+            }
+            break;
+
+        case 2:
+            t = (float)work->time / work->maxTime;
+            obj->rot.z = 100.0f * (0.2f * mbSinDeg(180.0f + 360.0f * t));
+            if(work->time >= work->maxTime) {
+                work->mode++;
+                work->time = 0;
+                work->maxTime = 30;
+                mbParManAttrSet((int)obj->mdlId[1], MB_PARMAN_ATTR_TIMEUP);
+                if(work->seNo > 0) {
+                    mbAudFXStop(work->seNo);
+                    work->seNo = -1;
+                }
+                if(!work->koopaF) {
+                    mbAudFXPlay(0x449);
+                } else {
+                    mbAudFXPlay(0x449);
+                }
+            }
+            break;
+
+        case 3:
+            obj->rot.y += 20.0f;
+            if(obj->rot.y >= 360.0f) {
+                obj->rot.y -= 360.0f;
+            }
+            t = (float)work->time / work->maxTime;
+            t = 1.0f - t;
+            if(t <= 0.0f) {
+                t = 0.00001f;
+            }
+            obj->scale.x = obj->scale.z = t;
+            if(work->coinF) {
+                obj->rot.z -= 5.0000005f;
+            }
+            if(work->time >= work->maxTime) {
+                work->mode++;
+                work->killF = TRUE;
+            }
+            break;
+    }
+    mbObjPosSet(obj->mdlId[0], obj->trans.x, obj->trans.y + obj->rot.z, obj->trans.z);
+    mbObjRotSet(obj->mdlId[0], 0.0f, obj->rot.y, 0.0f);
+    mbObjScaleSet(obj->mdlId[0], obj->scale.x, obj->scale.y, obj->scale.z);
+    mbParManPosSet((s16)obj->mdlId[1], obj->trans.x, obj->trans.y + obj->rot.z, obj->trans.z);
+}
+
+static s16 SNpcStarEffCreate(ANIMDATA *anim, int koopaF)
+{
+    s16 modelId = mbParManCreate(anim, 100, &snpcStarEffParam[koopaF]);
+    mbParManAttrSet((int)modelId, 100);
+    mbParManRotSet((int)modelId, 90.0f, 0.0f, 0.0f);
+    mbParticleBlendModeSet((int)modelId, MB_PARTICLE_BLEND_ADDCOL);
+    Hu3DModelLayerSet(modelId, 5);
+    Hu3DModelCameraSet(modelId, HU3D_CAM0);
+    return modelId;
+}
+
+static void SNpcStarEffKill(s16 modelId)
+{
+    mbParManKill((int)modelId);
+}
+
 /* @@PART3@@ */
 /* Counts the TEV stages and texture coordinates Hu3DTevStageTexSet used, so a material hook can
  * append its own stages after them. */

@@ -27,7 +27,7 @@ void mbMasuChanceKill(void *chance);
 void mbMasuChanceTypeSet(u8 *chance, char value, int *typeTbl, BOOL flag);
 void mbMasuChanceFlagSet(u8 *chance, char value, u32 attr, u32 mAttr, BOOL flag);
 void mbMasuChancePlayerSet(u8 *chance, char value);
-int mbMasuChanceSet(u8 *chance, s16 masuId);
+int mbMasuChanceSet(u8 *chance, int masuId);
 int mbSNpcMasuStarNextGet(int masuId, int num, int *tbl, int level);
 void mbObjStarTevStageSet(HU3D_DRAW_OBJ *drawObj, HSF_MATERIAL *matP, u32 *tevStage, u32 *texCoord);
 void mbObjFadeCreate(s16 objId, HuVecF *pos);
