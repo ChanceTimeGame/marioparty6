@@ -1,4 +1,9 @@
 /* @@HEAD@@ */
+/* Retail calls HuWinInsertMesSet unprototyped (extsh on its s16 argument) */
+#define HuWinInsertMesSet HuWinInsertMesSet_proto
+#include "game/window.h"
+#undef HuWinInsertMesSet
+void HuWinInsertMesSet();
 #include "game/audio.h"
 #include "game/charman.h"
 #include "game/data.h"
@@ -10,16 +15,16 @@
 #include "game/object.h"
 #include "game/pad.h"
 #include "game/process.h"
-#include "game/saveload.h"
 #include "game/sprite.h"
 #include "game/thpmain.h"
-#include "game/window.h"
 #include "game/wipe.h"
 #include "humath.h"
 #include "math.h"
 #include "dolphin.h"
 
 #include "datadir_enum.h"
+
+/* SLSaveModeExec is called unprototyped (fn_1_4158): game/saveload.h stays out of this unit */
 
 /* frand is called unprototyped: game/frand.h stays out of this unit */
 
@@ -30,32 +35,58 @@ extern const VoidFunc _dtors[];
 /* lbl_1_data_520: model table read by fn_1_4668 (0x30 per entry) */
 typedef struct InstModelData_s {
     u32 dataNum; /* 0x00 */
-    s16 motNo; /* 0x04 */
+    s16 mdlNo; /* 0x04 -1: a model; else the entry whose model this motion belongs to */
     HuVecF pos; /* 0x08 */
     HuVecF rot; /* 0x14 */
     HuVecF scale; /* 0x20 */
-    s16 layer; /* 0x2C */
+    s16 cameraBit; /* 0x2C */
 } INST_MODEL_DATA; /* size 0x30 */
+
+/* lbl_1_data_798: the stand layout per minigame type (0x70 per entry) */
+typedef struct InstTypeData_s {
+    u8 num; /* 0x00 */
+    u32 dataNum[4]; /* 0x04 */
+    float rotY; /* 0x14 */
+    float scale; /* 0x18 */
+    float playerRot[5]; /* 0x1C */
+    u8 playerBit[4]; /* 0x30 */
+    HuVecF playerPos[5]; /* 0x34 */
+} INST_TYPE_DATA; /* size 0x70 */
+
+/* lbl_1_bss_D8: one stand (0x58 each) */
+typedef struct InstStand_s {
+    HU3D_MODELID mdlId; /* 0x00 */
+    u16 time; /* 0x02 */
+    float angle; /* 0x04 */
+    u8 unk08[12]; /* 0x08 */
+    s8 player[5]; /* 0x14 */
+    HuVecF playerPos[5]; /* 0x1C */
+} INST_STAND; /* size 0x58 */
+
+typedef INST_TYPE_DATA INST_STAGETBL;
+typedef INST_STAND INST_STAGE;
 
 /* .bss is laid out in reverse definition order */
 s16 lbl_1_bss_6AA[256];
 s16 lbl_1_bss_4AA[256];
-s16 lbl_1_bss_49E[6];
-u8 lbl_1_bss_43A[0x64];
+HU3D_MODELID lbl_1_bss_49E[6];
+HU3D_MOTIONID lbl_1_bss_43A[5][10];
 s16 lbl_1_bss_438;
 s16 lbl_1_bss_238[256];
-s16 lbl_1_bss_D8[176];
+INST_STAND lbl_1_bss_D8[4];
 s16 lbl_1_bss_D4;
-u8 lbl_1_bss_84[0x50];
-u8 lbl_1_bss_78[0xC];
-s32 lbl_1_bss_70[2];
+s32 lbl_1_bss_84[20];
+s16 lbl_1_bss_78[6];
+ANIMDATA *lbl_1_bss_70[2];
 s16 lbl_1_bss_6E;
-s16 lbl_1_bss_6C;
-s16 lbl_1_bss_66[3];
-u8 lbl_1_bss_5C[0xA];
-s32 lbl_1_bss_58;
-s32 lbl_1_bss_50[2];
-s32 lbl_1_bss_4C;
+HU3D_MODELID lbl_1_bss_6C;
+s16 lbl_1_bss_68[2];
+HUSPR_GROUPID lbl_1_bss_66;
+s16 lbl_1_bss_64;
+ANIMDATA *lbl_1_bss_5C[2];
+ANIMDATA *lbl_1_bss_58;
+ANIMDATA *lbl_1_bss_50[2];
+void *lbl_1_bss_4C;
 float lbl_1_bss_48;
 OMOBJ *lbl_1_bss_40[2];
 OMOBJMAN *lbl_1_bss_3C;
@@ -106,8 +137,8 @@ void fn_1_539C(void);
 void fn_1_5DE0(void);
 void fn_1_8DB0(void);
 void fn_1_8FA0(s16 arg0);
-void fn_1_96F4(s16 arg0);
-void fn_1_A1E8(void (*func)(void), s16 arg1);
+void fn_1_96F4(s16 nightF);
+HUPROCESS *fn_1_A1E8(void (*func)(void), s32 param);
 
 /* @@PART1@@ */
 int _prolog(void) {
@@ -463,6 +494,282 @@ void fn_1_1024(void)
 void fn_1_15B4(void)
 {
     lbl_1_bss_8 = 20;
+}
+
+u32 lbl_1_data_A8[5] = { 0x420002, 0x420003, 0x420004, 0x420005, 0x420006 };
+
+void fn_1_15C8(void)
+{
+    s16 grpChar[GW_PLAYER_MAX][GW_PLAYER_MAX];
+    s16 winTbl[2][4];
+    HuVec2f size0;
+    HuVec2f size1;
+    HuVec2f pos0;
+    HuVec2f pos1;
+    s16 cnt[GW_PLAYER_MAX];
+    s16 win0[2];
+    s16 win1[2];
+    s16 i;
+    s16 page;
+    s16 j;
+    u32 mes2;
+    s16 k;
+    u32 mes;
+    s16 insertNo;
+    s16 time;
+    s16 frame;
+    s16 maxTime;
+    float t;
+
+    time = lbl_1_bss_1C;
+    if (time == 0) {
+        frame = 4;
+    } else {
+        frame = 3;
+    }
+    for (j = 0; j < 2; j++) {
+        if (j == 0) {
+            frame = 4;
+        } else {
+            frame = 3;
+        }
+        for (i = 0; i < 2; i++) {
+            size0.x = 400;
+            size0.y = 128;
+            pos0.x = 560 - size0.x;
+            pos0.y = 440 - size0.y;
+            win0[i] = HuWinCreate(pos0.x, pos0.y, size0.x, size0.y, frame);
+            HuWinMesSpeedSet(win0[i], 0);
+            HuWinMesSet(win0[i], lbl_1_bss_18[0]);
+            size1.x = 336;
+            size1.y = 48;
+            pos1.x = 560 - size1.x;
+            pos1.y = 440 - size0.y - size1.y;
+            win1[i] = HuWinCreate(pos1.x, pos1.y, size1.x, size1.y, frame);
+            HuWinAttrSet(win1[i], 0x800);
+            HuWinMesSpeedSet(win1[i], 0);
+            HuWinMesSet(win1[i], lbl_1_data_A8[0]);
+        }
+        winTbl[j][0] = win0[0];
+        winTbl[j][1] = win1[0];
+        winTbl[j][2] = win0[1];
+        winTbl[j][3] = win1[1];
+        for (i = 0; i < 4; i++) {
+            HuWinDispOff(winTbl[j][i]);
+        }
+    }
+    if (time == 0) {
+        win0[0] = winTbl[0][0];
+        win1[0] = winTbl[0][1];
+        win0[1] = winTbl[0][2];
+        win1[1] = winTbl[0][3];
+        for (i = 0; i < 4; i++) {
+            HuWinDispOn(winTbl[0][i]);
+        }
+    } else {
+        win0[0] = winTbl[1][0];
+        win1[0] = winTbl[1][1];
+        win0[1] = winTbl[1][2];
+        win1[1] = winTbl[1][3];
+        for (i = 0; i < 4; i++) {
+            HuWinDispOn(winTbl[1][i]);
+        }
+    }
+    for (i = 0; i < GW_PLAYER_MAX; i++) {
+        cnt[i] = 0;
+    }
+    for (i = 0; i < GW_PLAYER_MAX; i++) {
+        grpChar[GwPlayerConf[i].grpNo][cnt[GwPlayerConf[i].grpNo]] = GwPlayerConf[i].charNo;
+        cnt[GwPlayerConf[i].grpNo]++;
+    }
+    for (i = insertNo = 0; i < GW_PLAYER_MAX; i++) {
+        for (j = 0; j < cnt[i]; j++) {
+            HuWinInsertMesSet(winTbl[0][0], grpChar[i][j], insertNo);
+            HuWinInsertMesSet(winTbl[0][2], grpChar[i][j], insertNo);
+            HuWinInsertMesSet(winTbl[1][0], grpChar[i][j], insertNo);
+            HuWinInsertMesSet(winTbl[1][2], grpChar[i][j], insertNo);
+            insertNo++;
+        }
+    }
+    HuWinDispOff(win0[1]);
+    HuWinDispOff(win1[1]);
+    lbl_1_bss_C = 1;
+    if (lbl_1_bss_6 == 0 || lbl_1_bss_6 == 1) {
+        HuWinPosSet(win1[0], 1000, 0);
+        HuWinPosSet(win0[0], 1000, 0);
+        while (lbl_1_bss_6 != 1) {
+            HuPrcVSleep();
+        }
+        HuPrcSleep(20);
+        for (i = 0; i <= 20; i++) {
+            HuWinPosSet(win1[0], pos1.x + 400.0 * (1.0 - HuSin(90.0 * (i / 20.0))), pos1.y);
+            HuWinPosSet(win0[0], pos0.x, pos0.y + 200.0 * (1.0 - HuSin(90.0 * (i / 20.0))));
+            HuPrcVSleep();
+        }
+    }
+    page = 0;
+    mes2 = lbl_1_data_A8[0];
+    mes = lbl_1_bss_18[0];
+    lbl_1_bss_C = 0;
+    while (1) {
+        if (lbl_1_bss_8 == 0) {
+            if (lbl_1_bss_24 & 0x2020) {
+                lbl_1_bss_C = 1;
+                lbl_1_bss_10 = 1;
+                HuWinPriSet(win1[0], 100);
+                HuWinPriSet(win0[0], 100);
+                HuWinPriSet(win1[1], 50);
+                HuWinPriSet(win0[1], 50);
+                HuWinMesSet(win1[1], mes2);
+                HuWinMesSet(win0[1], mes);
+                HuWinDispOn(win0[1]);
+                HuWinDispOn(win1[1]);
+                HuWinPosSet(win1[1], 1000, 0);
+                HuWinPosSet(win0[1], 1000, 0);
+                HuPrcVSleep();
+                page++;
+                if (page > 4) {
+                    page = 0;
+                }
+                if (page == 2 && lbl_1_bss_18[2] == 0) {
+                    page++;
+                }
+                if (page == 4 && lbl_1_bss_18[4] == 0) {
+                    page = 0;
+                }
+                mes2 = lbl_1_data_A8[page];
+                if (page == 1 && lbl_1_bss_18[2] == 0) {
+                    mes2 = 0x420007;
+                }
+                if (page == 3 && lbl_1_bss_18[4] == 0) {
+                    mes2 = 0x420008;
+                }
+                HuWinMesSet(win1[0], mes2);
+                mes = lbl_1_bss_18[page];
+                HuWinMesSet(win0[0], mes);
+                HuAudFXPlay(55);
+                for (i = 0; i < 15; i++) {
+                    t = i / 15.0;
+                    HuWinPosSet(win1[1], pos1.x + 30.0 * HuSin(90.0f * t), pos1.y + 200.0 * (1.0 - HuCos(90.0f * t)));
+                    HuWinPosSet(win0[1], pos0.x + 30.0 * HuSin(90.0f * t), pos0.y + 200.0 * (1.0 - HuCos(90.0f * t)));
+                    HuPrcVSleep();
+                }
+                HuWinDispOff(win0[1]);
+                HuWinDispOff(win1[1]);
+                lbl_1_bss_C = 0;
+            } else if (lbl_1_bss_24 & 0x4040) {
+                lbl_1_bss_C = 1;
+                lbl_1_bss_10 = 1;
+                HuWinPriSet(win1[0], 50);
+                HuWinPriSet(win0[0], 50);
+                HuWinPriSet(win1[1], 100);
+                HuWinPriSet(win0[1], 100);
+                HuWinMesSet(win1[1], mes2);
+                HuWinMesSet(win0[1], mes);
+                HuWinDispOn(win0[1]);
+                HuWinDispOn(win1[1]);
+                HuWinPosSet(win1[1], pos1.x, pos1.y);
+                HuWinPosSet(win0[1], pos0.x, pos0.y);
+                HuPrcVSleep();
+                page--;
+                if (page < 0) {
+                    page = 4;
+                }
+                if (page == 2 && lbl_1_bss_18[2] == 0) {
+                    page--;
+                }
+                if (page == 4 && lbl_1_bss_18[4] == 0) {
+                    page--;
+                }
+                mes2 = lbl_1_data_A8[page];
+                if (page == 1 && lbl_1_bss_18[2] == 0) {
+                    mes2 = 0x420007;
+                }
+                if (page == 3 && lbl_1_bss_18[4] == 0) {
+                    mes2 = 0x420008;
+                }
+                HuWinMesSet(win1[0], mes2);
+                mes = lbl_1_bss_18[page];
+                HuWinMesSet(win0[0], mes);
+                HuAudFXPlay(54);
+                for (i = 1; i <= 15; i++) {
+                    t = i / 15.0;
+                    HuWinPosSet(win1[0], pos1.x + 30.0 * HuCos(90.0f * t), pos1.y + 200.0 * (1.0 - HuSin(90.0f * t)));
+                    HuWinPosSet(win0[0], pos0.x + 30.0 * HuCos(90.0f * t), pos0.y + 200.0 * (1.0 - HuSin(90.0f * t)));
+                    HuPrcVSleep();
+                }
+                HuWinDispOff(win0[1]);
+                HuWinDispOff(win1[1]);
+                lbl_1_bss_C = 0;
+            }
+        }
+        if (lbl_1_bss_8 != 0) {
+            maxTime = 9;
+            for (k = 1; k < maxTime; k++) {
+                t = 1.0f - (float)k / (float)maxTime;
+                for (i = 0; i < 2; i++) {
+                    HuWinBGTPLvlSet(win0[i], t);
+                    HuWinBGTPLvlSet(win1[i], t);
+                }
+                HuPrcVSleep();
+            }
+            time = (time == 0) ? 1 : 0;
+            if (time == 0) {
+                for (i = 0; i < 4; i++) {
+                    HuWinDispOff(winTbl[1][i]);
+                }
+                win0[0] = winTbl[0][0];
+                win1[0] = winTbl[0][1];
+                win0[1] = winTbl[0][2];
+                win1[1] = winTbl[0][3];
+                for (i = 0; i < 2; i++) {
+                    HuWinBGTPLvlSet(winTbl[0][i], 0);
+                    HuWinDispOn(winTbl[0][i]);
+                    HuWinMesSet(win1[i], mes2);
+                }
+                lbl_1_bss_18 = lbl_1_bss_20->instMes[MG_INST_TYPE_DAY];
+            } else {
+                for (i = 0; i < 4; i++) {
+                    HuWinDispOff(winTbl[0][i]);
+                }
+                win0[0] = winTbl[1][0];
+                win1[0] = winTbl[1][1];
+                win0[1] = winTbl[1][2];
+                win1[1] = winTbl[1][3];
+                for (i = 0; i < 2; i++) {
+                    HuWinBGTPLvlSet(winTbl[1][i], 0);
+                    HuWinDispOn(winTbl[1][i]);
+                    HuWinMesSet(win1[i], mes2);
+                }
+                lbl_1_bss_18 = lbl_1_bss_20->instMes[MG_INST_TYPE_NIGHT];
+            }
+            mes = lbl_1_bss_18[page];
+            HuWinMesSet(win0[0], mes);
+            for (k = 1; k < maxTime; k++) {
+                t = (float)k / (float)maxTime;
+                for (i = 0; i < 2; i++) {
+                    HuWinBGTPLvlSet(win0[i], t);
+                    HuWinBGTPLvlSet(win1[i], t);
+                }
+                HuPrcVSleep();
+            }
+            while (lbl_1_bss_8 != 0) {
+                HuPrcVSleep();
+            }
+        }
+        if (lbl_1_bss_6 == 3) {
+            break;
+        }
+        HuPrcVSleep();
+    }
+    for (i = 0; i <= 10; i++) {
+        HuWinPosSet(win1[0], pos1.x + 400.0 * (1.0 - HuCos(90.0 * (i / 10.0))), pos1.y);
+        HuWinPosSet(win0[0], pos0.x, pos0.y + 200.0 * (1.0 - HuCos(90.0 * (i / 10.0))));
+        HuPrcVSleep();
+    }
+    while (1) {
+        HuPrcVSleep();
+    }
 }
 
 /* @@PART2@@ */
