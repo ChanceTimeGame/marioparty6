@@ -2,7 +2,7 @@
 
 M616WORK lbl_1_bss_10;
 
-void fn_1_1590(void)
+void ObjectSetup(void)
 {
     s32 i;
     s32 j;

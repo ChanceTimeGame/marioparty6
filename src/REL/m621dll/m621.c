@@ -107,7 +107,7 @@ typedef struct M621Player_s {
 
 void *fn_1_A0(int prio, u32 size, OMOBJ_FUNC func);
 void fn_1_140(OMOBJ *obj, OMOBJ_FUNC func);
-void fn_1_148(void);
+void ObjectSetup(void);
 void fn_1_2BC(void);
 void fn_1_2E0(s16 mode, s16 frameNo);
 void fn_1_358(s16 mode, s16 frameNo);
@@ -236,7 +236,7 @@ int _prolog(void)
         (**ctors)();
         ctors++;
     }
-    fn_1_148();
+    ObjectSetup();
     return 0;
 }
 
@@ -266,7 +266,7 @@ void fn_1_140(OMOBJ *obj, OMOBJ_FUNC func)
     obj->objFunc = func;
 }
 
-void fn_1_148(void)
+void ObjectSetup(void)
 {
     HU3D_LIGHTID lightId;
     lbl_1_bss_0 = MgActorObjectSetup();
