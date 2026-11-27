@@ -1,15 +1,21 @@
 /* @@HEAD@@ */
-/* Retail calls mbMasuCapsuleGet as returning int (no extsh on the result), as capevent.c does. */
+/* Retail calls mbMasuCapsuleGet and mbMasuFind_TypeStepGet as returning int (no extsh on the
+   result), as capevent.c does, and passes mbMgCallSingleOnCheck the minigame overlay. */
 #define mbMasuCapsuleGet mbMasuCapsuleGet_s16
+#define mbMasuFind_TypeStepGet mbMasuFind_TypeStepGet_s16
+#define mbMgCallSingleOnCheck mbMgCallSingleOnCheck_void
 #include "game/board/single.h"
 #include "game/board/audio.h"
 #include "game/board/camera.h"
+#include "game/board/capsule.h"
 #include "game/board/coin.h"
 #include "game/board/effect.h"
 #include "game/board/exit.h"
+#include "game/board/guide.h"
 #include "game/board/masu.h"
 #include "game/board/math.h"
 #include "game/board/mgcall.h"
+#include "game/board/object.h"
 #include "game/board/pause.h"
 #include "game/board/player.h"
 #include "game/board/status.h"
@@ -17,16 +23,28 @@
 #include "game/board/window.h"
 #include "game/board/wipe.h"
 #include "game/data.h"
+#include "game/esprite.h"
 #include "game/flag.h"
 #include "game/frand.h"
+#include "game/gamemes.h"
+#include "game/gamework.h"
+#include "game/hu3d.h"
 #include "game/memory.h"
 #include "game/mgdata.h"
 #include "game/mic.h"
+#include "game/object.h"
+#include "game/process.h"
 #include "game/sprite.h"
+#include "humath.h"
 #include "math.h"
 #include "string.h"
 #undef mbMasuCapsuleGet
+#undef mbMasuFind_TypeStepGet
+#undef mbMgCallSingleOnCheck
 int mbMasuCapsuleGet(s16 id);
+int mbMasuFind_TypeStepGet(s16 id, s16 type);
+int mbMgCallSingleOnCheck(int ovl);
+int memcmp(const void *a, const void *b, size_t n);
 
 /* Not declared by game/mic.h. */
 void HuMCListenerCreate(HUMC_CONTEXTID ctxId, HUMC_CONTEXT_CALLBACK cb, u8 flag);
@@ -65,24 +83,43 @@ typedef struct SingleMasuOrder_s {
     u8 type;
 } SINGLEMASUORDER;
 
-/* Layout owned by the save functions (parts 2/3). */
+/* Story progress kept in the save (layout from part 3's functions). */
 typedef struct SingleSaveWork_s {
-    u8 unk00[0x26];
-} SINGLESAVEWORK;
+    u8 koopaBit; /* 0x00 */
+    u8 unk01; /* 0x01 */
+    u8 micNum; /* 0x02 */
+    s8 micChar; /* 0x03 */
+    u8 micMissF; /* 0x04 */
+    u8 micHitNum; /* 0x05 */
+    u8 mgNum; /* 0x06 */
+    u8 mgEvenNum; /* 0x07 */
+    u8 mgOddNum; /* 0x08 */
+    u16 mgRankTotal; /* 0x0A */
+    u8 mgHist[3]; /* 0x0C */
+    u8 mgHistNo; /* 0x0F */
+    u8 unk10; /* 0x10 */
+    u8 unk11; /* 0x11 */
+    u8 hist12[3]; /* 0x12 */
+    u8 hist12No; /* 0x15 */
+    u8 unk16; /* 0x16 */
+    u8 unk17; /* 0x17 */
+    u8 unk18; /* 0x18 */
+    u8 masuNum[12]; /* 0x19 */
+} SINGLE_SAVE_WORK; /* size 0x26 */
 
 static ANIMDATA *singleEffAnim[4];
 static SINGLEMASUORDER singleMasuOrder[256];
 static u32 singleMgUnlock[4];
 static SINGLEEFF singleEffData[SINGLE_EFF_MAX];
 static u32 mgUnlockOld[4];
-static SINGLESAVEWORK singleSaveWork;
+static SINGLE_SAVE_WORK singleSaveWork;
 static u64 singleBoardFlagOld[3];
 static u32 singleMgRecordOld[8];
 static u32 singleMgRecordPrize[8];
 
 static int singleTeamChar = -1;
 static int mgKoopaCapsuleTbl[2] = { 2, 7 };
-static u8 guideLast5MotTbl[3] = { 12, 6, 0xFF };
+static s8 guideLast5MotTbl[3] = { 12, 6, -1 };
 
 /* .sbss: CodeWarrior emits it in reverse definition order. */
 static int singleBoard;
@@ -139,6 +176,20 @@ static void SingleLast5(void);
 static inline SINGLEEFF *SingleEffGet(s16 id)
 {
     return &singleEffData[id-1];
+}
+
+static inline s16 SingleEffParticleCreate(ANIMDATA *anim)
+{
+    s16 modelId = mbParticleCreate(anim, 100);
+    mbParticleHookSet(modelId, SingleEffMgCapsuleHook);
+    Hu3DModelCameraSet(modelId, HU3D_CAM0);
+    Hu3DModelLayerSet(modelId, 5);
+    return modelId;
+}
+
+static inline s16 SingleEffCapsuleCreate(void)
+{
+    return SingleEffParticleCreate(singleEffAnim[2]);
 }
 
 /* @@PART1@@ */
@@ -1207,15 +1258,26 @@ static inline BOOL SingleMgUnlockCheck(int mgNo)
     }
 }
 
-static inline int SingleCoinSum(s16 a, s16 b)
+static inline void SingleEffMgStart(s16 id)
 {
-    return a + b;
+    SINGLEEFF *effP = &singleEffData[id-1];
+    int i;
+
+    effP->mode = 3;
+    effP->basePos = effP->pos;
+    effP->time = 0;
+    effP->maxTime = 58;
+    Hu3DModelCameraSet(effP->mdlId, HU3D_CAM1);
+    Hu3DModelLayerSet(effP->mdlId, 7);
+    for (i = 0; i < 2; i++) {
+        Hu3DModelCameraSet(effP->subMdlId[i], HU3D_CAM1);
+        Hu3DModelLayerSet(effP->subMdlId[i], 7);
+    }
 }
 
 static void ev_SingleMgEnd(int playerNo)
 {
     SINGLEEFF *effP;
-    SINGLEEFF *winEffP;
     SINGLEEFF *loseEffP;
     int mgNo;
     s16 winId;
@@ -1223,7 +1285,6 @@ static void ev_SingleMgEnd(int playerNo)
     int type;
     s16 effId;
     u32 i;
-    int j;
     BOOL unlockF;
     s16 masuId;
     s16 coin;
@@ -1267,17 +1328,7 @@ static void ev_SingleMgEnd(int playerNo)
         || (MgDataTbl[mgNo].type != 3 && (coin = GwPlayer[playerNo].mgCoin, bonus = GwPlayer[playerNo].mgCoinBonus, bonus + coin > 0))) {
         mbSingleCall(10, MgDataTbl[mgNo].type);
         mbAudFXStop(seNo);
-        winEffP = &singleEffData[effId-1];
-        winEffP->mode = 3;
-        winEffP->basePos = winEffP->pos;
-        winEffP->time = 0;
-        winEffP->maxTime = 58;
-        Hu3DModelCameraSet(winEffP->mdlId, HU3D_CAM1);
-        Hu3DModelLayerSet(winEffP->mdlId, 7);
-        for (j = 0; j < 2; j++) {
-            Hu3DModelCameraSet(winEffP->subMdlId[j], HU3D_CAM1);
-            Hu3DModelLayerSet(winEffP->subMdlId[j], 7);
-        }
+        SingleEffMgStart(effId);
         mbAudFXPlay(0x607);
         HuPrcSleep(60);
         if (!(unlockF = SingleMgUnlockCheck(mgNo + 0x259))) {
