@@ -50,6 +50,14 @@ void mbev_CapEffCoinGlowSet(void *effCoin, void *effGlow);
 int mbev_CapEffCoinAdd(void *eff, HuVecF *pos, HuVecF *vel, float scale, float gravity, int time, int arg6);
 void mbev_CapEffGlowCoinAdd(void *eff, HuVecF *pos, HuVecF *rot);
 void mbev_CapEffRingHitAdd(void *eff, HuVecF pos, HuVecF rot, HuVecF scale);
+int mbev_CapEffExplodeAdd(void *eff, HuVecF pos, HuVecF vel, float scale, float speed, float alpha, GXColor color);
+void mbev_CapObjPosSet(void *objList, int objId, int masuId, int arg3);
+void mbev_CapPlayerMoveHitCreate(int playerNo, int arg1, int arg2);
+void mbev_CapPlayerMoveEjectCreate(int playerNo, int arg1);
+void mbev_CapPlayerMoveMinYSet(int playerNo, float minY);
+void mbev_CapPlayerMoveVelSet(int playerNo, float speed, HuVecF vel);
+int mbev_CapPlayerMoveObjCheck(int playerNo);
+void mbev_CapPlayerIdleWait(void);
 void mbev_CapPlayerMoveObjInit(void);
 s16 mbev_CapPlayerMotionCreate(void *objList, int playerNo, int dataNum);
 int mbev_CapObjCreate(void *objList, int dataNum, int *motData, int arg3, int arg4, int arg5);
@@ -571,6 +579,203 @@ void mbev_CapKuribo(void)
 }
 
 void mbev_CapKuriboKill(void)
+{
+}
+
+void mbev_CapPakkun(void)
+{
+    CAPEVENTWORK *work = HuPrcCurrentGet()->property;
+    int i;
+    int pakkunId;
+    int j;
+    int coinNum;
+    int masuId;
+    int seNo;
+    float t;
+    float angle;
+    float dist;
+    float speed;
+    Mtx mtx;
+    int motData[8];
+    HuVecF playerPos;
+    HuVecF pos;
+    HuVecF dir;
+    HuVecF vel;
+    HuVecF startPos;
+    HuVecF objPos;
+    int motId[4];
+    GXColor color;
+
+    mbev_CapWait(work);
+    work->effExplode = mbev_CapEffExplodeCreate();
+    work->effCoin = mbev_CapEffCoinCreate();
+    mbev_CapPlayerMoveObjInit();
+    masuId = GwPlayer[work->playerNo].masuId;
+    mbPlayerPosGet(work->playerNo, &playerPos);
+    startPos = playerPos;
+    motData[0] = 0xF0005;
+    motData[1] = 0xF0006;
+    motData[2] = 0xF0007;
+    motData[3] = -1;
+    pakkunId = mbev_CapObjCreate(work->objList, 0xF0004, motData, 0, 5, 0);
+    mbev_CapObjPosSet(work->objList, pakkunId, GwPlayer[work->playerNo].masuId, 0);
+    objPos = playerPos;
+    mbObjMotionSet(pakkunId, 1, 0);
+    mbObjDispSet(pakkunId, FALSE);
+    motId[0] = mbev_CapPlayerMotionCreate(work->objList, work->playerNo, 0x930048);
+    motId[1] = mbev_CapPlayerMotionCreate(work->objList, work->playerNo, 0x930044);
+    motId[2] = mbev_CapPlayerMotionCreate(work->objList, work->playerNo, 0x930045);
+    motId[3] = mbev_CapPlayerMotionCreate(work->objList, work->playerNo, 0x930017);
+    pos.x = 0.0f;
+    pos.y = 100.0f;
+    pos.z = 0.0f;
+    mbCameraMoveMasu(masuId, NULL, &pos, 2000.0f, -1.0f, 21);
+    mbPlayerMotionShiftSet(work->playerNo, motId[3], 0.0f, 8.0f, 0);
+    HuPrcSleep(60);
+    mbev_CapPlayerMotShiftWait(work->playerNo, motId[0], 0, TRUE);
+    for(i=0; i<3; i++) {
+        for(j=0; j<32; j++) {
+            dist = 100.0f*CAPTHROW_RANDF();
+            angle = 360.0f*CAPTHROW_RANDF();
+            speed = 0.05f*(100.0f*CAPTHROW_RANDF());
+            pos.x = playerPos.x+(dist*HuSin(angle));
+            pos.y = 50.0f+(playerPos.y+(0.5f*(100.0f*CAPTHROW_RANDF())));
+            pos.z = playerPos.z+(dist*HuCos(angle));
+            vel.x = speed*HuSin(angle);
+            vel.y = 0.0f;
+            vel.z = speed*HuCos(angle);
+            t = CAPTHROW_RANDF();
+            color.r = 192.0f+(63.0f*t);
+            color.g = 192.0f+(63.0f*t);
+            color.b = 192.0f+(63.0f*t);
+            color.a = 127.0f+(63.0f*CAPTHROW_RANDF());
+            mbev_CapEffExplodeAdd(work->effExplode, pos, vel, 100.0f*(1.0f+(0.5f*CAPTHROW_RANDF())), -0.5f+CAPTHROW_RANDF(), 0.33f+(0.2f*CAPTHROW_RANDF()), color);
+        }
+        HuPrcVSleep();
+    }
+    mbAudFXPlay(0x42D);
+    mbObjDispSet(pakkunId, TRUE);
+    mbObjMotionSet(pakkunId, 1, 0);
+    mbObjMotionTimeSet(pakkunId, 0.0f);
+    mbObjMotionSpeedSet(pakkunId, 0.5f);
+    mbObjScaleSet(pakkunId, 0.0f, 0.0f, 0.0f);
+    for(i=0; i<4; i++) {
+        if(i != work->playerNo && masuId == GwPlayer[i].masuId) {
+            mbev_CapPlayerMoveHitCreate(i, 1, 0);
+        }
+    }
+    mbPlayerMotionShiftSet(work->playerNo, motId[1], 0.0f, 5.0f, 0);
+    mbPlayerColSnapPlayerSet(work->playerNo, FALSE);
+    for(i=0; i<10; i++) {
+        t = i/9.0f;
+        if(t > 1.0f) {
+            t = 1.0f;
+        }
+        mbObjScaleSet(pakkunId, t, t, t);
+        Hu3DMotionCalc(mbObjModelIDGet(pakkunId));
+        Hu3DModelObjMtxGet(mbObjModelIDGet(pakkunId), "itemhook_C", mtx);
+        pos.x = mtx[0][3];
+        pos.y = mtx[1][3];
+        pos.z = mtx[2][3];
+        if(pos.y > playerPos.y) {
+            pos.y = playerPos.y;
+        }
+        PSVECSubtract(&pos, &playerPos, &dir);
+        PSVECScale(&dir, &dir, i/9.0f);
+        PSVECAdd(&playerPos, &dir, &pos);
+        mbPlayerPosSetV(work->playerNo, &pos);
+        for(j=0; j<2; j++) {
+            dist = 100.0f*CAPTHROW_RANDF();
+            angle = 360.0f*CAPTHROW_RANDF();
+            speed = 0.05f*(100.0f*CAPTHROW_RANDF());
+            pos.x = playerPos.x+(dist*HuSin(angle));
+            pos.y = playerPos.y+(0.5f*(100.0f*CAPTHROW_RANDF()));
+            pos.z = playerPos.z+(dist*HuCos(angle));
+            vel.x = speed*HuSin(angle);
+            vel.y = 0.0f;
+            vel.z = speed*HuCos(angle);
+            t = CAPTHROW_RANDF();
+            color.r = 192.0f+(63.0f*t);
+            color.g = 192.0f+(63.0f*t);
+            color.b = 192.0f+(63.0f*t);
+            color.a = 192.0f+(63.0f*CAPTHROW_RANDF());
+            mbev_CapEffExplodeAdd(work->effExplode, pos, vel, 100.0f*(2.0f+CAPTHROW_RANDF()), 2.0f*(-0.5f+CAPTHROW_RANDF()), 0.33f+(0.2f*CAPTHROW_RANDF()), color);
+        }
+        HuPrcVSleep();
+    }
+    mbObjDispSet(mbPlayerObjIDGet(work->playerNo), FALSE);
+    omVibrate(work->playerNo, 20, 7, 3);
+    do {
+        HuPrcVSleep();
+    } while(!mbObjMotionEndCheck(pakkunId) || mbObjMotionShiftIDGet(pakkunId) != -1);
+    coinNum = (mbPlayerCoinGet(work->playerNo)+1)/2;
+    seNo = mbAudFXPlay(0x42E);
+    if(coinNum >= 1) {
+        mbObjMotionShiftSet(pakkunId, 2, 0.0f, 8.0f, 0x40000001);
+        HuPrcSleep(120);
+    }
+    if(seNo != -1) {
+        mbAudFXStop(seNo);
+    }
+    mbAudFXPlay(0x42F);
+    mbObjMotionShiftSet(pakkunId, 3, 0.0f, 8.0f, 0);
+    HuPrcSleep(38);
+    Hu3DMotionCalc(mbObjModelIDGet(pakkunId));
+    Hu3DModelObjMtxGet(mbObjModelIDGet(pakkunId), "itemhook_C", mtx);
+    mbPlayerMotionSet(work->playerNo, motId[2], 0);
+    mbObjDispSet(mbPlayerObjIDGet(work->playerNo), TRUE);
+    pos.x = startPos.x;
+    pos.y = mtx[1][3];
+    pos.z = startPos.z;
+    mbPlayerPosSetV(work->playerNo, &pos);
+    mbev_CapPlayerMoveEjectCreate(work->playerNo, 1);
+    mbev_CapPlayerMoveMinYSet(work->playerNo, startPos.y);
+    pos.x = 0.0f;
+    pos.y = 35.0f;
+    pos.z = 0.0f;
+    mbev_CapPlayerMoveVelSet(work->playerNo, 3.266667f, pos);
+    mbCoinAddDispExec(work->playerNo, -coinNum, FALSE, TRUE);
+    do {
+        HuPrcVSleep();
+    } while(!mbObjMotionEndCheck(pakkunId) || mbObjMotionShiftIDGet(pakkunId) != -1);
+    for(i=0; i<15.0f; i++) {
+        t = i/15.0f;
+        mbObjScaleSet(pakkunId, 1.0f-t, 1.0f-t, 1.0f-t);
+        HuPrcVSleep();
+    }
+    mbObjDispSet(pakkunId, FALSE);
+    do {
+        for(i=0; i<4; i++) {
+            if(!mbev_CapPlayerMoveObjCheck(i)) {
+                break;
+            }
+        }
+        HuPrcVSleep();
+    } while(i < 4);
+    if(coinNum != 0) {
+        mbev_CapCoinDisp(work->playerNo, -coinNum, 0, 1);
+    }
+    if(coinNum != 0) {
+        mbWinCreate(2, 0x360004, -1);
+    } else {
+        mbWinCreate(2, 0x360005, -1);
+    }
+    mbWinTopWait();
+    if(coinNum != 0) {
+        mbWipeDissolveFadeOutTime(1);
+        pos.x = 0.0f;
+        pos.y = 100.0f;
+        pos.z = 0.0f;
+        mbCameraMoveMasu(GwPlayer[work->targetNo].masuId, NULL, &pos, 2000.0f, -1.0f, -1);
+        mbCameraMoveWait();
+        mbWipeDissolveFadeIn();
+        mbev_CapCoinAdd(work->effCoin, work->targetNo, coinNum, 1);
+    }
+    mbev_CapPlayerIdleWait();
+    HuPrcEnd();
+}
+
+void mbev_CapPakkunKill(void)
 {
 }
 
