@@ -737,6 +737,30 @@ config.libs = [
         },
     ),
     Rel(
+        "instDll",
+        objects={
+            Object(NonMatching, "REL/instDll/inst.c"),
+        },
+    ),
+    Rel(
+        "m616dll",
+        objects={
+            Object(NonMatching, "REL/m616dll/m616.c"),
+        },
+    ),
+    Rel(
+        "m621dll",
+        objects={
+            Object(NonMatching, "REL/m621dll/m621.c"),
+        },
+    ),
+    Rel(
+        "m612dll",
+        objects={
+            Object(NonMatching, "REL/m612dll/m612.c"),
+        },
+    ),
+    Rel(
         "w01Dll",
         objects={
             Object(NonMatching, "REL/w01Dll/w01.c"),

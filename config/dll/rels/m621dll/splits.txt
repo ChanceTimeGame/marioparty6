@@ -5,3 +5,13 @@ Sections:
 	.rodata     type:rodata align:32
 	.data       type:data align:8
 	.bss        type:bss align:8
+
+REL/m621dll/m621.c:
+	.text       start:0x00000000 end:0x00005384
+	.rodata     start:0x00000000 end:0x00000198
+	.data       start:0x00000000 end:0x00000382
+	.bss        start:0x00000000 end:0x00000050
+
+REL/runtime.c:
+	.text       start:0x00005384 end:0x00005DC8
+	.rodata     start:0x00000198 end:0x000001B0
