@@ -404,10 +404,10 @@ void mbSNpcPlayerWalkSet(int playerNo, int masuId)
 
 void mbSNpcStarExec(int playerNo, int masuId)
 {
-    int unused = -1;
-    HuVecF rot;
-    HuVecF dir;
     HuVecF pos;
+    HuVecF dir;
+    HuVecF rot;
+    int unused = -1;
     int koopaF;
     int mode;
     int winId;
@@ -420,217 +420,216 @@ void mbSNpcStarExec(int playerNo, int masuId)
     s16 moveTime;
     float s;
 
-    if(snpcMagic != SNPC_MAGIC || masuId != snpcSaveWork->masuId) {
-        return;
-    }
-    mbCameraStackPush();
-    mbMoveNumDispSet(playerNo, FALSE);
-    mbCameraMoveMasu(masuId, NULL, &masuViewOfs, mbCameraPlayerViewZoomGet(0), -1.0f, 24);
-    koopaF = snpcSaveWork->koopaF;
-    mode = 0;
-    if(koopaF == FALSE) {
-        if(mbPlayerCoinGet(playerNo) >= 20) {
-            winId = mbWinCreateChoice(2, snpcMesTbl[0][koopaF], snpcMesSpeakerTbl[koopaF], 0);
-            if(GwPlayer[playerNo].comF) {
-                mbComChoiceUpSet();
+    if(snpcMagic == SNPC_MAGIC && masuId == snpcSaveWork->masuId) {
+        mbCameraStackPush();
+        mbMoveNumDispSet(playerNo, FALSE);
+        mbCameraMoveMasu(masuId, NULL, &masuViewOfs, mbCameraPlayerViewZoomGet(0), -1.0f, 24);
+        koopaF = snpcSaveWork->koopaF;
+        mode = 0;
+        if(koopaF == FALSE) {
+            if(mbPlayerCoinGet(playerNo) >= 20) {
+                winId = mbWinCreateChoice(2, snpcMesTbl[0][koopaF], snpcMesSpeakerTbl[koopaF], 0);
+                if(GwPlayer[playerNo].comF) {
+                    mbComChoiceUpSet();
+                }
+                mode = 1;
+            } else {
+                winId = mbWinCreate(2, snpcMesTbl[1][koopaF], snpcMesSpeakerTbl[koopaF]);
             }
-            mode = 1;
         } else {
-            winId = mbWinCreate(2, snpcMesTbl[1][koopaF], snpcMesSpeakerTbl[koopaF]);
+            if(mbPlayerStarGet(playerNo) > 0) {
+                winId = mbWinCreate(2, snpcMesTbl[0][koopaF], snpcMesSpeakerTbl[koopaF]);
+                mode = 2;
+            } else {
+                winId = mbWinCreate(2, snpcMesTbl[1][koopaF], snpcMesSpeakerTbl[koopaF]);
+                mode = 3;
+            }
         }
-    } else {
-        if(mbPlayerStarGet(playerNo) > 0) {
-            winId = mbWinCreate(2, snpcMesTbl[0][koopaF], snpcMesSpeakerTbl[koopaF]);
-            mode = 2;
-        } else {
-            winId = mbWinCreate(2, snpcMesTbl[1][koopaF], snpcMesSpeakerTbl[koopaF]);
-            mode = 3;
+        SNpcSePlay(1, 0);
+        mbPlayerPosGet(playerNo, &pos);
+        SNpcObjPosGet(&dir);
+        PSVECSubtract(&dir, &pos, &dir);
+        PSVECNormalize(&dir, &dir);
+        SNpcTargetAngleSet(HuAtan(-dir.x, -dir.z));
+        maxTime = 7;
+        PSVECScale(&dir, &dir, -100.0f / maxTime);
+        mbPlayerPosGet(playerNo, &pos);
+        mbPlayerRotGet(playerNo, &rot);
+        rot.z = mbAngleWrap2(HuAtan(-dir.x, -dir.z), rot.y);
+        mbPlayerMotionSet(playerNo, 9, 0);
+        for(i = 0; i < maxTime; i++) {
+            s = HuSin(90.0f * (i + 1) / maxTime);
+            mbPlayerRotSet(playerNo, 0.0f, rot.y + s * rot.z, 0.0f);
+            HuPrcVSleep();
         }
-    }
-    SNpcSePlay(1, 0);
-    mbPlayerPosGet(playerNo, &pos);
-    SNpcObjPosGet(&dir);
-    PSVECSubtract(&dir, &pos, &dir);
-    PSVECNormalize(&dir, &dir);
-    SNpcTargetAngleSet(HuAtan(-dir.x, -dir.z));
-    maxTime = 7;
-    PSVECScale(&dir, &dir, -100.0f / maxTime);
-    mbPlayerPosGet(playerNo, &pos);
-    mbPlayerRotGet(playerNo, &rot);
-    rot.z = mbAngleWrap2(HuAtan(-dir.x, -dir.z), rot.y);
-    mbPlayerMotionSet(playerNo, 9, 0);
-    for(i = 0; i < maxTime; i++) {
-        s = HuSin(90.0f * (i + 1) / maxTime);
-        mbPlayerRotSet(playerNo, 0.0f, rot.y + s * rot.z, 0.0f);
-        HuPrcVSleep();
-    }
-    strm = snpcStarStrmTbl[koopaF];
-    mbMusPlay(0, strm, 127, 0);
-    while(!mbPlayerMotionEndCheck(playerNo)) {
-        HuPrcVSleep();
-    }
-    mbPlayerMotIdleSet(playerNo);
-    SNpcRotateWait();
-    contF = TRUE;
-    switch(mode) {
-        case 0:
-            mbWinWait(winId);
-            winId = mbWinCreate(2, snpcMesTbl[5][koopaF], snpcMesSpeakerTbl[koopaF]);
-            SNpcSePlay(2, 0);
-            SNpcObjMotShiftSet(9);
-            mbWinWait(winId);
-            mbPlayerWinLoseVoicePlay(playerNo, 13, 585);
-            mbPlayerMotionShiftSet(playerNo, 13, 0.0f, 8.0f, 0);
-            mbPlayerMotionEndWait(playerNo);
-            contF = FALSE;
-            break;
+        strm = snpcStarStrmTbl[koopaF];
+        mbMusPlay(0, strm, 127, 0);
+        while(!mbPlayerMotionEndCheck(playerNo)) {
+            HuPrcVSleep();
+        }
+        mbPlayerMotIdleSet(playerNo);
+        SNpcRotateWait();
+        contF = TRUE;
+        switch(mode) {
+            case 0:
+                mbWinWait(winId);
+                winId = mbWinCreate(2, snpcMesTbl[5][koopaF], snpcMesSpeakerTbl[koopaF]);
+                SNpcSePlay(2, 0);
+                SNpcObjMotShiftSet(9);
+                mbWinWait(winId);
+                mbPlayerWinLoseVoicePlay(playerNo, 13, 585);
+                mbPlayerMotionShiftSet(playerNo, 13, 0.0f, 8.0f, 0);
+                mbPlayerMotionEndWait(playerNo);
+                contF = FALSE;
+                break;
 
-        case 1:
-            mbWinWait(winId);
-            if(mbWinChoiceGet(winId) == 0) {
-                jingle = -1;
-                mbCoinAddDispExec(playerNo, -20, FALSE, TRUE);
+            case 1:
+                mbWinWait(winId);
+                if(mbWinChoiceGet(winId) == 0) {
+                    jingle = -1;
+                    mbCoinAddDispExec(playerNo, -20, FALSE, TRUE);
+                    mbPlayerPosGet(playerNo, &pos);
+                    SNpcStarCreate(koopaF, TRUE, &pos);
+                    mbPlayerRotateStart(playerNo, 0, 15);
+                    SNpcObjMotShiftSet(7);
+                    HuPrcSleep(150);
+                    SNpcTargetAngleSet(0.0f);
+                    mbPlayerMotionShiftSet(playerNo, 11, 0.0f, 8.0f, 0);
+                    mbMusPauseFadeOut(0, TRUE, 1000);
+                    mbPlayerMotionEndWait(playerNo);
+                    mbPlayerMotIdleSet(playerNo);
+                    SNpcStarWait();
+                    omVibrate(playerNo, 20, 7, 3);
+                    mbPlayerStarAdd(playerNo, 1);
+                    mbPlayerWinLoseVoicePlay(playerNo, playerStarMotNoTbl[koopaF], playerStarSeTbl[koopaF]);
+                    mbPlayerMotionShiftSet(playerNo, playerStarMotNoTbl[koopaF], 0.0f, 8.0f, 0);
+                    SNpcSePlay(1, 0);
+                    SNpcObjMotShiftSet(8);
+                    jingle = mbMusJinglePlay(39);
+                    SNpcObjMotEndWait();
+                    mbPlayerMotionEndWait(playerNo);
+                    HuPrcSleep(60);
+                    mbMusJingleWait(jingle);
+                    mbMusPauseFadeOut(0, FALSE, 1000);
+                    mbPlayerMotIdleSet(playerNo);
+                } else {
+                    SNpcSePlay(2, 0);
+                    SNpcObjMotShiftSet(9);
+                    winId = mbWinCreate(2, snpcMesTbl[2][koopaF], snpcMesSpeakerTbl[koopaF]);
+                    mbWinWait(winId);
+                }
+                break;
+
+            case 2:
+            case 3:
+                mbWinWait(winId);
+                if(mode == 3) {
+                    winId = mbWinCreate(2, snpcMesTbl[5][koopaF], snpcMesSpeakerTbl[koopaF]);
+                    mbWinWait(winId);
+                }
                 mbPlayerPosGet(playerNo, &pos);
                 SNpcStarCreate(koopaF, TRUE, &pos);
-                mbPlayerRotateStart(playerNo, 0, 15);
                 SNpcObjMotShiftSet(7);
-                HuPrcSleep(150);
-                SNpcTargetAngleSet(0.0f);
-                mbPlayerMotionShiftSet(playerNo, 11, 0.0f, 8.0f, 0);
-                mbMusPauseFadeOut(0, TRUE, 1000);
-                mbPlayerMotionEndWait(playerNo);
-                mbPlayerMotIdleSet(playerNo);
                 SNpcStarWait();
                 omVibrate(playerNo, 20, 7, 3);
-                mbPlayerStarAdd(playerNo, 1);
+                SNpcTargetAngleSet(0.0f);
+                if(mode == 2) {
+                    mbStarAddProcExec(playerNo, -1, -1, TRUE);
+                } else {
+                    mbCoinAddProcExec(playerNo, -20, -1, TRUE);
+                }
                 mbPlayerWinLoseVoicePlay(playerNo, playerStarMotNoTbl[koopaF], playerStarSeTbl[koopaF]);
                 mbPlayerMotionShiftSet(playerNo, playerStarMotNoTbl[koopaF], 0.0f, 8.0f, 0);
                 SNpcSePlay(1, 0);
                 SNpcObjMotShiftSet(8);
-                jingle = mbMusJinglePlay(39);
                 SNpcObjMotEndWait();
                 mbPlayerMotionEndWait(playerNo);
-                HuPrcSleep(60);
-                mbMusJingleWait(jingle);
-                mbMusPauseFadeOut(0, FALSE, 1000);
-                mbPlayerMotIdleSet(playerNo);
-            } else {
-                SNpcSePlay(2, 0);
-                SNpcObjMotShiftSet(9);
-                winId = mbWinCreate(2, snpcMesTbl[2][koopaF], snpcMesSpeakerTbl[koopaF]);
-                mbWinWait(winId);
+                break;
+        }
+        if(contF) {
+            nextMasu = SNpcMasuStarNextGet(FALSE);
+            SNpcObjMotShiftSet(3);
+            SNpcObjMotEndWait();
+            if(snpcSaveWork->koopaF == TRUE) {
+                mbCameraShakeSet(12, 50.0f);
             }
-            break;
-
-        case 2:
-        case 3:
-            mbWinWait(winId);
-            if(mode == 3) {
-                winId = mbWinCreate(2, snpcMesTbl[5][koopaF], snpcMesSpeakerTbl[koopaF]);
-                mbWinWait(winId);
+            SNpcSePlay(3, 0);
+            SNpcObjMotShiftSet(4);
+            SNpcObjPosGet(&pos);
+            maxTime = 30;
+            for(i = 0; i < maxTime; i++) {
+                s = (float)i / maxTime;
+                s = HuSin(80.0f * s);
+                SNpcObjPosSet(pos.x, pos.y + 100.0f * (8.0f * s), pos.z);
+                HuPrcVSleep();
             }
-            mbPlayerPosGet(playerNo, &pos);
-            SNpcStarCreate(koopaF, TRUE, &pos);
-            SNpcObjMotShiftSet(7);
-            SNpcStarWait();
-            omVibrate(playerNo, 20, 7, 3);
-            SNpcTargetAngleSet(0.0f);
-            if(mode == 2) {
-                mbStarAddProcExec(playerNo, -1, -1, TRUE);
-            } else {
-                mbCoinAddProcExec(playerNo, -20, -1, TRUE);
+            SNpcObjDispSet(FALSE);
+            SNpcMasuReset(TRUE);
+            mbCameraMovePlayer(-1, NULL, NULL, mbCameraPlayerViewZoomGet(2), -1.0f, 24);
+            mbCameraMoveWait();
+            mbMasuPosGet(nextMasu, &pos);
+            mbMasuPosGet(masuId, &dir);
+            PSVECSubtract(&dir, &pos, &dir);
+            s = 0.00066666666f * PSVECMag(&dir);
+            moveTime = (u32)(60.0f * s);
+            mbCameraMoveMasu(nextMasu, NULL, NULL, mbCameraPlayerViewZoomGet(2), -1.0f, moveTime);
+            winId = mbWinCreate(2, snpcMesTbl[3][koopaF], mbGuideSpeakerNoGet());
+            mbWinPause(winId);
+            mbCameraMoveWait();
+            mbWinKill(winId);
+            mbCameraMoveMasu(-1, NULL, NULL, mbCameraPlayerViewZoomGet(0), -1.0f, 21);
+            SNpcObjDispSet(TRUE);
+            mbMasuPosGet(nextMasu, &pos);
+            SNpcObjRotSet(0.0f, 0.0f, 0.0f);
+            maxTime = 30;
+            for(i = 0; i < maxTime; i++) {
+                s = (float)(maxTime - i - 1) / maxTime;
+                s = HuSin(80.0f * s);
+                SNpcObjPosSet(pos.x, pos.y + 100.0f * (8.0f * s), pos.z);
+                if(i + 5 == maxTime) {
+                    SNpcSePlay(7, 0);
+                    SNpcObjMotShiftSet(5);
+                }
+                HuPrcVSleep();
             }
-            mbPlayerWinLoseVoicePlay(playerNo, playerStarMotNoTbl[koopaF], playerStarSeTbl[koopaF]);
-            mbPlayerMotionShiftSet(playerNo, playerStarMotNoTbl[koopaF], 0.0f, 8.0f, 0);
+            if(snpcSaveWork->koopaF == TRUE) {
+                mbCameraShakeSet(18, 200.0f);
+            }
+            SNpcObjPosSetV(&pos);
+            SNpcMasuSet(nextMasu, TRUE);
+            SNpcObjMotEndWait();
+            winId = mbWinCreate(2, snpcMesTbl[4][koopaF], snpcMesSpeakerTbl[koopaF]);
+            mbWinPlayerDisable(winId, -1);
             SNpcSePlay(1, 0);
             SNpcObjMotShiftSet(8);
+            mbWinWait(winId);
+            mbCameraMoveWait();
             SNpcObjMotEndWait();
-            mbPlayerMotionEndWait(playerNo);
-            break;
-    }
-    if(contF) {
-        nextMasu = SNpcMasuStarNextGet(FALSE);
-        SNpcObjMotShiftSet(3);
-        SNpcObjMotEndWait();
-        if(snpcSaveWork->koopaF == TRUE) {
-            mbCameraShakeSet(12, 50.0f);
+            mbWipeDissolveFadeOut();
+            mbCameraStackPop(0);
+            mbMasuPosGet(masuId, &pos);
+            mbPlayerPosSetV(playerNo, &pos);
+            mbPlayerRotSet(playerNo, 0.0f, 0.0f, 0.0f);
+            SNpcPosFixSnap();
+        } else {
+            mbWipeDissolveFadeOut();
+            mbCameraStackPop(0);
+            SNpcObjPosGet(&dir);
+            mbPlayerPosGet(playerNo, &pos);
+            SNpcObjPosSetV(&pos);
+            mbPlayerPosSetV(playerNo, &dir);
+            mbPlayerRotGet(playerNo, &rot);
+            SNpcObjRotSet(0.0f, rot.y, 0.0f);
         }
-        SNpcSePlay(3, 0);
-        SNpcObjMotShiftSet(4);
-        SNpcObjPosGet(&pos);
-        maxTime = 30;
-        for(i = 0; i < maxTime; i++) {
-            s = (float)i / maxTime;
-            s = HuSin(80.0f * s);
-            SNpcObjPosSet(pos.x, pos.y + 100.0f * (8.0f * s), pos.z);
-            HuPrcVSleep();
+        SNpcObjMotSet(0);
+        mbPlayerMotionSet(playerNo, 1, 0x40000001);
+        SNpcMasuEffDispSet();
+        mbMusBoardFadeOut(0, 0, 1000, 1000, -1, FALSE);
+        mbWipeDissolveFadeIn();
+        mbMoveNumDispSet(playerNo, TRUE);
+        if(!contF) {
+            SNpcPosFixCreate();
         }
-        SNpcObjDispSet(FALSE);
-        SNpcMasuReset(TRUE);
-        mbCameraMovePlayer(-1, NULL, NULL, mbCameraPlayerViewZoomGet(2), -1.0f, 24);
-        mbCameraMoveWait();
-        mbMasuPosGet(nextMasu, &pos);
-        mbMasuPosGet(masuId, &dir);
-        PSVECSubtract(&dir, &pos, &dir);
-        s = 0.00066666666f * PSVECMag(&dir);
-        moveTime = (u32)(60.0f * s);
-        mbCameraMoveMasu(nextMasu, NULL, NULL, mbCameraPlayerViewZoomGet(2), -1.0f, moveTime);
-        winId = mbWinCreate(2, snpcMesTbl[3][koopaF], mbGuideSpeakerNoGet());
-        mbWinPause(winId);
-        mbCameraMoveWait();
-        mbWinKill(winId);
-        mbCameraMoveMasu(-1, NULL, NULL, mbCameraPlayerViewZoomGet(0), -1.0f, 21);
-        SNpcObjDispSet(TRUE);
-        mbMasuPosGet(nextMasu, &pos);
-        SNpcObjRotSet(0.0f, 0.0f, 0.0f);
-        maxTime = 30;
-        for(i = 0; i < maxTime; i++) {
-            s = (float)(maxTime - i - 1) / maxTime;
-            s = HuSin(80.0f * s);
-            SNpcObjPosSet(pos.x, pos.y + 100.0f * (8.0f * s), pos.z);
-            if(i + 5 == maxTime) {
-                SNpcSePlay(7, 0);
-                SNpcObjMotShiftSet(5);
-            }
-            HuPrcVSleep();
-        }
-        if(snpcSaveWork->koopaF == TRUE) {
-            mbCameraShakeSet(18, 200.0f);
-        }
-        SNpcObjPosSetV(&pos);
-        SNpcMasuSet(nextMasu, TRUE);
-        SNpcObjMotEndWait();
-        winId = mbWinCreate(2, snpcMesTbl[4][koopaF], snpcMesSpeakerTbl[koopaF]);
-        mbWinPlayerDisable(winId, -1);
-        SNpcSePlay(1, 0);
-        SNpcObjMotShiftSet(8);
-        mbWinWait(winId);
-        mbCameraMoveWait();
-        SNpcObjMotEndWait();
-        mbWipeDissolveFadeOut();
-        mbCameraStackPop(0);
-        mbMasuPosGet(masuId, &pos);
-        mbPlayerPosSetV(playerNo, &pos);
-        mbPlayerRotSet(playerNo, 0.0f, 0.0f, 0.0f);
-        SNpcPosFixSnap();
-    } else {
-        mbWipeDissolveFadeOut();
-        mbCameraStackPop(0);
-        SNpcObjPosGet(&dir);
-        mbPlayerPosGet(playerNo, &pos);
-        SNpcObjPosSetV(&pos);
-        mbPlayerPosSetV(playerNo, &dir);
-        mbPlayerRotGet(playerNo, &rot);
-        SNpcObjRotSet(0.0f, rot.y, 0.0f);
-    }
-    SNpcObjMotSet(0);
-    mbPlayerMotionSet(playerNo, 1, 0x40000001);
-    SNpcMasuEffDispSet();
-    mbMusBoardFadeOut(0, 0, 1000, 1000, -1, FALSE);
-    mbWipeDissolveFadeIn();
-    mbMoveNumDispSet(playerNo, TRUE);
-    if(!contF) {
-        SNpcPosFixCreate();
     }
 }
 
@@ -920,11 +919,11 @@ static int SNpcMoveExec(void)
 
 static void StarChangeExec(s8 *list, BOOL coinF, int num)
 {
-    int i;
-    int motIdx;
-    s8 playerNo;
     int numTbl[4];
     int dispTbl[4];
+    int playerNo;
+    int i;
+    int motIdx;
 
     motIdx = 0;
     if(num < 0) {
@@ -982,8 +981,8 @@ static void SNpcMoveOMExec(OMOBJ *obj)
 {
     SNPCMOVEWORK *work = (SNPCMOVEWORK *)obj->work;
     BOOL endF = FALSE;
-    HuVecF dir;
     HuVecF pos;
+    HuVecF dir;
     float t;
     float rotT;
 
@@ -1101,11 +1100,20 @@ static void SNpcRotateWait(void)
     }
 }
 
+static inline float SNpcAbsF(register float x)
+{
+    // clang-format off
+    asm {
+        fabs x, x
+    }
+    // clang-format on
+    return x;
+}
+
 static void SNpcRotateUpdate(OMOBJ *obj)
 {
     SNPCTIMEWORK *work = (SNPCTIMEWORK *)obj->work;
     BOOL endF = FALSE;
-    float absAngle;
     float t;
     float s;
     float angle;
@@ -1121,10 +1129,9 @@ static void SNpcRotateUpdate(OMOBJ *obj)
         work->mode = 0;
         SNpcObjRotGet(&obj->rot);
         obj->scale.y = mbAngleWrap2(work->start, obj->rot.y);
-        absAngle = fabs(obj->scale.y);
-        t = (1.0f / 180.0f) * absAngle;
+        t = (1.0f / 180.0f) * SNpcAbsF(obj->scale.y);
         work->maxTime = 15.0f * (0.7f + t * snpcRotSpeedTbl[snpcSaveWork->koopaF]);
-        if(abs((int)obj->scale.y) < 5.0f) {
+        if(__abs((int)obj->scale.y) < 5.0f) {
             SNpcObjMotShiftSet(0);
         } else {
             SNpcObjMotShiftSet(1);
@@ -1155,10 +1162,9 @@ static void SNpcPosFixUpdate(OMOBJ *obj)
 {
     SNPCTIMEWORK *work = (SNPCTIMEWORK *)obj->work;
     BOOL endF = FALSE;
-    HuVecF rot;
-    HuVecF endPos;
     HuVecF pos;
-    float absAngle;
+    HuVecF endPos;
+    HuVecF rot;
     float t;
     float s;
     float angle;
@@ -1199,11 +1205,10 @@ static void SNpcPosFixUpdate(OMOBJ *obj)
             SNpcObjRotGet(&obj->rot);
             work->start = 0.0f;
             obj->scale.y = mbAngleWrap2(work->start, obj->rot.y);
-            absAngle = fabs(obj->scale.y);
-            t = (1.0f / 180.0f) * absAngle;
+            t = (1.0f / 180.0f) * SNpcAbsF(obj->scale.y);
             work->maxTime = 15.0f * (0.7f + t * snpcPosFixSpeedTbl[snpcSaveWork->koopaF]);
             work->time = 0;
-            if(abs((int)obj->scale.y) < 5.0f) {
+            if(__abs((int)obj->scale.y) < 5.0f) {
                 SNpcObjMotShiftSet(0);
             } else {
                 SNpcObjMotShiftSet(1);
@@ -1275,8 +1280,8 @@ static void SNpcZoomUpdate(OMOBJ *obj)
 
 static OMOBJ *SNpcDiceExec(int value, int diceNum)
 {
-    int tbl[3] = { 0, 0, 0 };
     HuVecF pos;
+    int tbl[3] = { 0, 0, 0 };
     int koopaF;
     int i;
 
@@ -1378,18 +1383,18 @@ static int SNpcMasuStarNextGet(BOOL nearF)
 
 static void SNpcPosFixSnap(void)
 {
-    HuVecF dir;
-    HuVecF pos;
     Mtx mtx;
+    HuVecF pos;
+    HuVecF dir;
     int masuId;
     int i;
-    s16 linkId;
+    int linkId;
 
     if(snpcMagic == SNPC_MAGIC) {
         masuId = snpcSaveWork->masuId;
         for(i = 0; i < mbMasuLinkNumGet(masuId); i++) {
             linkId = mbMasuLinkGet(masuId, i);
-            if(mbBranchMAttrGet() & mbMasuMAttrGet(linkId)) {
+            if(!(mbMasuMAttrGet(linkId) & mbBranchMAttrGet())) {
                 break;
             }
         }
