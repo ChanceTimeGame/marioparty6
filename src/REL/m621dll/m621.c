@@ -154,6 +154,11 @@ void fn_1_2C6C(M621_PLAYER *player, M621_TARGET *target, s16 itemNo);
 void fn_1_3678(OMOBJ *obj);
 void fn_1_5054(OMOBJ *obj);
 void fn_1_51F4(s16 playerNo, HuVecF *pos);
+void fn_1_52D4(s32 playerNo, s16 mgCoin);
+void fn_1_5328(s32 playerNo, u32 mgScore);
+s16 fn_1_5340(void);
+float fn_1_5350(float x);
+double fn_1_537C(double x);
 
 MGSEQ_PARAM lbl_1_data_0 = {
     30, MGSEQ_TIMER_BOTTOM,
@@ -427,7 +432,7 @@ void fn_1_778(OMOBJ *obj)
             }
             for (i = 0; i < winNum; i++) {
                 winner[i]->winF = 1;
-                GWMgCoinBonusSet(winner[i]->playerNo, 10);
+                fn_1_52D4(winner[i]->playerNo, 10);
             }
             switch (winNum) {
                 case 0:
@@ -461,7 +466,7 @@ void fn_1_A5C(OMOBJ *obj)
     if ((lbl_1_bss_C >= 4 && work->timer >= 60) || work->timer >= 180) {
         if (lbl_1_bss_8) {
             for (i = 0; i < 4; i++) {
-                GWMgScoreSet(lbl_1_bss_10[i]->playerNo, lbl_1_bss_10[i]->score);
+                fn_1_5328(lbl_1_bss_10[i]->playerNo, lbl_1_bss_10[i]->score);
             }
             MgSeqModeSet(MGSEQ_MODE_FADEOUT);
         } else {
@@ -510,15 +515,15 @@ void fn_1_D28(OMOBJ *obj)
     COL_ATTRPARAM attrParam;
     work->obj = omAddObjEx(lbl_1_bss_0, 0x7FDA, 5, 2, -1, NULL);
     for (i = 0; i < 5; i++) {
-        if (lbl_1_data_3C[GWMgTimeGet()][i] != -1) {
-            work->obj->mdlId[i] = Hu3DModelCreateData(lbl_1_data_3C[GWMgTimeGet()][i]);
+        if (lbl_1_data_3C[fn_1_5340()][i] != -1) {
+            work->obj->mdlId[i] = Hu3DModelCreateData(lbl_1_data_3C[fn_1_5340()][i]);
         } else {
             work->obj->mdlId[i] = 0;
         }
     }
     for (i = 0; i < 2; i++) {
-        if (lbl_1_data_64[GWMgTimeGet()][i] != -1) {
-            work->obj->mtnId[i] = Hu3DJointMotionData(work->obj->mdlId[i], lbl_1_data_64[GWMgTimeGet()][i]);
+        if (lbl_1_data_64[fn_1_5340()][i] != -1) {
+            work->obj->mtnId[i] = Hu3DJointMotionData(work->obj->mdlId[i], lbl_1_data_64[fn_1_5340()][i]);
             Hu3DMotionSet(work->obj->mdlId[i], work->obj->mtnId[i]);
         } else {
             work->obj->mtnId[i] = 0;
@@ -589,7 +594,7 @@ int fn_1_1240(COL_NARROW_PARAM *a, COL_NARROW_PARAM *b)
     if (dot < -cos(1.0471975511965976)) {
         ofs = dir;
         ofs.y = 0.0f;
-        if (fabsf(VECSquareMag(&ofs)) < 0.001) {
+        if (fn_1_5350(VECSquareMag(&ofs)) < 0.001) {
             ofs.x = 1.0f;
         } else {
             fn_1_10E8(&ofs, &ofs);
@@ -981,9 +986,9 @@ void fn_1_27A0(void)
     lbl_1_bss_3E = Hu3DModelCreateData(DATANUM(DATA_m621, 0x0C));
     lbl_1_bss_3C = Hu3DModelCreateData(DATANUM(DATA_m621, 0x0D));
     lbl_1_bss_3A = Hu3DModelCreateData(DATANUM(DATA_m621, 0x0E));
-    lbl_1_bss_38 = Hu3DModelCreateData(lbl_1_data_74[GWMgTimeGet()][0]);
-    lbl_1_bss_36 = Hu3DModelCreateData(lbl_1_data_74[GWMgTimeGet()][1]);
-    lbl_1_bss_34 = Hu3DJointMotionData(lbl_1_bss_36, lbl_1_data_74[GWMgTimeGet()][2]);
+    lbl_1_bss_38 = Hu3DModelCreateData(lbl_1_data_74[fn_1_5340()][0]);
+    lbl_1_bss_36 = Hu3DModelCreateData(lbl_1_data_74[fn_1_5340()][1]);
+    lbl_1_bss_34 = Hu3DJointMotionData(lbl_1_bss_36, lbl_1_data_74[fn_1_5340()][2]);
     Hu3DModelAttrSet(lbl_1_bss_3E, HU3D_ATTR_DISPOFF);
     Hu3DModelAttrSet(lbl_1_bss_3C, HU3D_ATTR_DISPOFF);
     Hu3DModelAttrSet(lbl_1_bss_38, HU3D_ATTR_DISPOFF);
