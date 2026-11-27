@@ -1102,5 +1102,764 @@ s16 lbl_1_data_37E = 1;
 s16 lbl_1_data_380 = 1;
 
 /* @@PART2@@ */
+#pragma auto_inline off
+
+#include "humath.h"
+
+typedef struct M621Effect_s {
+    s16 state;
+    s16 mdlId;
+} M621EFFECT;
+
+extern s16 lbl_1_data_37E;
+extern s16 lbl_1_data_380;
+
+void fn_1_390C(OMOBJ *obj);
+void fn_1_3A78(OMOBJ *obj);
+void fn_1_3E18(OMOBJ *obj);
+void fn_1_47B4(OMOBJ *obj);
+void fn_1_4CB0(OMOBJ *obj);
+void fn_1_5168(OMOBJ *obj);
+void fn_1_51F4(s16 type, HuVecF *pos);
+
+void fn_1_2E10(M621_ITEM *seg)
+{
+    HuVecF pos;
+    seg->state = 5;
+    MgActorPosGet(seg->actor, &pos);
+    seg->mdlId = Hu3DModelLink(lbl_1_bss_36);
+    seg->timer = 5;
+}
+
+int fn_1_2E68(COL_NARROW_PARAM *a, COL_NARROW_PARAM *b)
+{
+    M621_PLAYER *player;
+    M621_TARGET *tower;
+    int i;
+    int j;
+    if (b->type == 2 || b->type == 3) {
+        player = NULL;
+        tower = lbl_1_bss_40[a->type - 5];
+        for (j = 0; j < 4; j++) {
+            if (b->paramB - 0x100 == lbl_1_bss_10[j]->player->actor->no) {
+                player = lbl_1_bss_10[j];
+                break;
+            }
+        }
+        if (player->unk24 == 2) {
+            return 0;
+        }
+        player->unk24 = 2;
+        if (player->player->actor->colGroundAttr & 1) {
+            for (i = tower->itemNum - 1; i >= 0; i--) {
+                if (tower->item[i].state == 2) {
+                    if (i == 0) {
+                        fn_1_2A54(player, tower);
+                    } else {
+                        fn_1_2C6C(player, tower, i);
+                    }
+                    break;
+                }
+            }
+        } else if (a->paramB == 1) {
+            fn_1_2A54(player, tower);
+        } else {
+            fn_1_2C6C(player, tower, a->paramB - 1);
+        }
+    }
+    return 0;
+}
+
+int fn_1_2FFC(COL_NARROW_PARAM *a, COL_NARROW_PARAM *b)
+{
+    if (b->type >= 5 && b->type < 8) {
+        return 1;
+    }
+    return 0;
+}
+
+void fn_1_3024(MGACTOR *actor, int param)
+{
+    M621_ITEM *seg = (M621_ITEM *)param;
+    if (seg->state == 3) {
+        fn_1_2E10(seg);
+    } else if (seg->state == 2) {
+        seg->vel.y = 0.0f;
+    }
+}
+void fn_1_3084(M621_TARGET *tower)
+{
+    HuVecF pos;
+    MGACTOR_PARAM param;
+    int num;
+    int i;
+
+    num = fn_1_272C();
+    if (tower->unk8 != 0) {
+        tower->itemNum = (int)(5.0f * frandf()) + 3;
+        tower->unk14 = 0.0f;
+    } else {
+        if (num >= 7) {
+            tower->itemNum = (int)(5.0f * frandf()) + 3;
+            if (tower->itemNum > 7) {
+                tower->itemNum = 7;
+            }
+        } else {
+            tower->itemNum = num;
+        }
+        tower->unk14 = 360.0f * frandf();
+    }
+    tower->height = 90.0f * (tower->itemNum + 1);
+    tower->unkC = 30;
+    param.height = 150.0f + (80.0f + 90.0f * (tower->itemNum - 2));
+    param.radius = 130.0f;
+    param.type = tower->no + 5;
+    param.param = 0;
+    param.narrowHook = fn_1_2FFC;
+    param.correctHook = NULL;
+    param.correctHookParam = 0;
+    param.attr = 2;
+    tower->actor = MgActorCreate(&param, -1);
+    MgActorColMaskSet(tower->actor, 1);
+    pos = tower->pos;
+    pos.y -= tower->height;
+    MgActorPosSet(tower->actor, &pos);
+    param.height = 90.0f;
+    param.radius = 60.0f;
+    param.type = tower->no + 5;
+    param.narrowHook = fn_1_2E68;
+    param.correctHook = fn_1_3024;
+    param.attr = 2;
+    tower->item[0].itemMdlId = Hu3DModelLink(lbl_1_bss_3E);
+    tower->item[0].unk4 = fn_1_26A4();
+    tower->item[0].vel.x = tower->item[0].vel.y = tower->item[0].vel.z = 0.0f;
+    Hu3DModelAttrReset(tower->item[0].itemMdlId, HU3D_ATTR_DISPOFF);
+    Hu3DModelShadowSet(tower->item[0].itemMdlId);
+    param.height = 150.0f;
+    param.param = 1;
+    param.correctHookParam = (int)&tower->item[0];
+    tower->item[0].actor = MgActorCreate(&param, tower->item[0].itemMdlId);
+    MgActorColMaskSet(tower->item[0].actor, tower->item[0].unk4);
+    tower->rotY = tower->unk14;
+    if (tower->rotY > 70.0f) {
+        tower->rotY = 70.0f;
+    } else if (tower->rotY < -70.0f) {
+        tower->rotY = -70.0f;
+    }
+    MgActorRotYSet(tower->item[0].actor, tower->rotY);
+    pos = tower->pos;
+    pos.y += (80.0f + 90.0f * (tower->itemNum - 2)) - tower->height;
+    MgActorPosSet(tower->item[0].actor, &pos);
+    tower->item[0].actor->gravity = 0.0f;
+    tower->item[0].state = 1;
+    for (i = 1; i < tower->itemNum; i++) {
+        tower->item[i].itemMdlId = Hu3DModelLink(lbl_1_bss_3C);
+        tower->item[i].unk4 = fn_1_26A4();
+        tower->item[i].vel.x = tower->item[i].vel.y = tower->item[i].vel.z = 0.0f;
+        Hu3DModelAttrReset(tower->item[i].itemMdlId, HU3D_ATTR_DISPOFF);
+        Hu3DModelShadowSet(tower->item[i].itemMdlId);
+        param.height = (i == 1) ? 80.0f : 90.0f;
+        param.param = i + 1;
+        param.correctHookParam = (int)&tower->item[i];
+        tower->item[i].actor = MgActorCreate(&param, tower->item[i].itemMdlId);
+        MgActorColMaskSet(tower->item[i].actor, tower->item[i].unk4);
+        pos = tower->pos;
+        pos.y += (90.0f * (tower->itemNum - i - 1)) - tower->height;
+        MgActorPosSet(tower->item[i].actor, &pos);
+        tower->item[i].actor->gravity = 0.0f;
+        MgActorRotYSet(tower->item[i].actor, tower->unk14);
+        tower->item[i].state = 1;
+    }
+}
+
+void fn_1_3678(OMOBJ *obj)
+{
+    M621_TARGET *tower = obj->data;
+    HSF_OBJECT *hsfObj;
+    int i;
+    HuVecF dir;
+
+    if (MgSeqModeGet() == 6 || MgSeqModeGet() == 7 || MgSeqModeGet() == 8) {
+        fn_1_140(obj, NULL);
+        return;
+    }
+    tower->timer--;
+    if ((u32)MgSeqTimerValueGet() <= tower->timer + 60) {
+        fn_1_140(obj, NULL);
+        return;
+    }
+    if (tower->timer < 30) {
+        do {
+            tower->unk2C = 21.0f * frandf();
+            hsfObj = Hu3DModelObjPtrGet(lbl_1_bss_3A, lbl_1_data_258[tower->unk2C]);
+            tower->pos.x = hsfObj->mesh.base.pos.x;
+            tower->pos.y = hsfObj->mesh.base.pos.y;
+            tower->pos.z = hsfObj->mesh.base.pos.z;
+            for (i = 0; i < 3; i++) {
+                if (tower->no != lbl_1_bss_40[i]->no && lbl_1_bss_40[i]->unk2C >= 0) {
+                    PSVECSubtract(&tower->pos, &lbl_1_bss_40[i]->pos, &dir);
+                    dir.y = 0.0f;
+                    if (PSVECSquareMag(&dir) < 62500.0f) {
+                        tower->unk2C = 22;
+                        break;
+                    }
+                }
+            }
+        } while (tower->unk2C >= 21);
+        Hu3DModelPosSetV(tower->mdlId, &tower->pos);
+        Hu3DModelAttrReset(tower->mdlId, HU3D_ATTR_DISPOFF);
+        Hu3DMotionTimeSet(tower->mdlId, 0.0f);
+        Hu3DModelLayerSet(tower->mdlId, 1);
+        if (tower->unk8 != 0) {
+            for (i = 0; i < 4; i++) {
+                lbl_1_bss_10[i]->vibTimer = 30;
+                omVibrate(lbl_1_bss_10[i]->player->playerNo, 30, 4, 4);
+            }
+        }
+        fn_1_140(obj, fn_1_390C);
+        return;
+    }
+}
+
+void fn_1_390C(OMOBJ *obj)
+{
+    M621_TARGET *tower = obj->data;
+    int i;
+
+    if (MgSeqModeGet() == 6 || MgSeqModeGet() == 7 || MgSeqModeGet() == 8) {
+        fn_1_140(obj, NULL);
+        return;
+    }
+    tower->timer--;
+    if (tower->timer <= 0) {
+        fn_1_3084(tower);
+        tower->timer = 0;
+        if (tower->unk8 != 0) {
+            for (i = 0; i < 4; i++) {
+                lbl_1_bss_10[i]->vibTimer = tower->itemNum * 6;
+                omVibrate(lbl_1_bss_10[i]->player->playerNo, tower->itemNum * 6, 4, 4);
+            }
+            tower->unk8 = 0;
+            if (lbl_1_data_37E != 0) {
+                fn_1_594(64, 0x6EF);
+                lbl_1_data_37E = 0;
+            }
+        } else {
+            fn_1_420(&tower->pos, 0x6EF);
+        }
+        fn_1_140(obj, fn_1_3A78);
+        return;
+    }
+}
+
+void fn_1_3A78(OMOBJ *obj)
+{
+    M621_TARGET *tower = obj->data;
+    HuVecF pos;
+    s16 i;
+    float t;
+    float ofs;
+
+    if (MgSeqModeGet() == 6 || MgSeqModeGet() == 7 || MgSeqModeGet() == 8) {
+        tower->timer = 0;
+        fn_1_140(obj, fn_1_4CB0);
+        return;
+    }
+    tower->timer++;
+    t = 1.0f - tower->timer / (float)(tower->itemNum * 6);
+    if (t < 0.0f) {
+        t = 0.0f;
+    }
+    ofs = 25.0f * ((s16)(tower->height * t) / 25);
+    for (i = 0; i < tower->itemNum; i++) {
+        pos = tower->pos;
+        if (i == 0) {
+            pos.y += 1.0f + ((80.0f + 90.0f * (tower->itemNum - 2)) - ofs);
+        } else {
+            pos.y += 1.0f + (90.0f * (tower->itemNum - i - 1) - ofs);
+        }
+        MgActorPosSet(tower->item[i].actor, &pos);
+    }
+    pos = tower->pos;
+    pos.y = 1.0f + (pos.y - ofs);
+    MgActorPosSet(tower->actor, &pos);
+    if (t <= 0.0f) {
+        for (i = 0; i < tower->itemNum; i++) {
+            tower->item[i].timer = 0;
+            tower->item[i].state = 2;
+        }
+        MgActorColAttrReset(tower->item[tower->itemNum - 1].actor, 2);
+        MgActorColAttrReset(tower->actor, 2);
+        tower->state = 1;
+        fn_1_140(obj, fn_1_3E18);
+        return;
+    }
+}
+void fn_1_3E18(OMOBJ *obj)
+{
+    MGACTOR_COLMAP_POLY poly;
+    HuVecF pos;
+    HuVecF nextPos;
+    HuVecF push;
+    HuVecF actorPos;
+    HuVecF rayStart;
+    HuVecF rayEnd;
+    M621_ITEM *segP;
+    s16 cnt0;
+    M621_TARGET *tower;
+    M621_ITEM *nextSegP;
+    s16 j;
+    s16 cnt2;
+    s16 i;
+    M621_ITEM *seg;
+    float maxTop;
+    float top;
+    float wave;
+
+    tower = obj->data;
+    cnt0 = 0;
+    cnt2 = 0;
+    maxTop = 0.0f;
+    if (MgSeqModeGet() == 6 || MgSeqModeGet() == 7 || MgSeqModeGet() == 8) {
+        tower->timer = 0;
+        fn_1_140(obj, fn_1_47B4);
+        return;
+    }
+    if (Hu3DMotionEndCheck(tower->mdlId)) {
+        Hu3DModelAttrSet(tower->mdlId, HU3D_ATTR_DISPOFF);
+    }
+    for (i = 0; i < tower->itemNum; i++) {
+        segP = &tower->item[i];
+        switch (segP->state) {
+            case 0:
+                cnt0++;
+                break;
+            case 2:
+                cnt2++;
+                break;
+        }
+    }
+    if (cnt0 == tower->itemNum) {
+        tower->state = 2;
+        if ((u32)MgSeqTimerValueGet() / 60 <= 1) {
+            fn_1_140(obj, NULL);
+            return;
+        }
+        tower->timer = 30.0f + 90.0f * frandf();
+        tower->unk2C = -1;
+        fn_1_140(obj, fn_1_3678);
+        return;
+    }
+    if (MgSeqModeGet() == 5) {
+        tower->unkC--;
+        if (tower->unkC <= 0) {
+            tower->unk18 = frandf();
+            tower->unkC = 30;
+        }
+        if (tower->unk18 < 0.4f) {
+            tower->unk14 -= 0.3f;
+            if (tower->unk14 < -180.0f) {
+                tower->unk14 = 360.0f + tower->unk14;
+            }
+            tower->rotY -= 0.3f;
+            if (tower->rotY < -70.0f) {
+                tower->rotY = -70.0f;
+            }
+        } else if (tower->unk18 > 0.6f) {
+            tower->unk14 += 0.3f;
+            if (tower->unk14 > 180.0f) {
+                tower->unk14 -= 360.0f;
+            }
+            tower->rotY += 0.3f;
+            if (tower->rotY > 70.0f) {
+                tower->rotY = 70.0f;
+            }
+        }
+        push.x = push.y = 0.0f;
+        push.z = 1.0f;
+        if (tower->item[0].state == 2) {
+            MgActorRotYSet(tower->item[0].actor, tower->rotY);
+        }
+        for (i = 1; i < tower->itemNum; i++) {
+            if (tower->item[i].state == 2) {
+                MgActorRotYSet(tower->item[i].actor, tower->unk14);
+            }
+        }
+    } else {
+        push.x = push.y = push.z = 0.0f;
+    }
+    if (tower->actor != NULL) {
+        MgActorPosGet(tower->actor, &tower->pos);
+        MgActorRotYSet(tower->actor, tower->unk14);
+        MgActorPushSet(tower->actor, &push);
+    }
+    for (i = 0; i < tower->itemNum; i++) {
+        seg = &tower->item[i];
+        nextSegP = NULL;
+        for (j = i + 1; j < tower->itemNum; j++) {
+            if (tower->item[j].state == 2) {
+                nextSegP = &tower->item[j];
+                break;
+            }
+        }
+        switch (seg->state) {
+            case 2:
+                seg->timer++;
+                cnt2--;
+                wave = 10.0 * HuSin((360.0f * seg->timer) / 120.0f + 120.0f * cnt2);
+                if (nextSegP != NULL) {
+                    seg->vel.y -= 0.7f;
+                    MgActorPosGet(seg->actor, &pos);
+                    PSVECAdd(&pos, &seg->vel, &pos);
+                    MgActorPosGet(nextSegP->actor, &nextPos);
+                    if (i == 0 && 80.0f + nextPos.y >= pos.y) {
+                        pos.y = 80.0f + nextPos.y;
+                        seg->vel.y = 0.0f;
+                    } else if (i != 0 && 90.0f + nextPos.y >= pos.y) {
+                        pos.y = 90.0f + nextPos.y;
+                        seg->vel.y = 0.0f;
+                    }
+                    pos.x = tower->pos.x + wave;
+                    pos.z = tower->pos.z;
+                    MgActorPosSetRaw(seg->actor, &pos);
+                    top = (pos.y - tower->pos.y) + ((i == 0) ? 150.0f : 90.0f);
+                } else {
+                    MgActorPosGet(seg->actor, &actorPos);
+                    rayStart = rayEnd = actorPos;
+                    rayStart.y = 10000.0f;
+                    rayEnd.y = -10000.0f;
+                    if (MgActorColMapPolyGet(&rayStart, &rayEnd, -1, &poly)) {
+                        if (actorPos.y < poly.pos.y) {
+                            actorPos.y = poly.pos.y;
+                            MgActorPosSet(seg->actor, &actorPos);
+                        } else if (actorPos.y > poly.pos.y) {
+                            MgActorColAttrReset(seg->actor, 2);
+                            seg->actor->gravity = 150.0f;
+                            MgActorPosGet(seg->actor, &pos);
+                            pos.x = tower->pos.x + wave;
+                            pos.z = tower->pos.z;
+                            MgActorPosSetRaw(seg->actor, &pos);
+                        }
+                    }
+                    top = (i == 0) ? 150.0f : 90.0f;
+                }
+                if (top > maxTop) {
+                    maxTop = top;
+                }
+                break;
+            case 3:
+                seg->timer++;
+                if (seg->timer % 2 == 0) {
+                    Hu3DModelAttrReset(seg->itemMdlId, HU3D_ATTR_DISPOFF);
+                } else {
+                    Hu3DModelAttrSet(seg->itemMdlId, HU3D_ATTR_DISPOFF);
+                }
+                seg->vel.y -= 0.7f;
+                MgActorPosGet(seg->actor, &pos);
+                PSVECAdd(&pos, &seg->vel, &pos);
+                MgActorPosSetRaw(seg->actor, &pos);
+                break;
+            case 4:
+                seg->timer--;
+                if (seg->timer <= 0) {
+                    MgActorPosGet(seg->actor, &pos);
+                    fn_1_420(&pos, 0x6F0);
+                    pos.y += 50.0f;
+                    pos.z += 55.0f;
+                    fn_1_51F4(seg->playerNo, &pos);
+                    fn_1_2E10(seg);
+                }
+                break;
+            case 5:
+                seg->timer--;
+                if (seg->timer == 0) {
+                    MgActorKill(seg->actor);
+                    Hu3DModelKill(seg->itemMdlId);
+                    seg->state = 0;
+                    fn_1_270C(seg->unk4);
+                }
+                break;
+        }
+    }
+    if (tower->actor != NULL) {
+        ColBodyGetSafe(tower->actor->no)->param.height = maxTop;
+    }
+}
+void fn_1_47B4(OMOBJ *obj)
+{
+    HuVecF pos;
+    HuVecF nextPos;
+    M621_ITEM *segP;
+    s16 cnt0;
+    s16 cnt2;
+    M621_ITEM *nextSegP;
+    s16 j;
+    s16 i;
+    M621_TARGET *tower;
+    M621_ITEM *seg;
+    float wave;
+
+    tower = obj->data;
+    cnt0 = 0;
+    cnt2 = 0;
+    for (i = 0; i < tower->itemNum; i++) {
+        segP = &tower->item[i];
+        switch (segP->state) {
+            case 0:
+                cnt0++;
+                break;
+        }
+    }
+    if (cnt0 == tower->itemNum) {
+        fn_1_140(obj, NULL);
+        return;
+    }
+    if (tower->actor != NULL) {
+        MgActorPushSet(tower->actor, &lbl_1_data_30);
+    }
+    if (tower->timer == 0) {
+        Hu3DModelPosSetV(tower->mdlId, &tower->pos);
+        Hu3DModelAttrReset(tower->mdlId, HU3D_ATTR_DISPOFF);
+        Hu3DMotionTimeSet(tower->mdlId, 0.0f);
+        Hu3DModelLayerSet(tower->mdlId, 1);
+    }
+    tower->timer++;
+    if (tower->timer >= 30) {
+        tower->timer = 0;
+        if (lbl_1_data_380 != 0) {
+            fn_1_594(64, 0x6F1);
+            lbl_1_data_380 = 0;
+        }
+        fn_1_140(obj, fn_1_4CB0);
+        return;
+    }
+    for (i = 0; i < tower->itemNum; i++) {
+        seg = &tower->item[i];
+        nextSegP = NULL;
+        for (j = i + 1; j < tower->itemNum; j++) {
+            if (tower->item[j].state == 2) {
+                nextSegP = &tower->item[j];
+                break;
+            }
+        }
+        switch (seg->state) {
+            case 2:
+                seg->timer++;
+                cnt2--;
+                wave = 10.0 * HuSin((360.0f * seg->timer) / 120.0f + 120.0f * cnt2);
+                if (nextSegP != NULL) {
+                    seg->vel.y -= 0.7f;
+                    MgActorPosGet(seg->actor, &pos);
+                    PSVECAdd(&pos, &seg->vel, &pos);
+                    MgActorPosGet(nextSegP->actor, &nextPos);
+                    if (i == 0 && 80.0f + nextPos.y >= pos.y) {
+                        pos.y = 80.0f + nextPos.y;
+                        seg->vel.y = 0.0f;
+                    } else if (i != 0 && 90.0f + nextPos.y >= pos.y) {
+                        pos.y = 90.0f + nextPos.y;
+                        seg->vel.y = 0.0f;
+                    }
+                    pos.x = tower->pos.x + wave;
+                    pos.z = tower->pos.z;
+                    MgActorPosSetRaw(seg->actor, &pos);
+                } else {
+                    MgActorColAttrReset(seg->actor, 2);
+                    seg->actor->gravity = 150.0f;
+                }
+                break;
+            case 3:
+                seg->timer++;
+                if (seg->timer % 2 == 0) {
+                    Hu3DModelAttrReset(seg->itemMdlId, HU3D_ATTR_DISPOFF);
+                } else {
+                    Hu3DModelAttrSet(seg->itemMdlId, HU3D_ATTR_DISPOFF);
+                }
+                seg->vel.y -= 0.7f;
+                MgActorPosGet(seg->actor, &pos);
+                PSVECAdd(&pos, &seg->vel, &pos);
+                MgActorPosSetRaw(seg->actor, &pos);
+                break;
+            case 4:
+                fn_1_2E10(seg);
+                break;
+            case 5:
+                seg->timer--;
+                if (seg->timer == 0) {
+                    MgActorKill(seg->actor);
+                    Hu3DModelKill(seg->itemMdlId);
+                    seg->state = 0;
+                    fn_1_270C(seg->unk4);
+                }
+                break;
+        }
+    }
+}
+void fn_1_4CB0(OMOBJ *obj)
+{
+    HuVecF pos;
+    HuVecF nextPos;
+    s16 cnt2;
+    M621_ITEM *segP;
+    s16 cnt0;
+    M621_ITEM *nextSegP;
+    s16 j;
+    s16 i;
+    M621_TARGET *tower;
+    M621_ITEM *seg;
+
+    tower = obj->data;
+    cnt0 = 0;
+    cnt2 = 0;
+    for (i = 0; i < tower->itemNum; i++) {
+        segP = &tower->item[i];
+        switch (segP->state) {
+            case 0:
+                cnt0++;
+                break;
+        }
+    }
+    if (cnt0 == tower->itemNum) {
+        fn_1_140(obj, NULL);
+        return;
+    }
+    for (i = 0; i < tower->itemNum; i++) {
+        seg = &tower->item[i];
+        nextSegP = NULL;
+        for (j = i + 1; j < tower->itemNum; j++) {
+            if (tower->item[j].state == 2) {
+                nextSegP = &tower->item[j];
+                break;
+            }
+        }
+        switch (seg->state) {
+            case 2:
+                seg->timer++;
+                cnt2--;
+                MgActorColAttrSet(seg->actor, 2);
+                seg->actor->gravity = 150.0f;
+                if (nextSegP != NULL) {
+                    seg->vel.y -= 0.7f;
+                    MgActorPosGet(seg->actor, &pos);
+                    PSVECAdd(&pos, &seg->vel, &pos);
+                    MgActorPosGet(nextSegP->actor, &nextPos);
+                    if (i == 0 && 80.0f + nextPos.y >= pos.y) {
+                        pos.y = 80.0f + nextPos.y;
+                        seg->vel.y = 0.0f;
+                    } else if (i != 0 && 90.0f + nextPos.y >= pos.y) {
+                        pos.y = 90.0f + nextPos.y;
+                        seg->vel.y = 0.0f;
+                    }
+                    pos.x = tower->pos.x;
+                    pos.z = tower->pos.z;
+                    MgActorPosSetRaw(seg->actor, &pos);
+                } else {
+                    seg->actor->gravity = 150.0f;
+                    MgActorPosGet(seg->actor, &pos);
+                }
+                if (pos.y < -200.0f) {
+                    fn_1_2E10(seg);
+                }
+                break;
+            case 3:
+                seg->timer++;
+                if (seg->timer % 2 == 0) {
+                    Hu3DModelAttrReset(seg->itemMdlId, HU3D_ATTR_DISPOFF);
+                } else {
+                    Hu3DModelAttrSet(seg->itemMdlId, HU3D_ATTR_DISPOFF);
+                }
+                seg->vel.y -= 0.7f;
+                MgActorPosGet(seg->actor, &pos);
+                PSVECAdd(&pos, &seg->vel, &pos);
+                MgActorPosSetRaw(seg->actor, &pos);
+                break;
+            case 4:
+                fn_1_2E10(seg);
+                break;
+            case 5:
+                seg->timer--;
+                if (seg->timer == 0) {
+                    MgActorKill(seg->actor);
+                    Hu3DModelKill(seg->itemMdlId);
+                    seg->state = 0;
+                    fn_1_270C(seg->unk4);
+                }
+                break;
+        }
+    }
+}
+void fn_1_5054(OMOBJ *obj)
+{
+    M621EFFECT *effect = obj->data;
+    int i;
+
+    for (i = 0; i < 4; i++) {
+        lbl_1_bss_2C[i] = Hu3DModelCreateData(lbl_1_data_9C[i][0]);
+        lbl_1_bss_24[i] = Hu3DJointMotionData(lbl_1_bss_2C[i], lbl_1_data_9C[i][1]);
+        Hu3DModelAttrSet(lbl_1_bss_2C[i], HU3D_ATTR_DISPOFF);
+    }
+    memset(effect, 0, sizeof(M621EFFECT) * 21);
+    fn_1_140(obj, fn_1_5168);
+}
+
+void fn_1_5168(OMOBJ *obj)
+{
+    M621EFFECT *work = obj->data;
+    int i;
+    M621EFFECT *effect;
+
+    for (i = 0; i < 21; i++) {
+        effect = &work[i];
+        if (effect->state == 1 && Hu3DMotionEndCheck(effect->mdlId)) {
+            Hu3DModelKill(effect->mdlId);
+            effect->state = 0;
+        }
+    }
+}
+
+void fn_1_51F4(s16 type, HuVecF *pos)
+{
+    int i;
+    M621EFFECT *effect;
+
+    for (i = 0; i < 21; i++) {
+        effect = &((M621EFFECT *)lbl_1_bss_20)[i];
+        if (effect->state == 0) {
+            effect->mdlId = Hu3DModelLink(lbl_1_bss_2C[type]);
+            Hu3DMotionSet(effect->mdlId, lbl_1_bss_24[type]);
+            Hu3DModelAttrReset(effect->mdlId, HU3D_ATTR_DISPOFF);
+            Hu3DModelPosSetV(effect->mdlId, pos);
+            Hu3DModelLayerSet(effect->mdlId, 2);
+            effect->state = 1;
+            break;
+        }
+    }
+}
+void fn_1_52D4(s32 playerNo, s16 mgCoin)
+{
+    if (_CheckFlag(FLAG_MG_PRACTICE)) {
+        return;
+    }
+    GwPlayer[playerNo].mgCoinBonus = mgCoin;
+}
+
+void fn_1_5328(s32 playerNo, u32 mgScore)
+{
+    GwPlayer[playerNo].mgScore = mgScore;
+}
+
+s16 fn_1_5340(void)
+{
+    return GwMgTime;
+}
+
+float fn_1_5350(float x)
+{
+    return fn_1_537C(x);
+}
+
+double fn_1_537C(double x)
+{
+    return __fabs(x);
+}
 
 /* @@END@@ */
