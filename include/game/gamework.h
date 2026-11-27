@@ -177,7 +177,7 @@ extern GW_SYSTEM GwSystem;
 extern GW_PLAYER GwPlayer[GW_PLAYER_MAX];
 extern GW_PLAYER_CONF GwPlayerConf[GW_PLAYER_MAX];
 
-extern u32 GwSinglePrizeFlag[2];
+extern u32 GwSinglePrizeFlag[]; /* unsized: board/single.c addresses it with @ha/@l */
 extern s16 GwMgTime;
 
 extern s16 GwLanguage;

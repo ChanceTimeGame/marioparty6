@@ -178,6 +178,50 @@ static inline SINGLEEFF *SingleEffGet(s16 id)
     return &singleEffData[id-1];
 }
 
+static inline BOOL SingleMgUnlockCheck(int mgNo)
+{
+    if (GWMgUnlockGet(mgNo) || mbSingleMgUnlockGet(mgNo)) {
+        return TRUE;
+    } else {
+        return FALSE;
+    }
+}
+
+/* Minigames still locked in story mode, of one type (type < 0: any). */
+static inline int SingleMgLockListGet(int type, u8 *list)
+{
+    int i;
+    int num = 0;
+    for (i = 0; MgDataTbl[i].ovl != 0xFFFF; i++) {
+        if (type >= 0 && type != MgDataTbl[i].type) {
+            continue;
+        }
+        if (MgDataTbl[i].type == MG_TYPE_KOOPA || MgDataTbl[i].type == MG_TYPE_DONKEY) {
+            continue;
+        }
+        if (!(MgDataTbl[i].flag & MG_FLAG_RARE) && !mbMgCallSingleOnCheck(MgDataTbl[i].ovl)) {
+            continue;
+        }
+        if (MgDataTbl[i].nameMes == 0x5004C) {
+            continue;
+        }
+        if (SingleMgUnlockCheck(i + 0x259)) {
+            continue;
+        }
+        if (list) {
+            list[num] = i;
+        }
+        num++;
+    }
+    return num;
+}
+
+static inline void SingleMasuTypeAdd(s16 type)
+{
+    masuType[masuTypeNum++] = type;
+    masuTypeNum = masuTypeNum % 5;
+}
+
 static inline s16 SingleEffParticleCreate(ANIMDATA *anim)
 {
     s16 modelId = mbParticleCreate(anim, 100);
@@ -1247,15 +1291,6 @@ static void ev_SingleMg(int playerNo, s16 masuId)
     }
     SingleEffKill(effId);
     mbAudFXStop(seNo);
-}
-
-static inline BOOL SingleMgUnlockCheck(int mgNo)
-{
-    if (GWMgUnlockGet(mgNo) || mbSingleMgUnlockGet(mgNo)) {
-        return TRUE;
-    } else {
-        return FALSE;
-    }
 }
 
 static inline void SingleEffMgStart(s16 id)
