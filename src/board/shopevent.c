@@ -455,7 +455,188 @@ static void ev_Shop(SHOPEVWORK *evWork)
 
 static int ev_ShopSelect(SHOPEVWORK *evWork, SHOPITEM *item, int itemNum, int speakerNo)
 {
-    return 0;
+    int i;
+    int j;
+    int time;
+    int prevSel;
+    int sel;
+    int grpId;
+    int cursorId;
+    int sprId;
+    int padNo;
+    int btn;
+    int btnDown;
+    int doneF;
+    float scale;
+    float rot;
+    float t;
+    float ofsStart;
+    float ofsEnd;
+    HuVecF winBasePos[3];
+    int coinSprId[3][4];
+    HuVecF pos3D;
+    HuVecF startPos;
+    HuVecF endPos;
+    HuVecF pos;
+    HuVecF ofs;
+    int capObjId[3];
+    int winId[3];
+    HuVec2f winPos;
+    ANIMDATA *anim;
+    int helpWinId;
+
+    sel = prevSel = time = 0;
+    ofs.x = ofs.y = ofs.z = 0.0f;
+    grpId = HuSprGrpCreate(1);
+    HuSprGrpCenterSet(grpId, ev_ShopWinPos.x, ev_ShopWinPos.y);
+    HuSprGrpDrawNoSet(grpId, 32);
+    sprId = HuSprCreate(anim = HuSprAnimDataRead(0x13000C), 100, 0);
+    HuSprGrpMemberSet(grpId, 0, sprId);
+    HuSprDrawNoSet(grpId, 0, 32);
+    HuSprAttrSet(grpId, 0, 9);
+    HuSpr3DSet(sprId);
+    HuSpr3DRotSet(sprId, 90.0f, 0.0f, 0.0f);
+    for(i = 1; i <= 10; i++) {
+        rot = 90.0-(9.0*i);
+        HuSpr3DRotSet(sprId, rot, 0.0f, 0.0f);
+        HuPrcVSleep();
+    }
+    HuSpr3DRotSet(sprId, 0.0f, 0.0f, 0.0f);
+    cursorId = espEntry(0x13000D, 90, 0);
+    espDrawNoSet(cursorId, 0);
+    espPosSet(cursorId, -32.0f+ev_ShopCapsulePos[itemNum-1][sel].x, -32.0f+ev_ShopCapsulePos[itemNum-1][sel].y);
+    espAttrSet(cursorId, 9);
+    espDispOn(cursorId);
+    for(i = 0; i < itemNum; i++) {
+        capObjId[i] = mbCapObjCreate(item[i].capsuleNo, 0);
+        mbObjLayerSet(capObjId[i], 6);
+        mbObjCameraSet(capObjId[i], 4);
+        ev_ShopObjLoopSet(capObjId[i]);
+        mbObjMotionSpeedSet(capObjId[i], 0.0f);
+        Hu3D2Dto3D(&ev_ShopCapsulePos[itemNum-1][i], 4, &pos3D);
+        mbObjPosSetV(capObjId[i], &pos3D);
+        mbObjRotSet(capObjId[i], 30.0f, 0.0f, 0.0f);
+        mbObjScaleSet(capObjId[i], 1.0f, 1.0f, 1.0f);
+    }
+    mbObjMotionSpeedSet(capObjId[0], 1.0f);
+    for(i = 0; i < itemNum; i++) {
+        pos = ev_ShopCapsulePos[itemNum-1][i];
+        if(item[i].cost >= 10) {
+            pos.x -= 24.0f;
+        } else {
+            pos.x -= 18.0f;
+        }
+        for(j = 0; j < 4; j++) {
+            coinSprId[i][j] = espEntry(mbBoardDataNumGet(ev_ShopSprFileTbl[j]), 90, 0);
+            espDrawNoSet(coinSprId[i][j], 0);
+            espAttrSet(coinSprId[i][j], 9);
+            espPosSet(coinSprId[i][j], pos.x+(j*16), 32.0f+pos.y);
+        }
+        espBankSet(coinSprId[i][1], 10);
+        if(item[i].cost >= 10) {
+            espBankSet(coinSprId[i][2], item[i].cost/10);
+            espBankSet(coinSprId[i][3], item[i].cost%10);
+        } else {
+            espBankSet(coinSprId[i][2], item[i].cost%10);
+            espDispOff(coinSprId[i][3]);
+        }
+    }
+    for(i = 0; i < itemNum; i++) {
+        winId[i] = mbCapDescWinCreate(item[i].capsuleNo);
+        mbWinPosGet(winId[i], &winPos);
+        winBasePos[i].x = (576.0f*i)+winPos.x;
+        winBasePos[i].y = winPos.y;
+        winBasePos[i].z = 0.0f;
+        PSVECAdd(&winBasePos[i], &ofs, &pos);
+        mbWinPosSet(winId[i], pos.x, pos.y);
+    }
+    helpWinId = mbWinCreateHelp(0x39001D);
+    mbWinAttrSet(helpWinId, 0x800);
+    do {
+        doneF = FALSE;
+        padNo = GwPlayer[evWork->playerNo].padNo;
+        btn = HuPadBtn[padNo];
+        btnDown = HuPadBtnDown[padNo];
+        if(mbPadStkXGet(padNo) < -20) {
+            btn |= PAD_BUTTON_LEFT;
+        } else if(mbPadStkXGet(padNo) > 20) {
+            btn |= PAD_BUTTON_RIGHT;
+        }
+        if(btn & PAD_BUTTON_LEFT) {
+            sel--;
+        } else if(btn & PAD_BUTTON_RIGHT) {
+            sel++;
+        }
+        if(GwPlayer[evWork->playerNo].comF) {
+            btnDown = PAD_BUTTON_A;
+            sel = prevSel;
+        }
+        if(sel < 0) {
+            sel = 0;
+        }
+        if(sel >= itemNum) {
+            sel = itemNum-1;
+        }
+        if(sel != prevSel) {
+            startPos = ev_ShopCapsulePos[itemNum-1][prevSel];
+            endPos = ev_ShopCapsulePos[itemNum-1][sel];
+            ofsStart = 576.0f*(-prevSel);
+            ofsEnd = 576.0f*(-sel);
+            mbObjMotionSpeedSet(capObjId[prevSel], 0.0f);
+            mbObjMotionTimeSet(capObjId[prevSel], 0.0f);
+            mbObjScaleSet(capObjId[prevSel], 1.0f, 1.0f, 1.0f);
+            mbAudFXPlay(0);
+            for(i = 1; i <= 20; i++) {
+                t = i/20.0f;
+                mbev_CapVecChase(HuSin(90.0f*t), &startPos, &endPos, &pos);
+                espPosSet(cursorId, -32.0f+pos.x, -32.0f+pos.y);
+                ofs.x = ofsStart+((ofsEnd-ofsStart)*HuSin(90.0f*t));
+                for(j = 0; j < itemNum; j++) {
+                    PSVECAdd(&winBasePos[j], &ofs, &pos);
+                    mbWinPosSet(winId[j], pos.x, pos.y);
+                }
+                HuPrcVSleep();
+            }
+            mbObjMotionSpeedSet(capObjId[sel], 1.0f);
+            mbObjMotionTimeSet(capObjId[sel], 0.0f);
+            mbObjScaleSet(capObjId[sel], 1.0f, 1.0f, 1.0f);
+            prevSel = sel;
+            time = 0;
+        }
+        scale = 1.0+(0.2f*fabs(HuSin((90.0f*time)/12.0f)));
+        mbObjScaleSet(capObjId[sel], scale, scale, scale);
+        time++;
+        if(btnDown & PAD_BUTTON_A) {
+            mbAudFXPlay(1);
+            doneF = TRUE;
+        } else if(btnDown & PAD_BUTTON_B) {
+            mbAudFXPlay(3);
+            sel = -1;
+            doneF = TRUE;
+        }
+        HuPrcVSleep();
+    } while(!doneF);
+    espKill(cursorId);
+    for(i = 0; i < itemNum; i++) {
+        mbCapObjKill(capObjId[i]);
+    }
+    for(i = 0; i < itemNum; i++) {
+        for(j = 0; j < 4; j++) {
+            espKill(coinSprId[i][j]);
+        }
+    }
+    for(i = 0; i < itemNum; i++) {
+        mbWinKill(winId[i]);
+    }
+    mbWinKill(helpWinId);
+    for(i = 1; i <= 10; i++) {
+        rot = 9.0*i;
+        HuSpr3DRotSet(sprId, rot, 0.0f, 0.0f);
+        HuPrcVSleep();
+    }
+    HuSprGrpMemberKill(grpId, 0);
+    HuSprGrpKill(grpId);
+    return sel;
 }
 
 static u32 ev_ShopMesGet(u32 mes)

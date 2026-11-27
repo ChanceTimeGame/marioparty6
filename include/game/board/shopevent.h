@@ -3,8 +3,9 @@
 
 #include "game/board/board.h"
 
-/* Called for each shop model as it is created: the model's object id and the shop's index. */
-typedef void (*MBEV_SHOPHOOK)(int objId, int no);
+/* Called for each shop model as it is created, with the model's object id and the shop's index
+   (unprototyped: w01's hook takes only the object id). */
+typedef void (*MBEV_SHOPHOOK)();
 
 void mbev_ShopEnableSet(BOOL enableF);
 void mbev_ShopInit(int dataNum);
