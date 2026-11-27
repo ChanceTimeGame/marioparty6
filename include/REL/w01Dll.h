@@ -34,7 +34,7 @@ static inline int GWPlayerTeamGet(int playerNo)
     return GwPlayer[playerNo].team;
 }
 
-/* .bss types (parts 3, 5, 6, 7) */
+/* .bss types (from every part) */
 typedef struct W01Coin_s {
     /* 0x00 */ int activeF;
     /* 0x04 */ MBOBJID objId;
@@ -50,7 +50,8 @@ typedef struct W01Coin_s {
 } W01_COIN; /* size 0x40 */
 
 typedef struct W01CoinWork_s {
-    /* 0x00 */ u8 unk00[0x10];
+    /* 0x00 */ HuVecF pos;
+    /* 0x0C */ MBOBJID objId;
     /* 0x10 */ int num;
     /* 0x14 */ W01_COIN *coin;
     /* 0x18 */ s16 motNo[4];
@@ -87,7 +88,7 @@ typedef struct W01BranchLeaf_s {
 
 typedef struct W01Branch_s {
     MBOBJID objId; /* 0x00 */
-    char name[18]; /* 0x02 */
+    char objName[18]; /* 0x02 */
     W01_BRANCHLEAF *leaf; /* 0x14 */
     s32 leafNum; /* 0x18 */
     s32 attachF; /* 0x1C */
@@ -236,8 +237,6 @@ typedef struct W01Teresa_s {
     /* 0x2C */ float rotY;
 } W01_TERESA; /* size 0x30 */
 
-/* .bss placeholders (sizes from the asm). The part whose functions use one replaces it with the
-   real layout in its report; part 1 merges it into the unit's HEAD. */
 /* lbl_1_bss_155C: the rope bridge (fn_1_10A0, fn_1_13CC, fn_1_2A08) */
 typedef struct W01BridgePlank_s {
     MBOBJID mdlId; //0x00
@@ -278,9 +277,7 @@ typedef struct W01Bss15E8_s {
 
 void ObjectSetup(void);
 
-/* Every global function of w01.c, in reference order. Hook-typed ones are exact; the rest are
-   GUESSED from register use (argN are ints, fN floats): the part that owns a function tells part 1
-   its real signature and the list is regenerated from the definitions at the final splice. */
+/* Every global function of w01.c, in reference order (signatures from the definitions). */
 void fn_1_F4(void);
 void fn_1_60C(void);
 void fn_1_644(void);
@@ -292,7 +289,7 @@ void fn_1_914(int playerNo);
 void fn_1_944(int playerNo);
 void fn_1_970(void);
 void fn_1_9F0(void);
-void fn_1_9F4(int arg0);
+void fn_1_9F4(int objId);
 void fn_1_AC4(BOOL startF);
 void fn_1_B68(void);
 void fn_1_DD0(void);
@@ -301,19 +298,19 @@ void fn_1_13CC(void);
 void fn_1_2A08(void);
 void fn_1_2A1C(void);
 void fn_1_2D08(int playerNo);
-void fn_1_3214(float f0);
+void fn_1_3214(float t);
 void fn_1_4004(void);
 void fn_1_44C0(void);
 void fn_1_45A0(void);
 void fn_1_4750(void);
 void fn_1_47B0(void);
-void fn_1_4C6C(int arg0);
+void fn_1_4C6C(int playerNo);
 void fn_1_4CD0(void);
-void fn_1_4D78(int arg0);
+void fn_1_4D78(s16 masuId);
 void fn_1_4D88(void);
 void fn_1_4F94(int playerNo);
-void fn_1_5560(int arg0);
-void fn_1_5888(int arg0);
+void fn_1_5560(int no);
+void fn_1_5888(int no);
 void fn_1_5C18(void);
 void fn_1_5C7C(void);
 void fn_1_5EF0(void);
@@ -324,7 +321,7 @@ void fn_1_7448(HU3D_MODEL *modelP, MBPARTICLE *particleP, Mtx mtx);
 void fn_1_77AC(HU3D_MODEL *modelP, MBPARTICLE *particleP, Mtx mtx);
 void fn_1_7944(void);
 void fn_1_7B20(void);
-void fn_1_7B70(int arg0);
+void fn_1_7B70(int no);
 void fn_1_7C14(void);
 void fn_1_7D14(W01_LIFT *work, HuVecF *pos);
 void fn_1_7D84(HU3D_MODEL *modelP, MBPARTICLE *particleP, Mtx mtx);
@@ -335,7 +332,7 @@ void fn_1_87E8(void);
 void fn_1_8860(int playerNo);
 void fn_1_9134(HU3D_MODEL *modelP, MBPARTICLE *particleP, Mtx mtx);
 void fn_1_939C(HU3D_MODELID modelId, int no, HuVecF *pos);
-void fn_1_950C(BOOL flag);
+void fn_1_950C(BOOL dispF);
 void fn_1_9574(void);
 void fn_1_99E4(void);
 void fn_1_9AEC(int playerNo, s16 masuId);
@@ -367,7 +364,7 @@ void fn_1_F1F4(int playerNo, s16 masuId);
 void fn_1_F66C(W01BATSUB *sub);
 BOOL fn_1_1089C(void);
 void fn_1_10900(void);
-void fn_1_10998(int arg0);
+void fn_1_10998(int num);
 void fn_1_10AA8(void);
 void fn_1_10C68(void);
 void fn_1_10CB8(int playerNo, s16 masuId);
@@ -376,39 +373,39 @@ void fn_1_11C84(HU3D_MODEL *modelP, MBPARTICLE *particleP, Mtx mtx);
 void fn_1_12090(void);
 void fn_1_12454(void);
 void fn_1_124C8(void);
-void fn_1_126EC(int playerNo, s16 masuId); /* fn_1_760 passes masuId in r4 */
+void fn_1_126EC(int playerNo, s16 masuId);
 void fn_1_12A4C(void);
 void fn_1_12CF0(void);
 void fn_1_12D58(HU3D_MODEL *modelP, Mtx *mtx);
-u32 fn_1_130C4(void **arg0);
+u32 fn_1_130C4(void **dlBuf);
 void fn_1_1330C(void);
-void fn_1_139E8(int arg0);
+void fn_1_139E8(BOOL flag);
 void fn_1_139F8(void);
 void fn_1_13B38(void);
 void fn_1_13BC4(void);
-void fn_1_13CBC(int arg0);
+s16 fn_1_13CBC(int playerNo);
 void fn_1_13D04(void);
 void fn_1_13D8C(HuVecF *pos, int num);
 void fn_1_13F50(void);
-void fn_1_14108(int arg0, int arg1, int arg2, int arg3, int arg4, float f0);
-void fn_1_142B0(int arg0, int arg1, int arg2, int arg3, int arg4, float f0);
-void fn_1_144C0(int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, float f0, float f1);
-void fn_1_147DC(int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, float f0, float f1);
+float fn_1_14108(W01_CURVEFUNC func, HuVecF *a, HuVecF *b, HuVecF *c, HuVecF *d, float t);
+float fn_1_142B0(W01_CURVEFUNC func, HuVecF *a, HuVecF *b, HuVecF *c, HuVecF *d, float t);
+float fn_1_144C0(W01_CURVEFUNC func, HuVecF *a, HuVecF *b, HuVecF *c, HuVecF *d, float t, float len, int maxIter);
+float fn_1_147DC(W01_CURVEFUNC func, HuVecF *a, HuVecF *b, HuVecF *c, HuVecF *d, float t, float len, int maxIter);
 float fn_1_14A90(HuVecF *a, HuVecF *b, HuVecF *c, HuVecF *d, float t);
-void fn_1_14B34(int arg0, int arg1, int arg2, int arg3, float f0);
+float fn_1_14B34(HuVecF *a, HuVecF *b, HuVecF *c, HuVecF *d, float t);
 float fn_1_14BF0(HuVecF *a, HuVecF *b, HuVecF *c, HuVecF *d, float t);
-void fn_1_14CAC(float f0, float f1, float f2, float f3, float f4);
-void fn_1_14D34(float f0, float f1, float f2, float f3, float f4);
-void fn_1_14E0C(int arg0, int arg1, int arg2, int arg3, int arg4, float f0);
-void fn_1_150CC(int arg0, int arg1, int arg2, int arg3, int arg4, float f0);
-void fn_1_1547C(int arg0, int arg1, int arg2, float f0);
-void fn_1_155EC(int arg0, int arg1, float f0);
-void fn_1_15B60(int arg0, int arg1, int arg2, float f0);
-void fn_1_15E1C(int arg0, int arg1, int arg2);
-void fn_1_15FF8(int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6);
-void fn_1_16148(int arg0, int arg1, int arg2, float f0);
-void fn_1_161AC(int arg0, int arg1, int arg2, float f0, float f1);
+float fn_1_14CAC(float a, float b, float c, float d, float t);
+float fn_1_14D34(float a, float b, float c, float d, float t);
+void fn_1_14E0C(HuVecF *a, HuVecF *b, HuVecF *c, HuVecF *d, HuVecF *dst, float t);
+void fn_1_150CC(HuVecF *a, HuVecF *b, HuVecF *c, HuVecF *d, HuVecF *dst, float t);
+void fn_1_1547C(HuVecF *src, int num, HuVecF *dst, float t);
+float fn_1_155EC(int i, int k, float t);
+void fn_1_15B60(HuVecF *ctrl, int num, HuVecF *dst, float t);
+void fn_1_15E1C(HuVecF *list, int idx, int num, HuVecF *p0, HuVecF *p1, HuVecF *p2, HuVecF *p3);
+void fn_1_15FF8(HuVecF *list, int idx, int num, HuVecF *p0, HuVecF *p1, HuVecF *t0, HuVecF *t1);
+void fn_1_16148(HuVecF *a, HuVecF *b, HuVecF *dst, float t);
+void fn_1_161AC(int playerNo, HuVecF *target, float rotY, float height, int time);
 void fn_1_1644C(void);
-int fn_1_16478(void);
+OSTick fn_1_16478(void);
 
 #endif
