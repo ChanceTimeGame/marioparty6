@@ -4,7 +4,11 @@
 #include "game/data.h"
 #include "game/flag.h"
 #include "game/frand.h"
+/* GWPlayerStarGet is called with an int result (no extsh) */
+#define GWPlayerStarGet GWPlayerStarGet_proto
 #include "game/gamework.h"
+#undef GWPlayerStarGet
+s32 GWPlayerStarGet(GW_PLAYER_ID playerNo);
 #include "game/hsfex.h"
 #include "game/hu3d.h"
 #include "game/memory.h"
@@ -43,6 +47,21 @@ typedef struct ResultPlayer_s {
     s32 starMdlId; /* 0x50 */
     s32 coinMdlId; /* 0x54 */
 } RESULT_PLAYER; /* size 0x58 */
+
+static inline s16 GWMgCoinGet(s32 playerNo)
+{
+    return GwPlayer[playerNo].mgCoin;
+}
+
+static inline s16 GWMgCoinBonusGet(s32 playerNo)
+{
+    return GwPlayer[playerNo].mgCoinBonus;
+}
+
+static inline BOOL GWTeamGet(void)
+{
+    return GwSystem.tagF;
+}
 
 void ObjectSetup(void);
 void fn_1_560(void);
@@ -137,7 +156,8 @@ void _epilog(void)
 void ObjectSetup(void)
 {
     s32 i;
-    HU3D_LIGHTID lightId;
+    s32 lightId;
+    s32 partyF;
     GXColor unusedColor = { 20 };
 
     OSReport("******* RESULT ObjectSetup *********\n");
@@ -150,7 +170,8 @@ void ObjectSetup(void)
         GwPlayerConf[i].grpNo = GwPlayer[i].team;
     }
     HuDataDirClose(MgDataTbl[lbl_1_bss_628].dataDir);
-    if (!GWPartyGet()) {
+    partyF = GwSystem.partyF;
+    if (!partyF) {
         omOvlReturnEx(1, 1);
         return;
     }
@@ -179,7 +200,7 @@ void ObjectSetup(void)
     Hu3DGLightInfinitytSet(lightId);
     lbl_1_bss_624 = 0;
     if (MgDataTbl[GwSystem.mgNo].type != MG_TYPE_BATTLE) {
-        if (GwSystem.tagF) {
+        if (GWTeamGet()) {
             HuPrcChildCreate(fn_1_49C4, 100, 0x3000, 0, (HUPROCESS *)lbl_1_bss_62C);
         } else {
             HuPrcChildCreate(fn_1_560, 100, 0x3000, 0, (HUPROCESS *)lbl_1_bss_62C);
@@ -292,8 +313,8 @@ float lbl_1_data_23C = 1.0f;
 void fn_1_940(void)
 {
     float unused;
-    float coinRot[4];
     float starRot[4];
+    float coinRot[4];
     s16 i;
     s16 j;
 
@@ -363,20 +384,18 @@ s32 lbl_1_data_240[2] = { -80, -80 };
 
 void fn_1_1074(void)
 {
-    HuVecF pos;
-    s32 rankNew[4];
-    s32 score[4];
     s32 charNo[4];
+    s32 score[4];
+    s32 rankNew[4];
+    HuVecF pos;
     s32 unused;
     s32 i;
+    s32 id;
+    s32 mdlId;
     s32 j;
     s32 k;
     s32 rank;
-    s32 id;
-    s32 rankNum;
     s32 language;
-    s16 mgCoin;
-    s16 mgCoinBonus;
 
     language = GWLanguageGet();
     if (language == 1) {
@@ -453,42 +472,42 @@ void fn_1_1074(void)
         fn_1_3488(i, 0);
         charNo[i] = GwPlayerConf[i].charNo;
         unused = charNo[i] * 4;
-        id = CharModelCreate(charNo[i], 2);
-        lbl_1_bss_488[i].charMdlId = id;
+        mdlId = CharModelCreate(charNo[i], 2);
+        lbl_1_bss_488[i].charMdlId = mdlId;
         lbl_1_bss_488[i].charMotId[0] = CharMotionCreate(charNo[i], DATANUM(DATA_mariomot, 0x00));
         lbl_1_bss_488[i].charMotId[1] = CharMotionCreate(charNo[i], DATANUM(DATA_mariomot, 0x24));
         lbl_1_bss_488[i].charMotId[2] = CharMotionCreate(charNo[i], DATANUM(DATA_mariomot, 0x25));
         CharMotionDataClose(charNo[i]);
-        Hu3DMotionSet(id, lbl_1_bss_488[i].charMotId[0]);
-        Hu3DModelAttrSet(id, HU3D_MOTATTR_LOOP);
-        Hu3DModelCameraSet(id, HU3D_CAM0);
+        Hu3DMotionSet(mdlId, lbl_1_bss_488[i].charMotId[0]);
+        Hu3DModelAttrSet(mdlId, HU3D_MOTATTR_LOOP);
+        Hu3DModelCameraSet(mdlId, HU3D_CAM0);
         Hu3D2Dto3D(&lbl_1_data_114[i], HU3D_CAM0, &pos);
-        Hu3DModelPosSetV(id, &pos);
-        Hu3DModelScaleSetV(id, &lbl_1_data_1D4[rank]);
-        Hu3DModelLayerSet(id, 1);
-        id = Hu3DModelCreateData(fn_1_C45C(DATANUM(DATA_result, 22)));
-        lbl_1_bss_488[i].crownMdlId = id;
-        Hu3DModelCameraSet(id, HU3D_CAM0);
+        Hu3DModelPosSetV(mdlId, &pos);
+        Hu3DModelScaleSetV(mdlId, &lbl_1_data_1D4[rank]);
+        Hu3DModelLayerSet(mdlId, 1);
+        mdlId = Hu3DModelCreateData(fn_1_C45C(DATANUM(DATA_result, 22)));
+        lbl_1_bss_488[i].crownMdlId = mdlId;
+        Hu3DModelCameraSet(mdlId, HU3D_CAM0);
         Hu3D2Dto3D(&lbl_1_data_144[i], HU3D_CAM0, &pos);
-        Hu3DModelPosSetV(id, &pos);
-        Hu3DModelLayerSet(id, 1);
-        Hu3DModelScaleSet(id, 0.0f, 0.0f, 0.0f);
-        Hu3DModelAttrSet(id, HU3D_ATTR_DISPOFF);
-        Hu3DModelAttrSet(id, HU3D_MOTATTR_LOOP);
-        id = Hu3DModelCreateData(fn_1_C45C(DATANUM(DATA_result, 25)));
-        lbl_1_bss_488[i].starMdlId = id;
-        Hu3DModelCameraSet(id, HU3D_CAM0);
+        Hu3DModelPosSetV(mdlId, &pos);
+        Hu3DModelLayerSet(mdlId, 1);
+        Hu3DModelScaleSet(mdlId, 0.0f, 0.0f, 0.0f);
+        Hu3DModelAttrSet(mdlId, HU3D_ATTR_DISPOFF);
+        Hu3DModelAttrSet(mdlId, HU3D_MOTATTR_LOOP);
+        mdlId = Hu3DModelCreateData(fn_1_C45C(DATANUM(DATA_result, 25)));
+        lbl_1_bss_488[i].starMdlId = mdlId;
+        Hu3DModelCameraSet(mdlId, HU3D_CAM0);
         Hu3D2Dto3D(&lbl_1_data_174[i], HU3D_CAM0, &pos);
-        Hu3DModelScaleSet(id, 0.6f, 0.6f, 0.6f);
-        Hu3DModelPosSetV(id, &pos);
-        Hu3DModelLayerSet(id, 1);
-        id = Hu3DModelCreateData(fn_1_C45C(DATANUM(DATA_result, 26)));
-        lbl_1_bss_488[i].coinMdlId = id;
-        Hu3DModelCameraSet(id, HU3D_CAM0);
+        Hu3DModelScaleSet(mdlId, 0.6f, 0.6f, 0.6f);
+        Hu3DModelPosSetV(mdlId, &pos);
+        Hu3DModelLayerSet(mdlId, 1);
+        mdlId = Hu3DModelCreateData(fn_1_C45C(DATANUM(DATA_result, 26)));
+        lbl_1_bss_488[i].coinMdlId = mdlId;
+        Hu3DModelCameraSet(mdlId, HU3D_CAM0);
         Hu3D2Dto3D(&lbl_1_data_1A4[i], HU3D_CAM0, &pos);
-        Hu3DModelScaleSet(id, 0.5f, 0.5f, 0.5f);
-        Hu3DModelPosSetV(id, &pos);
-        Hu3DModelLayerSet(id, 1);
+        Hu3DModelScaleSet(mdlId, 0.5f, 0.5f, 0.5f);
+        Hu3DModelPosSetV(mdlId, &pos);
+        Hu3DModelLayerSet(mdlId, 1);
     }
     for (i = 0; i < 9; i++) {
         for (j = 0; j < 10; j++) {
@@ -507,19 +526,17 @@ void fn_1_1074(void)
     }
     HuSprExecLayerCameraSet(64, HU3D_CAM0, 1);
     for (i = 0; i < 4; i++) {
-        score[i] = (GWPlayerStarGet(i) << 10) | GWPlayerCoinGet(i);
-        mgCoin = GwPlayer[i].mgCoin;
-        mgCoinBonus = GwPlayer[i].mgCoinBonus;
-        score[i] = mgCoinBonus + (mgCoin + score[i]);
+        score[i] = GWPlayerCoinGet(i) | (GWPlayerStarGet(i) << 10);
+        score[i] += GWMgCoinBonusGet(i) + GWMgCoinGet(i);
     }
     for (i = 0; i < 4; i++) {
-        rankNum = 0;
+        rank = 0;
         for (j = 0; j < 4; j++) {
             if (j != i && score[i] < score[j]) {
-                rankNum++;
+                rank++;
             }
         }
-        rankNew[i] = rankNum;
+        rankNew[i] = rank;
     }
     for (i = 0; i < 4; i++) {
         k = i * 2;
@@ -568,7 +585,6 @@ void fn_1_2068(void)
     s16 coinNum[5];
     float scale;
     float addTime;
-    float speed;
     s16 i;
     s16 j;
     s16 maxTime;
@@ -617,8 +633,7 @@ void fn_1_2068(void)
         coin[i] = GWPlayerCoinGet(i);
     }
     while (1) {
-        speed = (lbl_1_bss_624) ? 1.0f : 0.2f;
-        addTime += speed;
+        addTime += (lbl_1_bss_624) ? 1.0f : 0.2f;
         if (addTime >= 1.0f) {
             for (i = maxTime = 0; i < 4; i++) {
                 if (coinNum[i] == 0) {
@@ -666,15 +681,15 @@ void fn_1_2068(void)
 void fn_1_2878(void)
 {
     s32 unused;
-    s32 changeF[4];
-    float speed[4];
-    float speed2[4];
-    float scaleEnd[4];
     float scale[4];
+    float scaleEnd[4];
+    float speed2[4];
+    float speed[4];
+    s32 changeF[4];
     s32 i;
     s32 j;
-    s32 k;
     s32 sameNum;
+    s32 k;
 
     sameNum = 0;
     unused = 0;
