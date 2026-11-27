@@ -166,32 +166,17 @@ static GXColor miracleMasuEffColorTbl[2][3] = {
     { { 127, 127, 255, 255 }, { 127, 255, 255, 255 }, { 127, 190, 255, 255 } },
 };
 
-static int miracleTradeOrderTbl[3][16][2] = {
-    {
-        { 0, 2 }, { 0, 1 }, { 0, 3 }, { 0, 1 }, { 0, 2 }, { 0, 1 }, { 0, 4 }, { 0, 1 },
-        { 0, 1 }, { -1, 0 },
-    },
-    {
-        { 3, 2 }, { 0, 1 }, { 0, 2 }, { 0, 1 }, { 3, 0 }, { 4, 2 }, { 3, 0 }, { 1, 0 },
-        { 1, 5 }, { 2, 4 }, { -1, 0 },
-    },
-    {
-        { 3, 0 }, { 4, 2 }, { 0, 5 }, { 1, 2 }, { 0, 3 }, { 0, 1 }, { 4, 1 }, { 3, 1 },
-        { 2, 3 }, { 4, 5 }, { -1, 0 },
-    },
+static int miracleTradeOrderTbl[3][32] = {
+    { 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0, 4, 0, 1, 0, 1, -1 },
+    { 3, 2, 0, 1, 0, 2, 0, 1, 3, 0, 4, 2, 3, 0, 1, 0, 1, 5, 2, 4, -1 },
+    { 3, 0, 4, 2, 0, 5, 1, 2, 0, 3, 0, 1, 4, 1, 3, 1, 2, 3, 4, 5, -1 },
 };
 
-static int miracleLeftCharOrderTbl[16][2] = {
-    { 1, 2 }, { 1, 3 }, { 1, 0 }, { 1, 3 }, { 0, 2 }, { -1, 0 },
-};
+static int miracleLeftCharOrderTbl[32] = { 1, 2, 1, 3, 1, 0, 1, 3, 0, 2, -1 };
 
-static int miracleRightCharOrderTbl[2][16][2] = {
-    {
-        { 2, 0 }, { 2, 1 }, { 2, 1 }, { 2, 0 }, { 2, 0 }, { -1, 0 },
-    },
-    {
-        { 1, 0 }, { 2, 0 }, { 2, 0 }, { 1, 0 }, { 2, 0 }, { -1, 0 },
-    },
+static int miracleRightCharOrderTbl[2][32] = {
+    { 2, 0, 2, 1, 2, 1, 2, 0, 2, 0, -1 },
+    { 1, 0, 2, 0, 2, 0, 1, 0, 2, 0, -1 },
 };
 
 static HuVecF miracleTradePosTbl[3] = {
@@ -209,13 +194,10 @@ static int kettouGuideMotTbl[2][16] = {
     { 0x11001C, 0x11001F, 0x11002B, 0x110020, 0x11002C, 0x11002D, 0x11002E, -1 },
 };
 
-static int kettouPlayerMotTbl[2][2] = {
-    { 0x8E0027, 0x93001F },
-    { 0x8E0078, 0x93004B },
-};
+static int kettouPlayerMotTbl[4] = { 0x8E0027, 0x93001F, 0x8E0078, 0x93004B };
 
 static s32 kettouMotId[12];
-static s32 mgResultData[4];
+static s16 mgResultData[5];
 
 static int donkeyMotTbl[12] = {
     0xE000F, 0xE0011, 0xE0012, 0xE0015, 0xE0016, 0xE0013, 0xE0014, 0xE0018, 0xE0019, 0xE001A, 0xE001B, -1
@@ -225,7 +207,7 @@ static s32 donkeyMgFile[2] = { 0x5008C, 0x5008C };
 static s8 donkeyDiceTbl[8] = { 0, 1, 2, 3, 4, -1 };
 
 static int donkeyDiceResultTbl[5] = { 5, 10, 20, 30, -1 };
-static int donkeyRouletteBankTbl[5][2] = { { 0, 1 }, { 0, 1 }, { 0, 1 }, { 0, 1 }, { 0, 2 } };
+static int donkeyRouletteBankTbl[10] = { 0, 1, 0, 1, 0, 1, 0, 1, 0, 2 };
 
 static int koopaMotTbl[7] = { 0xE0001, 0xE0005, 0xE0003, 0xE0007, 0xE0004, 0xE000A, -1 };
 
