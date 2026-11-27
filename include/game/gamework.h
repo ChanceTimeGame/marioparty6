@@ -323,7 +323,7 @@ static inline s16 GWMgTimeGet(void)
     return GwMgTime;
 }
 
-static inline void GWMgTimeSet(s16 value)
+static inline void GWMgTimeSet(int value)
 {
     GwMgTime = value;
 }
@@ -336,6 +336,11 @@ static inline void GWSubGameNoSet(int subGameNo)
 static inline int GWSubGameNoGet()
 {
     return GwSystem.subGameNo;
+}
+
+static inline BOOL GWMgInstDispFGet(void)
+{
+    return GwSystem.mgInstDispF;
 }
 
 
