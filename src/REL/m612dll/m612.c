@@ -112,8 +112,7 @@ void fn_1_54D4(OMOBJ *obj);
 void fn_1_5924(OMOBJ *obj);
 float fn_1_5E00(s32 dir);
 
-/* Defined by part 2, after fn_1_5924: .data keeps definition order.
-   lbl_1_data_198 needs ATTRIBUTE_ALIGN(8): the target has a 4-byte gap at .data 0x194 before it. */
+/* Defined by part 2, after fn_1_5924: .data keeps definition order */
 extern s8 lbl_1_data_198[][60];
 extern s8 lbl_1_data_16B0[][7];
 
@@ -1058,17 +1057,546 @@ void fn_1_2CEC(s32 playerNo)
 }
 
 /* @@PART2@@ */
-/* placeholder until part 2 splices in */
-s32 fn_1_4038(s32 playerNo) { return 0; }
-s32 fn_1_4150(s32 playerNo) { return 0; }
-s32 fn_1_42C4(s32 playerNo) { return 0; }
-s32 fn_1_4480(s32 playerNo) { return 0; }
-void fn_1_48D4(void) { }
-void fn_1_4B94(s32 playerNo) { }
-void fn_1_51D8(void) { }
-void fn_1_54D4(OMOBJ *obj) { }
-void fn_1_5924(OMOBJ *obj) { }
-float fn_1_5E00(s32 dir) { return 0.0f; }
+void fn_1_5E90(s32 dir, HuVecF *pos, float dist);
+void fn_1_5EF0(s32 dir, s32 *x, s32 *y);
+void fn_1_5F58(s32 playerNo);
+
+s32 lbl_1_data_128[4] = { 1, 2, 4, 8 };
+s32 lbl_1_data_138[4] = { 0, 640, 0, 640 };
+s32 lbl_1_data_148[4] = { 0, 0, 480, 480 };
+s32 lbl_1_data_158[4] = { 640, 0, 640, 0 };
+s32 lbl_1_data_168[4] = { 480, 480, 0, 0 };
+
+s32 fn_1_4038(s32 player)
+{
+    s16 stkX;
+    s16 stkY;
+    s32 dir;
+
+    dir = 0;
+    stkX = HuPadStkX[lbl_1_bss_43C[player]];
+    stkY = HuPadStkY[lbl_1_bss_43C[player]];
+    if (stkX < 30 && stkX > -30) {
+        stkX = 0;
+    }
+    if (stkY < 30 && stkY > -30) {
+        stkY = 0;
+    }
+    if (stkX != 0 || stkY != 0) {
+        if (stkX > 0) {
+            dir = 2;
+        }
+        else if (stkX < 0) {
+            dir = 1;
+        }
+        else if (stkY < 0) {
+            dir = 4;
+        }
+        else if (stkY > 0) {
+            dir = 3;
+        }
+    }
+    return dir;
+}
+
+s32 fn_1_4150(s32 player)
+{
+    s32 x;
+    s32 y;
+    s32 blocked;
+    s32 shift;
+    s32 bit;
+    s8 row;
+
+    if (lbl_1_bss_3AC[player] == 0 && lbl_1_bss_41C[player] != 3) {
+        return 0;
+    }
+    x = (lbl_1_bss_3BC[player] & 0xF0) >> 4;
+    y = lbl_1_bss_3BC[player] & 0xF;
+    switch (lbl_1_bss_41C[player]) {
+        case 2:
+            x++;
+            break;
+        case 1:
+            x--;
+            break;
+        case 4:
+            y++;
+            break;
+        case 3:
+            y--;
+            break;
+    }
+    row = lbl_1_data_16B0[lbl_1_bss_8][y];
+    if (lbl_1_bss_C) {
+        shift = x;
+    }
+    else {
+        shift = 6 - x;
+    }
+    bit = 1 << shift;
+    if (bit & row) {
+        blocked = 1;
+    }
+    else {
+        blocked = 0;
+    }
+    if (blocked) {
+        return 0;
+    }
+    return 1;
+}
+
+s32 fn_1_42C4(s32 player)
+{
+    if (lbl_1_bss_41C[player] == lbl_1_bss_48[lbl_1_bss_3AC[player]]) {
+        if (lbl_1_bss_48[lbl_1_bss_3AC[player] + 1] == 0) {
+            return 3;
+        }
+        return 0;
+    }
+    switch (lbl_1_bss_41C[player]) {
+        case 2:
+            if (lbl_1_bss_48[lbl_1_bss_3AC[player] - 1] == 1) {
+                return 1;
+            }
+            break;
+        case 1:
+            if (lbl_1_bss_48[lbl_1_bss_3AC[player] - 1] == 2) {
+                return 1;
+            }
+            break;
+        case 4:
+            if (lbl_1_bss_48[lbl_1_bss_3AC[player] - 1] == 3) {
+                return 1;
+            }
+            break;
+        case 3:
+            if (lbl_1_bss_48[lbl_1_bss_3AC[player] - 1] == 4) {
+                return 1;
+            }
+            break;
+    }
+    return 2;
+}
+
+s32 fn_1_4480(s32 player)
+{
+    s32 dif;
+    s32 dir;
+    s32 result;
+    s32 x;
+    s32 y;
+
+    dif = GwPlayerConf[player].comDif;
+    result = lbl_1_bss_48[lbl_1_bss_3AC[player]];
+    if (lbl_1_bss_3FC[player] > 0) {
+        lbl_1_bss_3FC[player]--;
+    }
+    if (lbl_1_bss_3AC[player] != 0) {
+        if (lbl_1_bss_48[lbl_1_bss_3AC[player]] == lbl_1_bss_48[lbl_1_bss_3AC[player] - 1]
+            && (lbl_1_data_30[dif] == 0 || lbl_1_data_30[dif] != lbl_1_bss_3CC[player])) {
+            lbl_1_bss_3FC[player] = -1;
+            return result;
+        }
+        if (lbl_1_bss_3FC[player] == 0) {
+            if (lbl_1_data_20[dif] != 0 && lbl_1_bss_48[lbl_1_bss_3AC[player] + 1] != 0 && rand8() % lbl_1_data_20[dif] == 0) {
+                while (TRUE) {
+                    dir = (rand8() % 4) + 1;
+                    switch (lbl_1_bss_48[lbl_1_bss_3AC[player] - 1]) {
+                        case 1:
+                            if (dir == 2) {
+                                continue;
+                            }
+                            break;
+                        case 2:
+                            if (dir == 1) {
+                                continue;
+                            }
+                            break;
+                        case 3:
+                            if (dir == 4) {
+                                continue;
+                            }
+                            break;
+                        case 4:
+                            if (dir == 3) {
+                                continue;
+                            }
+                            break;
+                    }
+                    x = (lbl_1_bss_3BC[player] & 0xF0) >> 4;
+                    y = lbl_1_bss_3BC[player] & 0xF;
+                    fn_1_5EF0(dir, &x, &y);
+                    if (x < 0 || x > 6 || y < 0 || y > 6) {
+                        continue;
+                    }
+                    if (lbl_1_data_40[dif] == 0 && (Hu3DModelAttrGet(lbl_1_bss_4AC.panelMdlId[player][x + (y * 7)]) & 1)) {
+                        continue;
+                    }
+                    result = dir;
+                    break;
+                }
+            }
+            lbl_1_bss_3CC[player] = 0;
+            lbl_1_bss_3FC[player] = -1;
+            return result;
+        }
+        else if (lbl_1_bss_3FC[player] == -1) {
+            lbl_1_bss_3FC[player] = lbl_1_data_0[dif] + (rand8() % lbl_1_data_10[dif]);
+        }
+        return 0;
+    }
+    return result;
+}
+
+void fn_1_48D4(void)
+{
+    s32 i;
+
+    Hu3DCameraCreate(15);
+    for (i = 0; i < 4; i++) {
+        Hu3DCameraPerspectiveSet(lbl_1_data_128[i], 45.0f, 20.0f, 15000.0f, 1.2f);
+        Hu3DCameraViewportSet(lbl_1_data_128[i], lbl_1_data_138[i], lbl_1_data_148[i], lbl_1_data_158[i], lbl_1_data_168[i], 0.0f, 1.0f);
+        Hu3DCameraScissorSet(lbl_1_data_128[i], lbl_1_data_138[i], lbl_1_data_148[i], 640, 480);
+        CenterM[i].x = 0.0f;
+        CenterM[i].y = 150.0f;
+        CenterM[i].z = 0.0f;
+        CRotM[i].x = -50.0f;
+        CRotM[i].y = 0.0f;
+        CRotM[i].z = 0.0f;
+        CZoomM[i] = 700.0f;
+    }
+}
+
+void fn_1_4B94(s32 mode)
+{
+    float t;
+    float t2;
+    s32 w;
+    s32 h;
+    s32 vpH;
+    s32 i;
+    s32 vpY;
+    s32 sc[4][4];
+    s32 vp[4][4];
+
+    t = 0.016666668f * (lbl_1_bss_14 + 60);
+    t2 = 0.016666666666666666 * lbl_1_bss_14;
+    w = 320.0f * t;
+    h = 240.0f * t;
+    vpH = 280.0f * t;
+    vpY = 280.0f * t2;
+    switch (mode) {
+        case 0:
+            sc[0][0] = w;
+            sc[0][1] = h;
+            sc[0][2] = 0;
+            sc[0][3] = 0;
+            sc[1][0] = 640 - w;
+            sc[1][1] = h;
+            sc[1][2] = w;
+            sc[1][3] = 0;
+            sc[2][0] = w;
+            sc[2][1] = 480 - h;
+            sc[2][2] = 0;
+            sc[2][3] = h;
+            sc[3][0] = 640 - w;
+            sc[3][1] = 480 - h;
+            sc[3][2] = w;
+            sc[3][3] = h;
+            vp[0][0] = w;
+            vp[0][1] = vpH;
+            vp[0][2] = 0;
+            vp[0][3] = 0;
+            vp[1][0] = 640 - w;
+            vp[1][1] = vpH;
+            vp[1][2] = w;
+            vp[1][3] = 0;
+            vp[2][0] = w;
+            vp[2][1] = 560 - vpH;
+            vp[2][2] = 0;
+            vp[2][3] = vpY + 200;
+            vp[3][0] = 640 - w;
+            vp[3][1] = 560 - vpH;
+            vp[3][2] = w;
+            vp[3][3] = vpY + 200;
+            break;
+        case 1:
+            sc[0][0] = 640 - w;
+            sc[0][1] = h;
+            sc[0][2] = 0;
+            sc[0][3] = 0;
+            sc[1][0] = w;
+            sc[1][1] = h;
+            sc[1][2] = 640 - w;
+            sc[1][3] = 0;
+            sc[2][0] = 640 - w;
+            sc[2][1] = 480 - h;
+            sc[2][2] = 0;
+            sc[2][3] = h;
+            sc[3][0] = w;
+            sc[3][1] = 480 - h;
+            sc[3][2] = 640 - w;
+            sc[3][3] = h;
+            vp[0][0] = 640 - w;
+            vp[0][1] = vpH;
+            vp[0][2] = 0;
+            vp[0][3] = 0;
+            vp[1][0] = w;
+            vp[1][1] = vpH;
+            vp[1][2] = 640 - w;
+            vp[1][3] = 0;
+            vp[2][0] = 640 - w;
+            vp[2][1] = 560 - vpH;
+            vp[2][2] = 0;
+            vp[2][3] = vpY + 200;
+            vp[3][0] = w;
+            vp[3][1] = 560 - vpH;
+            vp[3][2] = 640 - w;
+            vp[3][3] = vpY + 200;
+            break;
+        case 2:
+            sc[0][0] = w;
+            sc[0][1] = 480 - h;
+            sc[0][2] = 0;
+            sc[0][3] = 0;
+            sc[1][0] = 640 - w;
+            sc[1][1] = 480 - h;
+            sc[1][2] = w;
+            sc[1][3] = 0;
+            sc[2][0] = w;
+            sc[2][1] = h;
+            sc[2][2] = 0;
+            sc[2][3] = 480 - h;
+            sc[3][0] = 640 - w;
+            sc[3][1] = h;
+            sc[3][2] = w;
+            sc[3][3] = 480 - h;
+            vp[0][0] = w;
+            vp[0][1] = 560 - vpH;
+            vp[0][2] = 0;
+            vp[0][3] = 0;
+            vp[1][0] = 640 - w;
+            vp[1][1] = 560 - vpH;
+            vp[1][2] = w;
+            vp[1][3] = 0;
+            vp[2][0] = w;
+            vp[2][1] = vpH;
+            vp[2][2] = 0;
+            vp[2][3] = 200 - vpY;
+            vp[3][0] = 640 - w;
+            vp[3][1] = vpH;
+            vp[3][2] = w;
+            vp[3][3] = 200 - vpY;
+            break;
+        case 3:
+            sc[0][0] = 640 - w;
+            sc[0][1] = 480 - h;
+            sc[0][2] = 0;
+            sc[0][3] = 0;
+            sc[1][0] = w;
+            sc[1][1] = 480 - h;
+            sc[1][2] = 640 - w;
+            sc[1][3] = 0;
+            sc[2][0] = 640 - w;
+            sc[2][1] = h;
+            sc[2][2] = 0;
+            sc[2][3] = 480 - h;
+            sc[3][0] = w;
+            sc[3][1] = h;
+            sc[3][2] = 640 - w;
+            sc[3][3] = 480 - h;
+            vp[0][0] = 640 - w;
+            vp[0][1] = 560 - vpH;
+            vp[0][2] = 0;
+            vp[0][3] = 0;
+            vp[1][0] = w;
+            vp[1][1] = 560 - vpH;
+            vp[1][2] = 640 - w;
+            vp[1][3] = 0;
+            vp[2][0] = 640 - w;
+            vp[2][1] = vpH;
+            vp[2][2] = 0;
+            vp[2][3] = 200 - vpY;
+            vp[3][0] = w;
+            vp[3][1] = vpH;
+            vp[3][2] = 640 - w;
+            vp[3][3] = 200 - vpY;
+            break;
+    }
+    for (i = 0; i < 4; i++) {
+        Hu3DCameraViewportSet(lbl_1_data_74[i], vp[i][2], vp[i][3], vp[i][0], vp[i][1], 0.0f, 1.0f);
+        Hu3DCameraScissorSet(lbl_1_data_74[i], sc[i][2] + 2, sc[i][3] + 2, sc[i][0] - 2, sc[i][1] - 2);
+    }
+}
+
+void fn_1_51D8(void)
+{
+    Hu3DCameraViewportSet(lbl_1_data_74[0], 0.0f, 0.0f, 320.0f, 280.0f, 0.0f, 1.0f);
+    Hu3DCameraScissorSet(lbl_1_data_74[0], 0, 0, 318, 238);
+    Hu3DCameraPerspectiveSet(lbl_1_data_74[0], 45.0f, 20.0f, 15000.0f, 1.1428572f);
+    Hu3DCameraViewportSet(lbl_1_data_74[1], 320.0f, 0.0f, 320.0f, 280.0f, 0.0f, 1.0f);
+    Hu3DCameraScissorSet(lbl_1_data_74[1], 322, 0, 318, 238);
+    Hu3DCameraPerspectiveSet(lbl_1_data_74[1], 45.0f, 20.0f, 15000.0f, 1.1428572f);
+    Hu3DCameraViewportSet(lbl_1_data_74[2], 0.0f, 200.0f, 320.0f, 280.0f, 0.0f, 1.0f);
+    Hu3DCameraScissorSet(lbl_1_data_74[2], 0, 242, 318, 238);
+    Hu3DCameraPerspectiveSet(lbl_1_data_74[2], 45.0f, 20.0f, 15000.0f, 1.1428572f);
+    Hu3DCameraViewportSet(lbl_1_data_74[3], 320.0f, 200.0f, 320.0f, 280.0f, 0.0f, 1.0f);
+    Hu3DCameraScissorSet(lbl_1_data_74[3], 322, 242, 318, 238);
+    Hu3DCameraPerspectiveSet(lbl_1_data_74[3], 45.0f, 20.0f, 15000.0f, 1.1428572f);
+}
+
+void fn_1_54D4(OMOBJ *obj)
+{
+    s32 i;
+    float t;
+    float t2;
+    HuVecF pos;
+
+    for (i = 0; i < 4; i++) {
+        switch (lbl_1_bss_36C[i]) {
+            case 0:
+                lbl_1_bss_36C[i] = 1;
+                lbl_1_bss_37C[i] = 0;
+                break;
+            case 1:
+                break;
+            case 2:
+                Hu3DModelPosGet(lbl_1_bss_48C[i], &pos);
+                pos.y = 600.0f;
+                Hu3DModelPosSetV(lbl_1_bss_39C[i], &pos);
+                lbl_1_bss_37C[i] = 0;
+                lbl_1_bss_36C[i] = 3;
+                break;
+            case 3:
+                lbl_1_bss_37C[i]++;
+                if (lbl_1_bss_37C[i] > 30) {
+                    lbl_1_bss_37C[i] = 0;
+                    lbl_1_bss_36C[i] = 4;
+                    Hu3DModelAttrReset(lbl_1_bss_39C[i], HU3D_ATTR_DISPOFF);
+                }
+                break;
+            case 4:
+                t = 0.033333335f * lbl_1_bss_37C[i];
+                Hu3DModelPosGet(lbl_1_bss_39C[i], &pos);
+                pos.y = 1300.0f - (1300.0f * t) - 700.0f;
+                Hu3DModelPosSetV(lbl_1_bss_39C[i], &pos);
+                if (lbl_1_bss_37C[i] == 30) {
+                    lbl_1_bss_37C[i] = 0;
+                    lbl_1_bss_36C[i] = 5;
+                    HuAudFXPlay(0x6A3);
+                }
+                else {
+                    lbl_1_bss_37C[i]++;
+                }
+                break;
+            case 5:
+                t2 = 0.033333335f * lbl_1_bss_37C[i];
+                Hu3DModelPosGet(lbl_1_bss_39C[i], &pos);
+                pos.y = (1300.0f * t2) - 700.0f;
+                Hu3DModelPosSetV(lbl_1_bss_39C[i], &pos);
+                if (lbl_1_bss_37C[i] == 30) {
+                    Hu3DModelAttrSet(lbl_1_bss_39C[i], HU3D_ATTR_DISPOFF);
+                    lbl_1_bss_37C[i] = 0;
+                    lbl_1_bss_36C[i] = 1;
+                }
+                else {
+                    lbl_1_bss_37C[i]++;
+                }
+                break;
+        }
+    }
+}
+
+void fn_1_5924(OMOBJ *obj)
+{
+    float rotY;
+    s32 x;
+    s32 y;
+    HuVecF pos;
+
+    switch (lbl_1_bss_308) {
+        case 0:
+            Hu3DMotionSet(lbl_1_bss_300, lbl_1_bss_2F8);
+            lbl_1_bss_3BC[0] = 0x37;
+            lbl_1_bss_308 = 1;
+            break;
+        case 1:
+            break;
+        case 2:
+            if (lbl_1_bss_48[lbl_1_bss_2F0] != 0) {
+                rotY = fn_1_5E00(lbl_1_bss_48[lbl_1_bss_2F0]);
+                Hu3DModelRotSet(lbl_1_bss_300, 0.0f, rotY, 0.0f);
+                lbl_1_bss_304 = 10;
+                lbl_1_bss_308 = 3;
+            }
+            else {
+                lbl_1_bss_308 = 4;
+            }
+            break;
+        case 3:
+            lbl_1_bss_304--;
+            if (lbl_1_bss_304 >= 0) {
+                Hu3DModelPosGet(lbl_1_bss_300, &pos);
+                switch (lbl_1_bss_48[lbl_1_bss_2F0]) {
+                    case 1:
+                        pos.x -= 20.0f;
+                        break;
+                    case 2:
+                        pos.x += 20.0f;
+                        break;
+                    case 3:
+                        pos.z -= 20.0f;
+                        break;
+                    case 4:
+                        pos.z += 20.0f;
+                        break;
+                }
+                Hu3DModelPosSetV(lbl_1_bss_300, &pos);
+            }
+            else {
+                lbl_1_bss_308 = 2;
+                x = (lbl_1_bss_3BC[0] & 0xF0) >> 4;
+                y = lbl_1_bss_3BC[0] & 0xF;
+                switch (lbl_1_bss_48[lbl_1_bss_2F0]) {
+                    case 1:
+                        x--;
+                        break;
+                    case 2:
+                        x++;
+                        break;
+                    case 4:
+                        y++;
+                        break;
+                    case 3:
+                        y--;
+                        break;
+                }
+                if (x >= 0 && x < 7 && y >= 0 && y < 7) {
+                    Hu3DModelAttrReset(lbl_1_bss_4AC.panelMdlId[0][x + (y * 7)], 0x40000002);
+                    lbl_1_bss_3BC[0] = (x << 4) | (y & 0xF);
+                }
+                lbl_1_bss_2F0++;
+                HuAudFXPlayVolPan(0x6A6, 32.0f + (11.142858f * y), 48.0f + (4.571429f * x));
+            }
+            break;
+        case 4:
+            Hu3DModelRotSet(lbl_1_bss_300, 0.0f, 0.0f, 0.0f);
+            lbl_1_bss_14 = 0;
+            lbl_1_bss_308 = 6;
+            break;
+        case 5:
+            if (lbl_1_bss_14 > 300) {
+                lbl_1_bss_308 = 6;
+            }
+            lbl_1_bss_14++;
+            break;
+        case 6:
+            break;
+    }
+}
+
 s8 lbl_1_data_198[90][60] ATTRIBUTE_ALIGN(8) = {
     { 3, 1, 3, 3, 2, 2, 3, 3, 1, 3, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
     { 3, 1, 3, 3, 2, 2, 3, 3, 3, 1, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
@@ -1173,4 +1701,92 @@ s8 lbl_1_data_16B0[10][7] = {
     { 0, 0, 0, 0, 0, 0, 0 },
     { 0, 0, 0, 0, 0, 0, 0 },
 };
+
+float fn_1_5E00(s32 dir)
+{
+    float rot = 0.0f;
+
+    switch (dir) {
+        case 1:
+            rot = 270.0f;
+            break;
+        case 2:
+            rot = 90.0f;
+            break;
+        case 3:
+            rot = 180.0f;
+            break;
+        case 4:
+            rot = 0.0f;
+            break;
+    }
+    return rot;
+}
+
+void fn_1_5E90(s32 dir, HuVecF *pos, float dist)
+{
+    switch (dir) {
+        case 1:
+            pos->x -= dist;
+            break;
+        case 2:
+            /* Retail assigns instead of adding */
+            pos->x = dist;
+            break;
+        case 3:
+            pos->z -= dist;
+            break;
+        case 4:
+            pos->z += dist;
+            break;
+    }
+}
+
+void fn_1_5EF0(s32 dir, s32 *x, s32 *y)
+{
+    switch (dir) {
+        case 1:
+            (*x)--;
+            break;
+        case 2:
+            (*x)++;
+            break;
+        case 3:
+            (*y)--;
+            break;
+        case 4:
+            (*y)++;
+            break;
+    }
+}
+
+void fn_1_5F58(s32 player)
+{
+    s32 x;
+    s32 y;
+    s32 i;
+
+    i = 0;
+    x = 3;
+    y = 7;
+    for (; lbl_1_bss_48[i] != 0; i++) {
+        switch (lbl_1_bss_48[i]) {
+            case 1:
+                x--;
+                break;
+            case 2:
+                x++;
+                break;
+            case 3:
+                y--;
+                break;
+            case 4:
+                y++;
+                break;
+        }
+        if (x >= 0 && x < 7 && y >= 0 && y < 7) {
+            Hu3DModelAttrReset(lbl_1_bss_4AC.panelMdlId[player][x + (y * 7)], 0x40000002);
+        }
+    }
+}
 /* @@END@@ */
