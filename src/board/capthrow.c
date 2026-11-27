@@ -36,7 +36,8 @@ typedef struct CapEventWork_s {
     /* 0xBDC */ void *effGlow;
     /* 0xBE0 */ void *effRing;
     /* 0xBE4 */ void *effCoin;
-    /* 0xBE8 */ u8 unkBE8[0xBF4 - 0xBE8];
+    /* 0xBE8 */ void *coinMan;
+    /* 0xBEC */ u8 unkBEC[0xBF4 - 0xBEC];
 } CAPEVENTWORK;
 
 /* capevent.c prototypes as retail calls them here (local declarations, not capevent.h). */
@@ -57,6 +58,12 @@ float mbev_CapAngleSumLerp(float t, float start, float end);
 int mbev_CapCoinDisp(int playerNo, int coinNum, int arg2, int arg3);
 void mbev_CapCoinAdd(void *effCoin, int playerNo, int coinNum, int arg3);
 void mbev_CapPlayerMotShiftWait(int playerNo, int motNo, u32 attr, BOOL waitF);
+void *mbev_CapCoinManCreate(void);
+int mbev_CapCoinManNumGet(void *coinMan);
+int mbev_CapCoinManAdd(void *coinMan, HuVecF *start, HuVecF *end, int playerNo, int arg4);
+
+/* Retail calls sprintf unprototyped here (no crclr before the call). */
+int sprintf();
 
 #define CAPTHROW_RANDF() ((1.0f/268435456.0f)*mbRandMod(0x10000000))
 
@@ -345,6 +352,226 @@ static void ev_CapTogezoOMExec(OMOBJ *obj)
             }
             break;
     }
+}
+
+static int kuriboCoinTbl[6] = { 3, 5, 10, 20, 30, 40 };
+static s8 diceKuriboNumTbl[5] = { 0, 1, 2, 3, -1 };
+
+void mbev_CapKuribo(void)
+{
+    CAPEVENTWORK *work = HuPrcCurrentGet()->property;
+    int playerNo;
+    int kuriboId;
+    int targetNo;
+    int shadowId;
+    int targetObjId;
+    int i;
+    int coinVal;
+    int interval;
+    int counter;
+    int coinAdd;
+    int dispId1;
+    int dispId2;
+    float t;
+    int motData[9];
+    HuVecF playerPos;
+    HuVecF objPos;
+    HuVecF pos;
+    HuVecF rot;
+    HuVecF targetStartPos;
+    HuVecF coinStart;
+    HuVecF coinEnd;
+    HuVecF dispPos;
+    char coinStr[16];
+    int coin[2];
+    int unused;
+
+    mbev_CapWait(work);
+    work->coinMan = mbev_CapCoinManCreate();
+    playerNo = work->playerNo;
+    targetNo = work->targetNo;
+    coin[0] = mbPlayerCoinGet(targetNo);
+    coin[1] = mbPlayerCoinGet(playerNo);
+    mbPlayerPosGet(targetNo, &targetStartPos);
+    mbPlayerPosGet(playerNo, &playerPos);
+    motData[0] = 0xF0002;
+    motData[1] = 0xF0003;
+    motData[2] = -1;
+    kuriboId = mbev_CapObjCreate(work->objList, 0xF0001, motData, 0, 5, 0);
+    mbObjMotionSet(kuriboId, 1, 0x40000001);
+    mbObjDispSet(kuriboId, FALSE);
+    shadowId = mbev_CapObjCreate(work->objList, 0xF001A, NULL, 1, 5, 0);
+    mbObjDispSet(shadowId, FALSE);
+    targetObjId = mbev_CapObjCreate(work->objList, 0xF001B, NULL, 1, 5, 0);
+    mbObjDispSet(targetObjId, FALSE);
+    mbObjDispSet(kuriboId, TRUE);
+    mbObjDispSet(shadowId, TRUE);
+    mbAudFXPlay(0x40C);
+    for(i=0; i<=60.0f; i++) {
+        t = i/60.0f;
+        objPos.x = playerPos.x;
+        objPos.y = (250.0f+playerPos.y)+(500.0*HuCos(90.0f*t));
+        objPos.z = playerPos.z;
+        mbObjPosSetV(kuriboId, &objPos);
+        mbObjPosSetV(shadowId, &objPos);
+        HuPrcVSleep();
+    }
+    mbObjMotionShiftSet(kuriboId, 2, 0.0f, 8.0f, 0x40000001);
+    mbAudFXPlay(0x3D5);
+    mbWinCreate(2, 0x360000, 2);
+    mbWinTopInsertMesSet(mbPlayerNameMesGet(targetNo), 0);
+    mbWinTopWait();
+    mbObjMotionShiftSet(kuriboId, 1, 0.0f, 8.0f, 0x40000001);
+    if(mbPlayerCoinGet(playerNo) > 0) {
+        for(i=1; i<60.0f; i++) {
+            t = i/60.0f;
+            t = HuSin(90.0f*t);
+            objPos.x = playerPos.x-(1.5f*(100.0f*t));
+            objPos.y = 250.0f+playerPos.y;
+            objPos.z = playerPos.z;
+            mbObjPosSetV(kuriboId, &objPos);
+            mbObjPosSetV(shadowId, &objPos);
+            HuPrcVSleep();
+        }
+        switch(mbRandMod(32768)%10) {
+            case 0:
+            case 1:
+                coinVal = 0;
+                break;
+            case 2:
+            case 3:
+            case 4:
+                coinVal = 1;
+                break;
+            case 5:
+            case 6:
+            case 7:
+                coinVal = 2;
+                break;
+            default:
+                coinVal = 3;
+                break;
+        }
+        coinVal = mbDiceExec(playerNo, 13, diceKuriboNumTbl, coinVal, TRUE, TRUE, NULL, 0);
+        coinVal = kuriboCoinTbl[coinVal-1];
+        HuPrcSleep(30);
+        mbWipeDissolveFadeOutTime(1);
+        mbDiceNumKill(playerNo);
+        for(i=0; i<4; i++) {
+            if(i != playerNo) {
+                mbPlayerDispSet(i, FALSE);
+            }
+        }
+        objPos.x = playerPos.x-100.0f;
+        objPos.y = 250.0f+playerPos.y;
+        objPos.z = playerPos.z;
+        mbObjPosSetV(kuriboId, &objPos);
+        mbObjPosSetV(shadowId, &objPos);
+        mbWipeDissolveFadeIn();
+        mbAudFXPlay(0x40C);
+        mbPlayerDispSet(targetNo, TRUE);
+        mbPlayerColSnapPlayerSet(targetNo, FALSE);
+        mbObjDispSet(targetObjId, TRUE);
+        for(i=0; i<=60.0f; i++) {
+            t = i/60.0f;
+            pos.x = 100.0f+playerPos.x;
+            pos.y = (250.0f+playerPos.y)+(500.0*HuCos(90.0f*t));
+            pos.z = playerPos.z;
+            rot.x = rot.z = 0.0f;
+            rot.y = 720.0*HuSin(90.0f*t);
+            mbPlayerPosSetV(targetNo, &pos);
+            mbPlayerRotSetV(targetNo, &rot);
+            mbObjPosSetV(targetObjId, &pos);
+            HuPrcVSleep();
+        }
+        mbObjMotionShiftSet(kuriboId, 2, 0.0f, 8.0f, 0x40000001);
+        sprintf(coinStr, "%d", coinVal);
+        mbWinCreate(2, 0x360001, 2);
+        mbWinTopInsertMesSet((u32)coinStr, 0);
+        mbWinTopInsertMesSet(mbPlayerNameMesGet(targetNo), 1);
+        mbWinTopWait();
+        mbObjMotionShiftSet(kuriboId, 1, 0.0f, 8.0f, 0x40000001);
+        coin[0] = coinVal;
+        if(coin[0] > mbPlayerCoinGet(playerNo)) {
+            coin[0] = coinVal = mbPlayerCoinGet(playerNo);
+        }
+        if(coin[0] > 30) {
+            interval = 0;
+        } else if(coin[0] > 20) {
+            interval = 1;
+        } else if(coin[0] > 10) {
+            interval = 2;
+        } else {
+            interval = 3;
+        }
+        unused = counter = 0;
+        do {
+            if(coin[0] > 0 && ++counter > interval) {
+                mbPlayerPosGet(playerNo, &coinStart);
+                mbPlayerPosGet(targetNo, &coinEnd);
+                coinStart.y += 150.0f;
+                coinEnd.y += 150.0f;
+                coinAdd = mbev_CapCoinManAdd(work->coinMan, &coinStart, &coinEnd, targetNo, 1);
+                if(coinAdd != 0) {
+                    mbPlayerCoinAdd(playerNo, -coinAdd);
+                    coin[0] -= coinAdd;
+                    counter = 0;
+                }
+            }
+            HuPrcVSleep();
+        } while(coin[0] > 0 || mbev_CapCoinManNumGet(work->coinMan) > 0);
+        mbAudFXPlay(0xF);
+        mbPlayerWinLoseVoicePlay(targetNo, 12, 0x243);
+        mbPlayerMotionShiftSet(targetNo, 12, 0.0f, 8.0f, 0);
+        mbPlayerPosGet(targetNo, &dispPos);
+        dispPos.y += 250.0f;
+        dispId1 = mbCoinDispCapsuleCreate(&dispPos, coinVal);
+        mbPlayerMotionShiftSet(playerNo, 13, 0.0f, 8.0f, 0);
+        mbPlayerPosGet(playerNo, &dispPos);
+        dispPos.y += 250.0f;
+        dispId2 = mbCoinDispCapsuleCreate(&dispPos, -coinVal);
+        while(!mbCoinDispKillCheck(dispId1) || !mbCoinDispKillCheck(dispId2)) {
+            HuPrcVSleep();
+        }
+        mbWipeDissolveFadeOutTime(1);
+        for(i=0; i<4; i++) {
+            mbPlayerMotionShiftSet(i, 1, 0.0f, 8.0f, 0x40000001);
+            mbPlayerDispSet(i, TRUE);
+        }
+        mbObjDispSet(targetObjId, FALSE);
+        mbPlayerPosSetV(targetNo, &targetStartPos);
+        mbPlayerColSnapPlayerSet(targetNo, TRUE);
+        objPos.x = playerPos.x;
+        objPos.y = 250.0f+playerPos.y;
+        objPos.z = playerPos.z;
+        mbObjPosSetV(kuriboId, &objPos);
+        mbObjPosSetV(shadowId, &objPos);
+        mbWipeDissolveFadeIn();
+    } else {
+        mbAudFXPlay(0x3D6);
+        mbWinCreate(2, 0x360003, 2);
+        mbWinTopWait();
+    }
+    mbObjMotionShiftSet(kuriboId, 2, 0.0f, 8.0f, 0x40000001);
+    mbAudFXPlay(0x3D5);
+    mbWinCreate(2, 0x360002, 2);
+    mbWinTopWait();
+    mbObjMotionShiftSet(kuriboId, 1, 0.0f, 8.0f, 0x40000001);
+    mbAudFXPlay(0x40C);
+    for(i=0; i<=60.0f; i++) {
+        t = i/60.0f;
+        objPos.y = (250.0f+playerPos.y)+(500.0*HuSin(90.0f*t));
+        mbObjPosSetV(kuriboId, &objPos);
+        mbObjPosSetV(shadowId, &objPos);
+        HuPrcVSleep();
+    }
+    mbObjDispSet(kuriboId, FALSE);
+    mbObjDispSet(shadowId, FALSE);
+    HuPrcEnd();
+}
+
+void mbev_CapKuriboKill(void)
+{
 }
 
 /* @@PART2@@ */
