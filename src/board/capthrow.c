@@ -6,6 +6,7 @@
 #include "game/board/dice.h"
 #include "game/board/exit.h"
 #include "game/board/masu.h"
+#include "game/board/math.h"
 #include "game/board/object.h"
 #include "game/board/player.h"
 #include "game/board/window.h"
@@ -45,7 +46,7 @@ void *mbev_CapEffGlowCreate(void);
 void *mbev_CapEffRingHitCreate(void);
 void *mbev_CapEffCoinCreate(void);
 void mbev_CapEffCoinGlowSet(void *effCoin, void *effGlow);
-int mbev_CapEffCoinAdd(void *eff, HuVecF *pos, HuVecF *vel, int time, int arg4, float f0, float f1);
+int mbev_CapEffCoinAdd(void *eff, HuVecF *pos, HuVecF *vel, float scale, float gravity, int time, int arg6);
 void mbev_CapEffGlowCoinAdd(void *eff, HuVecF *pos, HuVecF *rot);
 void mbev_CapEffRingHitAdd(void *eff, HuVecF pos, HuVecF rot, HuVecF scale);
 void mbev_CapPlayerMoveObjInit(void);
@@ -83,30 +84,28 @@ void mbev_CapTogezo(void)
     HU3D_MODEL *modelP;
     int playerNo;
     int targetNo;
+    int objId;
     int masuId;
     int targetMasuId;
-    int objId;
     int i;
     int j;
     int coinNum;
     int coinSum;
     int coinTotal;
-    s16 modelId;
     float t;
     float angle;
     float dist;
     float elev;
-    float speed;
-    HuVecF playerPos;
+    HuVecF throwPos[3];
+    int motId[16];
     HuVecF targetPos;
-    HuVecF startPos;
-    HuVecF pos;
-    HuVecF rot;
+    HuVecF playerPos;
     HuVecF coinPos;
     HuVecF coinVel;
+    HuVecF pos;
+    HuVecF rot;
+    HuVecF startPos;
     HuVecF scale;
-    HuVecF throwPos[3];
-    int motId[3];
 
     mbev_CapWait(work);
     work->effGlow = mbev_CapEffGlowCreate();
@@ -143,10 +142,10 @@ void mbev_CapTogezo(void)
     objWork->target.y += 150.0f;
     mbAudFXPlay(0x41F);
     mbPlayerMotionShiftSet(playerNo, motId[0], 0.0f, 8.0f, 0);
-    modelId = mbPlayerObjIDGet(playerNo);
-    modelId = mbObjModelIDGet(modelId);
-    modelP = &Hu3DData[modelId];
-    modelP->motShiftWork.time = 3.0f;
+    i = mbPlayerObjIDGet(playerNo);
+    i = mbObjModelIDGet(i);
+    modelP = &Hu3DData[i];
+    modelP->motShiftWork.speed = 3.0f;
     HuPrcSleep(120);
     mbPlayerMotionShiftSet(playerNo, motId[1], 0.0f, 8.0f, 0);
     angle = 360.0f*CAPTHROW_RANDF();
@@ -185,7 +184,7 @@ void mbev_CapTogezo(void)
             objWork->target.y += 150.0f;
             for(j=0; j<=24.0f; j++) {
                 t = j/24.0f;
-                rot.z = rot.x = 0.0f;
+                rot.x = rot.z = 0.0f;
                 if(i & 1) {
                     rot.y = 360.0f*t;
                 } else {
@@ -219,11 +218,11 @@ void mbev_CapTogezo(void)
             coinPos = startPos;
             coinPos.y += 100.0f;
             elev = 70.0f+(15.0f*CAPTHROW_RANDF());
-            speed = 65.0f*(0.8f+(0.3f*CAPTHROW_RANDF()));
-            coinVel.x = speed*(HuSin(angle)*HuCos(elev));
-            coinVel.z = speed*(HuCos(angle)*HuCos(elev));
-            coinVel.y = speed*HuSin(elev);
-            mbev_CapEffCoinAdd(work->effCoin, &coinPos, &coinVel, 30, 0, 0.75f, 4.9f);
+            t = 65.0f*(0.8f+(0.3f*CAPTHROW_RANDF()));
+            coinVel.x = t*(HuSin(angle)*HuCos(elev));
+            coinVel.z = t*(HuCos(angle)*HuCos(elev));
+            coinVel.y = t*HuSin(elev);
+            mbev_CapEffCoinAdd(work->effCoin, &coinPos, &coinVel, 0.75f, 4.9f, 30, 0);
         }
         mbPlayerPosGet(playerNo, &pos);
         pos.y += 150.0f;
@@ -277,14 +276,13 @@ static void ev_CapTogezoOMExec(OMOBJ *obj)
 {
     TOGEZOWORK *objWork = obj->data;
     float t;
-    float t2;
     float angle;
     float elev;
     float speed;
     float baseAngle;
     HuVecF pos;
 
-    if(mbExitCheck() || obj->work[2]) {
+    if(mbExitCheck() || obj->work[3]) {
         omDelObjEx(mbObjMan, obj);
         return;
     }
@@ -304,12 +302,12 @@ static void ev_CapTogezoOMExec(OMOBJ *obj)
             break;
         case 1:
             t = ++objWork->time/(float)objWork->maxTime;
-            t2 = t*t;
+            elev = t*t;
             objWork->rot.x = mbev_CapAngleSumLerp(t, objWork->rot.x, 90.0f);
             if(objWork->spinF == 0) {
                 objWork->rot.y = 360.0f*t;
             }
-            mbev_CapVecChase(t2, &objWork->pos, &objWork->target, &pos);
+            mbev_CapVecChase(elev, &objWork->pos, &objWork->target, &pos);
             mbObjPosSetV(objWork->objId, &pos);
             mbObjRotSetV(objWork->objId, &objWork->rot);
             mbObjDispSet(objWork->objId, TRUE);
@@ -331,7 +329,7 @@ static void ev_CapTogezoOMExec(OMOBJ *obj)
                 mbObjPosGet(objWork->objId, &objWork->pos);
                 objWork->pos.y += 100.0f;
                 objWork->mode++;
-                obj->work[0] = 0;
+                obj->work[1] = 0;
             }
             break;
         default:
