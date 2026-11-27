@@ -12,7 +12,12 @@ int mbev_CapCall(int playerNo, int capsuleNo, BOOL trapF, BOOL moveF);
 #include "game/board/capspecial.h"
 #include "game/board/shopevent.h"
 #include "game/board/audio.h"
+#define mbCameraMultiFocusSet mbCameraMultiFocusSet_void
 #include "game/board/camera.h"
+#undef mbCameraMultiFocusSet
+void mbCameraMultiFocusSet();
+#include "game/board/branch.h"
+#include "game/board/coin.h"
 #include "game/board/exit.h"
 #define mbMasuCapsuleGet mbMasuCapsuleGet_s16
 #include "game/board/masu.h"
@@ -21,6 +26,7 @@ int mbev_CapCall(int playerNo, int capsuleNo, BOOL trapF, BOOL moveF);
 int mbMasuCapsuleGet(s16 id);
 #include "game/board/object.h"
 #include "game/board/player.h"
+#include "game/board/star.h"
 #include "game/board/status.h"
 #include "game/board/telop.h"
 #include "game/board/window.h"
@@ -33,6 +39,13 @@ int mbMasuCapsuleGet(s16 id);
 #include "game/esprite.h"
 #include "game/object.h"
 #include "game/process.h"
+#include "game/hu3d.h"
+#include "game/hsfex.h"
+#include "game/charman.h"
+#include "game/main.h"
+#include "game/window.h"
+#include "humath.h"
+#include "math.h"
 #include "game/pad.h"
 #include "game/printfunc.h"
 
@@ -43,6 +56,220 @@ static void ev_CapCoinAdd(void *eff, int playerNo, int coinNum, int arg3, void (
 static void ev_CapCall(CAPWORK *work, BOOL waitF);
 static void ev_CapWorkInit(CAPOBJWORK *objWork, int capsuleNo);
 static void ev_CapWorkClose(CAPOBJWORK *objWork);
+
+static float ev_CapRotCamera(float rotY);
+static HU3D_MODELID ev_CapEffCreate(ANIMDATA *anim, s16 num);
+static void ev_CapEffGridSet(HU3D_MODELID modelId, int w, int h, int arg3);
+static void ev_CapEffDraw(HU3D_MODEL *modelP, Mtx *mtx);
+static void ev_CapComChoiceHook(void);
+
+#define CAP_RANDF() (0.0000000037252903f*mbRandMod(0x10000000))
+
+static inline float CapSinDeg(float deg)
+{
+    return mbSinDeg(deg);
+}
+
+static inline float CapCosDeg(float deg)
+{
+    return mbCosDeg(deg);
+}
+
+/* One particle of a CAPEV_EFFECT (ev_CapEffCreate's model). The unions carry the names the
+   different effects use for the same per-particle words. Size 0x6C. */
+typedef struct CapEvEffData_s {
+    /* 0x00 */ union {
+        s16 work[4];
+        struct {
+            s16 time;
+            s16 maxTime;
+            s16 count;
+            s16 unk06;
+        };
+    };
+    /* 0x08 */ union {
+        struct {
+            HuVecF vec1;
+            HuVecF vec2;
+            HuVecF vec3;
+            float val1;
+            float val2;
+            float val3;
+        };
+        struct {
+            HuVecF vel;
+            float alpha;
+            float alphaSpeed;
+            float speed;
+            float unk20;
+            float gravity;
+            float rotSpeed;
+            u8 unk2C[0xC];
+        };
+    };
+    /* 0x38 */ union {
+        float animTime;
+        float unk38;
+    };
+    /* 0x3C */ union {
+        float animSpeed;
+        float unk3C;
+    };
+    /* 0x40 */ float scale;
+    /* 0x44 */ float scaleX;
+    /* 0x48 */ float scaleY;
+    /* 0x4C */ HuVecF rot;
+    /* 0x58 */ HuVecF pos;
+    /* 0x64 */ GXColor color;
+    /* 0x68 */ union {
+        int no;
+        int unk68;
+    };
+} CAPEV_EFFDATA;
+
+typedef struct CapEvEffect_s CAPEV_EFFECT;
+typedef void (*CAPEV_EFFHOOK)(HU3D_MODEL *modelP, CAPEV_EFFECT *effP, Mtx *mtx);
+
+/* ev_CapEffCreate's particle model (Hu3DData[].hookData). Size 0x60. */
+struct CapEvEffect_s {
+    /* 0x00 */ union {
+        s16 mode;
+        s16 unk00;
+    };
+    /* 0x02 */ union {
+        s16 time;
+        s16 unk02;
+    };
+    /* 0x04 */ union {
+        u8 unk04[0x1C];
+        struct {
+            HuVecF vel;
+            s16 work[8];
+        };
+    };
+    /* 0x20 */ u8 blendMode;
+    /* 0x21 */ union {
+        u8 attr;
+        u8 pat;
+    };
+    /* 0x22 */ union {
+        u8 dispAttr;
+        u8 unk22;
+    };
+    /* 0x23 */ u8 unk23;
+    /* 0x24 */ union {
+        s16 unk24;
+        HU3D_MODELID modelId;
+    };
+    /* 0x26 */ s16 num;
+    /* 0x28 */ union {
+        u32 count;
+        int unk28;
+    };
+    /* 0x2C */ union {
+        u32 prevCounter;
+        int unk2C;
+    };
+    /* 0x30 */ union {
+        u32 prevCount;
+        int unk30;
+    };
+    /* 0x34 */ u32 dlSize;
+    /* 0x38 */ ANIMDATA *anim;
+    /* 0x3C */ CAPEV_EFFDATA *data;
+    /* 0x40 */ union {
+        HuVecF *vertex;
+        HuVecF *vtxBuf;
+    };
+    /* 0x44 */ union {
+        HuVec2f *st;
+        HuVec2f *stBuf;
+    };
+    /* 0x48 */ union {
+        void *dl;
+        void *dlBuf;
+    };
+    /* 0x4C */ union {
+        CAPEV_EFFHOOK hook;
+        int unk4C;
+    };
+    /* 0x50 */ union {
+        HuVec2f *gridSt;
+        int unk50;
+    };
+    /* 0x54 */ u32 unk54;
+    /* 0x58 */ union {
+        int gridNum;
+        int unk58;
+    };
+    /* 0x5C */ union {
+        HU3D_MODEL *hookMdlP;
+        int unk5C;
+    };
+};
+
+#define CAPEV_EFF_ATTR_COUNTER_RESET (1 << 0)
+#define CAPEV_EFF_ATTR_COUNTER_UPDATE (1 << 1)
+#define CAPEV_EFF_DISPATTR_ZBUF_OFF (1 << 0)
+#define CAPEV_EFF_DISPATTR_NOANIM (1 << 1)
+#define CAPEV_EFF_DISPATTR_CAMERA_ROT (1 << 2)
+#define CAPEV_EFF_DISPATTR_ROT3D (1 << 3)
+#define CAPEV_EFF_DISPATTR_SCALEXY (1 << 4)
+#define CAPEV_EFF_DISPATTR_ST_DONE (1 << 5)
+#define CAPEV_EFF_DISPATTR_CULL_OFF (1 << 6)
+
+/* The OMOBJ work of the single-model effects (explode, boost, snow, glow, ...). */
+typedef struct CapEffWork_s {
+    /* 0x00 */ int mdlId;
+    /* 0x04 */ int num;
+    /* 0x08 */ int no;
+    /* 0x0C */ ANIMDATA *anim;
+} CAPEFFWORK;
+
+typedef struct CapEffRingWork_s {
+    /* 0x00 */ int mdlId[3];
+    /* 0x0C */ union {
+        int num;
+        int dispNum;
+    };
+    /* 0x10 */ int no;
+    /* 0x14 */ ANIMDATA *anim[3];
+} CAPEFFRINGWORK;
+
+typedef struct CapEffCoinData_s {
+    /* 0x00 */ int coinId;
+    /* 0x04 */ int no;
+    /* 0x08 */ union {
+        int activeF;
+        BOOL dispF;
+    };
+    /* 0x0C */ int type;
+    /* 0x10 */ int time;
+    /* 0x14 */ int count;
+    /* 0x18 */ float rotSpeed;
+    /* 0x1C */ float gravity;
+    /* 0x20 */ float maxY;
+    /* 0x24 */ float alpha;
+    /* 0x28 */ float alphaSpeed;
+    /* 0x2C */ HuVecF pos;
+    /* 0x38 */ HuVecF rot;
+    /* 0x44 */ HuVecF scale;
+    /* 0x50 */ HuVecF vel;
+    /* 0x5C */ OMOBJ *glowEff;
+} CAPEFFCOINDATA;
+
+/* mbev_CapObjMotionSet / mbev_CapPlayerMotionSet process work. */
+typedef struct CapMotWork_s {
+    /* 0x00 */ int playerNo;
+    /* 0x04 */ int objId;
+    /* 0x08 */ int delay;
+    /* 0x0C */ int motNo;
+    /* 0x10 */ int nextMotNo;
+    /* 0x14 */ u32 attr;
+    /* 0x18 */ u32 nextAttr;
+    /* 0x1C */ BOOL shiftF;
+    /* 0x20 */ BOOL nextShiftF;
+} CAPMOTWORK;
 
 static inline void *CapMalloc(s32 size)
 {
@@ -186,7 +413,7 @@ static int bonusCoinNum;
 static int bonusCoinWinId;
 static CAPHOOK capsuleHook;
 s16 *mbCapEffData;
-int mbCapEffNum;
+u32 mbCapEffNum;
 static ANIMDATA *electricEffAnim;
 static ANIMDATA *ringHitEffAnim2;
 static ANIMDATA *ringHitEffAnim1;
@@ -1259,8 +1486,6 @@ void mbev_CapEffOpenCreate(int playerNo, int masuId, BOOL effF, BOOL openF, BOOL
         mbMasuCapsuleSet(masuId, -1);
     }
 }
-
-#define CAP_RANDF() (0.0000000037252903f*mbRandMod(0x10000000))
 
 static void ev_CapEffOpen(void)
 {
