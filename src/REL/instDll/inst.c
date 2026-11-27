@@ -3,7 +3,6 @@
 #include "game/charman.h"
 #include "game/data.h"
 #include "game/flag.h"
-#include "game/frand.h"
 #include "game/gamework.h"
 #include "game/hu3d.h"
 #include "game/memory.h"
@@ -21,6 +20,8 @@
 #include "dolphin.h"
 
 #include "datadir_enum.h"
+
+/* frand is called unprototyped: game/frand.h stays out of this unit */
 
 typedef void (*VoidFunc)(void);
 extern const VoidFunc _ctors[];
@@ -132,7 +133,7 @@ void ObjectSetup(void)
     int i;
     OMOVLHIS *his;
     int num;
-    HU3D_LIGHTID lightId;
+    int lightId;
 
     OSReport("******* INST ObjectSetup *********\n");
     lbl_1_bss_3C = omInitObjMan(50, 8192);
@@ -201,10 +202,11 @@ void ObjectSetup(void)
         HuDataDirClose(MgDataTbl[lbl_1_bss_36].dataDir);
         if (_CheckFlag(FLAGNUM(FLAG_GROUP_SYSTEM, 4))) {
             HuPrcChildCreate(fn_1_4158, 100, 0x3000, 0, HuPrcCurrentGet());
+            return;
         } else {
             omOvlReturnEx(1, 1);
+            return;
         }
-        return;
     }
     _ClearFlag(FLAG_MG_PRACTICE);
     if (!_CheckFlag(FLAG_INST_MG_MODE) && !_CheckFlag(FLAG_INST_NO_HISCHG)) {
@@ -222,7 +224,7 @@ void ObjectSetup(void)
     }
     if (omovlevtno == 0) {
         int grpMap[GW_PLAYER_MAX][GW_PLAYER_MAX];
-        int grpNum[2];
+        int grpNum[GW_PLAYER_MAX];
         if (lbl_1_bss_20->flag & MG_FLAG_TEAM_ORDER) {
             grpNum[0] = grpNum[1] = 0;
             for (i = 0; i < GW_PLAYER_MAX; i++) {
@@ -283,7 +285,7 @@ void ObjectSetup(void)
             }
         }
     }
-    if (!_CheckFlag(FLAGNUM(FLAG_GROUP_SAVE, 5)) || !GwSystem.mgInstDispF) {
+    if (!_CheckFlag(FLAGNUM(FLAG_GROUP_SAVE, 5)) || !GWMgInstDispFGet()) {
         GWMgPlayNumAdd(1);
         HuDataDirClose(DATA_inst);
         omSysPauseEnable(TRUE);
@@ -356,7 +358,7 @@ void fn_1_1024(void)
     HuPrcChildCreate(fn_1_4188, 2000, 0x3000, 0, HuPrcCurrentGet());
     HuDataDirClose(DATA_inst);
     CharModelDataClose(-1);
-    WipeCreate(WIPE_MODE_IN, WIPE_TYPE_NORMAL, 40);
+    WipeCreate(WIPE_MODE_IN, 5, 40);
     WipeWait();
     if (lbl_1_bss_6 != 2) {
         lbl_1_bss_6 = 1;
@@ -383,7 +385,7 @@ void fn_1_1024(void)
             comInputF = TRUE;
         }
     }
-    lbl_1_bss_30 = (_CheckFlag(FLAG_INST_DECA)) ? FALSE : TRUE;
+    lbl_1_bss_30 = (_CheckFlag(FLAGNUM(FLAG_GROUP_SYSTEM, 4))) ? FALSE : TRUE;
     while (1) {
         fn_1_8DB0();
         if (lbl_1_bss_8 == 0) {
