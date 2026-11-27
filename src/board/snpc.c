@@ -1,3 +1,4 @@
+/* @@HEAD@@ */
 #include "game/board/snpc.h"
 #include "game/board/object.h"
 #include "game/board/malloc.h"
@@ -7,8 +8,6 @@
 #include "game/memory.h"
 #include "game/sprite.h"
 
-/* Partial: the functions the host's board start reaches, decompiled as they are needed. The rest
- * of the unit (wave B6) is still assembly. */
 
 void HuSprTexLoad(ANIMDATA *anim, s16 bmpNo, s16 texMapId, GXTexWrapMode wrapS, GXTexWrapMode wrapT, GXTexFilter filter);
 
@@ -92,6 +91,7 @@ static BIRIQMAT biriQMatTbl[16] = {
 
 static GXColor texCol[16];
 
+/* @@PART1@@ */
 void mbSNpcInit(void)
 {
     snpcMagic = 0;
@@ -106,6 +106,8 @@ void mbSNpcDispSet(BOOL dispF)
     }
 }
 
+/* @@PART2@@ */
+/* @@PART3@@ */
 /* Counts the TEV stages and texture coordinates Hu3DTevStageTexSet used, so a material hook can
  * append its own stages after them. */
 static void GetStarTexTevStage(HU3D_DRAW_OBJ *drawObj, HSF_MATERIAL *matP, u32 *tevStageP, u32 *texCoordP)
@@ -809,3 +811,4 @@ static void BiriQMatHook(HU3D_DRAW_OBJ *drawObj, HSF_MATERIAL *matP)
         }
     }
 }
+/* @@END@@ */
