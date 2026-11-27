@@ -1627,7 +1627,7 @@ void Hu3DGLightSpotSet(HU3D_LIGHTID lightId, GXSpotFn spotFunc, float cutoff)
     Hu3DLightSpotSet(lightP, spotFunc, cutoff);
 }
 
-void Hu3DLLightSpotSet(HU3D_MODELID modelId, HU3D_LLIGHTID lightId, GXSpotFn spotFunc, float cutoff)
+void Hu3DLLightSpotSet(HU3D_MODELID modelId, HU3D_LLIGHTID lightId, float cutoff, GXSpotFn spotFunc)
 {
     HU3D_MODEL *modelP = &Hu3DData[modelId];
     HU3D_LIGHT *lightP = &Hu3DLocalLight[modelP->LLightId[lightId]];

@@ -60,7 +60,7 @@ s16 mbev_CapPlayerMotionCreate(void *objWork, int playerNo, int dataNum);
 void *mbev_CapEffGlowCreate(void);
 void *mbev_CapEffCoinCreate(void);
 void mbev_CapEffCoinGlowSet(void *coinEff, void *glowEff);
-int mbev_CapEffCoinAdd(void *coinEff, HuVecF *pos, HuVecF *vel, int time, int maxNum, float scale, float gravity);
+int mbev_CapEffCoinAdd(void *coinEff, HuVecF *pos, HuVecF *vel, float scale, float gravity, int time, int maxNum);
 int mbev_CapEffCoinMaxYSet(void *coinEff, int coinId, float maxY);
 int mbev_CapEffCoinNumGet(void *coinEff);
 int mbev_CapPlayerCheck(int playerNo, int otherNo);
@@ -204,8 +204,8 @@ void mbev_CapTeresa(void)
     int starPlayerNum;
     int masuId;
     int hookObjId;
-    int lightId;
     int starNo;
+    int lightId;
     int alpha;
     int tempNo;
     HU3D_LIGHT *lightP;
@@ -538,7 +538,7 @@ void mbev_CapTeresa(void)
     hookObjId = mbev_CapObjCreate(work->objWork, 0xC0049, NULL, 0, 0, 0);
     mbObjHookSet(mbPlayerObjIDGet(targetNo), CharModelItemHookGet(GwPlayer[targetNo].charNo, 4, 0), hookObjId);
     mbObjDispSet(hookObjId, FALSE);
-    for(i = 0, lightP = Hu3DGlobalLight; i < 8; i++, lightP++) {
+    for(lightP = Hu3DGlobalLight, i = 0; i < 8; i++, lightP++) {
         if(lightP->type != -1) {
             lightColor[i] = lightP->color;
             lightP->color.r *= 0.5f;
@@ -580,7 +580,7 @@ void mbev_CapTeresa(void)
             HuPrcVSleep();
         }
         lightId = Hu3DLLightCreateV(mbObjModelIDGet(teresaObjId), &teresaLightPos, &teresaLightDir, &teresaLightColor);
-        Hu3DLLightSpotSet(mbObjModelIDGet(teresaObjId), lightId, GX_SP_RING1, 0.001f);
+        Hu3DLLightSpotSet(mbObjModelIDGet(teresaObjId), lightId, 0.001f, GX_SP_SHARP);
         Hu3DLLightStaticSet(mbObjModelIDGet(teresaObjId), lightId, TRUE);
         Hu3DLLightInfinitytSet(mbObjModelIDGet(teresaObjId), lightId);
         Hu3DMotionCalc(mbObjModelIDGet(mbPlayerObjIDGet(playerNo)));
@@ -685,7 +685,7 @@ void mbev_CapTeresa(void)
             maxCoin = 40;
         }
         if(!GwPlayer[targetNo].comF) {
-            rate = 1.0f-(mashNum*0.03125f);
+            rate = 1.0f-(mashNum/32.0f);
         } else {
             rate = 1.0f-(0.1f+(GwPlayer[targetNo].comDif*(0.2f+(0.1f*CAP_RANDF()))));
         }
@@ -709,7 +709,7 @@ void mbev_CapTeresa(void)
             coinVel.x = t*(HuSin(angleY)*HuCos(angleX));
             coinVel.z = t*(HuCos(angleY)*HuCos(angleX));
             coinVel.y = t*HuSin(angleX);
-            coinId = mbev_CapEffCoinAdd(work->coinEff, &coinPos, &coinVel, 30, 0xFFFF, 0.75f, 4.9f);
+            coinId = mbev_CapEffCoinAdd(work->coinEff, &coinPos, &coinVel, 0.75f, 4.9f, 30, 0xFFFF);
             if(coinId >= 0) {
                 mbev_CapEffCoinMaxYSet(work->coinEff, coinId, 300.0f+pos.y);
             }
@@ -799,7 +799,7 @@ void mbev_CapTeresa(void)
     }
     mbWipeDissolveFadeOutTime(1);
     mbStarObjDispSetAll(TRUE);
-    for(i = 0, lightP = Hu3DGlobalLight; i < 8; i++, lightP++) {
+    for(lightP = Hu3DGlobalLight, i = 0; i < 8; i++, lightP++) {
         if(lightP->type != -1) {
             lightP->color = lightColor[i];
         }
