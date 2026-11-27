@@ -7,6 +7,7 @@
 #include "game/board/coin.h"
 #include "game/board/comchoice.h"
 #include "game/board/dice.h"
+#include "game/board/effect.h"
 #include "game/board/exit.h"
 #include "game/board/guide.h"
 #include "game/board/object.h"
@@ -198,7 +199,7 @@ static SNPCMOT snpcKoopaMotTbl[11] = {
     { 0xE000A, 1.0f, 0, 0, 0 },
     { 0xE000B, 1.0f, 0, 0, 0 }
 };
-static HU3D_PARMAN_PARAM snpcStarEffParam[2] = {
+static MBPARMANPARAM snpcStarEffParam[2] = {
     {
         30, 0, 3.3f, 70.0f, 7.0f, { 0.0f, -0.05f, 0.0f }, 2.0f, 1.0f, 30.0f, 0.98f, 2,
         { { 0xFF, 0xFF, 0xFF, 0xFF }, { 0xFF, 0xFF, 0x40, 0xFF }, { 0x00, 0x00, 0x00, 0x00 }, { 0x00, 0x00, 0x00, 0x00 } },
