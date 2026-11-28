@@ -7,10 +7,22 @@ Sections:
 	.bss        type:bss align:8
 
 REL/m650dll/m650.c:
-	.text       start:0x00000000 end:0x000074F4
-	.rodata     start:0x00000000 end:0x00000348
-	.data       start:0x00000000 end:0x00000471
-	.bss        start:0x00000000 end:0x000004B8
+	.text       start:0x00000000 end:0x000014FC
+	.rodata     start:0x00000000 end:0x000000C8
+	.data       start:0x00000000 end:0x00000028
+	.bss        start:0x00000000 end:0x00000028
+
+REL/m650dll/player.c:
+	.text       start:0x000014FC end:0x000062E0
+	.rodata     start:0x000000C8 end:0x000002B0
+	.data       start:0x00000028 end:0x000001F8
+	.bss        start:0x00000028 end:0x000002A8
+
+REL/m650dll/obst.c:
+	.text       start:0x000062E0 end:0x000074F4
+	.rodata     start:0x000002B0 end:0x00000348
+	.data       start:0x000001F8 end:0x00000471
+	.bss        start:0x000002A8 end:0x000004B8
 
 REL/runtime.c:
 	.text       start:0x000074F4 end:0x00007F38
