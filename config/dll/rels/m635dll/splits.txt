@@ -7,10 +7,16 @@ Sections:
 	.bss        type:bss align:8
 
 REL/m635dll/m635.c:
-	.text       start:0x00000000 end:0x000044BC
-	.rodata     start:0x00000000 end:0x000000C8
-	.data       start:0x00000000 end:0x00000458
-	.bss        start:0x00000000 end:0x0000014C
+	.text       start:0x00000000 end:0x00001774
+	.rodata     start:0x00000000 end:0x00000040
+	.data       start:0x00000000 end:0x000000A0
+	.bss        start:0x00000000 end:0x00000068
+
+REL/m635dll/object.c:
+	.text       start:0x00001774 end:0x000044BC
+	.rodata     start:0x00000040 end:0x000000C8
+	.data       start:0x000000A0 end:0x00000458
+	.bss        start:0x00000068 end:0x0000014C
 
 REL/runtime.c:
 	.text       start:0x000044BC end:0x00004F00
