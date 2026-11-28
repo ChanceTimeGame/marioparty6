@@ -28,7 +28,7 @@ extern const VoidFunc _dtors[];
 
 typedef struct M650Work_s {
     MGTIMER *timer; /* 0x00 */
-    MGTIMER *timer2; /* 0x04 */
+    s32 recordTime; /* 0x04 */
     s16 winner; /* 0x08 */
     s16 unkA; /* 0x0A */
     s16 mode; /* 0x0C */
