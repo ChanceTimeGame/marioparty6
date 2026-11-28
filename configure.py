@@ -793,7 +793,8 @@ config.libs = [
     Rel(
         "m635dll",
         objects={
-            Object(NonMatching, "REL/m635dll/m635.c"),
+            Object(Matching, "REL/m635dll/m635.c"),
+            Object(Matching, "REL/m635dll/object.c"),
         },
     ),
     Rel(
