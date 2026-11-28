@@ -775,7 +775,9 @@ config.libs = [
     Rel(
         "m608dll",
         objects={
-            Object(NonMatching, "REL/m608dll/m608.c"),
+            Object(Matching, "REL/m608dll/m608.c"),
+            Object(Matching, "REL/m608dll/setup.c"),
+            Object(Matching, "REL/m608dll/sub.c"),
         },
     ),
     Rel(
