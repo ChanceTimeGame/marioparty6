@@ -7,7 +7,7 @@ by hand.
 *bytes*: size of the original function. Functions at 0% either have no C yet or have C whose
 shape differs from the original (functions merged or split, wrong inlining).
 
-**Summary:** 2,812 functions short of 100%: 45 at 95% or better, 31 at 80-95%, 18 below 80%, 2,718 at 0%; in 199 units.
+**Summary:** 3,249 functions short of 100%: 45 at 95% or better, 32 at 80-95%, 18 below 80%, 3,154 at 0%; in 204 units.
 
 ## Started, not matching yet
 
@@ -79,6 +79,7 @@ order or one wrong type.
 | 90.00% | `msmStreamPauseOff` | `main/msm/msmstream` | 720 |
 | 89.80% | `mbCapEffThrowCheck` | `main/board/capsule` | 196 |
 | 89.77% | `MgCallBattleCoinGet` | `main/board/mgcall` | 352 |
+| 89.74% | `fn_1_4430` | `m650dll/REL/m650dll/player` | 780 |
 | 89.47% | `ev_CapKettouReturn` | `main/board/capspecial` | 2,692 |
 | 89.02% | `msmSysLoadGroup` | `main/msm/msmsys` | 1,384 |
 | 88.83% | `FileBoxInit` | `fileseldll/REL/fileseldll/saveload` | 2,400 |
@@ -191,9 +192,13 @@ Every unit with a function short of 100%, largest remaining code first.
 | `bootDll/REL/runtime` | (no source yet) | 109 | 109 | 3,100 |
 | `fileseldll/REL/runtime` | (no source yet) | 109 | 109 | 3,100 |
 | `instDll/REL/runtime` | (no source yet) | 109 | 109 | 3,100 |
+| `m608dll/REL/runtime` | (no source yet) | 109 | 109 | 3,100 |
 | `m612dll/REL/runtime` | (no source yet) | 109 | 109 | 3,100 |
 | `m616dll/REL/runtime` | (no source yet) | 109 | 109 | 3,100 |
 | `m621dll/REL/runtime` | (no source yet) | 109 | 109 | 3,100 |
+| `m635dll/REL/runtime` | (no source yet) | 109 | 109 | 3,100 |
+| `m650dll/REL/runtime` | (no source yet) | 109 | 109 | 3,100 |
+| `m670dll/REL/runtime` | (no source yet) | 109 | 109 | 3,100 |
 | `mdpartydll/REL/runtime` | (no source yet) | 109 | 109 | 3,100 |
 | `mdseldll/REL/runtime` | (no source yet) | 109 | 109 | 3,100 |
 | `resultDll/REL/runtime` | (no source yet) | 109 | 109 | 3,100 |
@@ -270,6 +275,7 @@ Every unit with a function short of 100%, largest remaining code first.
 | `main/gssdk_lib/common/rsrc/rsrc` | (no source yet) | 3 | 3 | 856 |
 | `main/dolphin/gx/GXGeometry` | (no source yet) | 9 | 9 | 800 |
 | `main/dolphin/os/OSFont` | (no source yet) | 3 | 3 | 788 |
+| `m650dll/REL/m650dll/player` | (no source yet) | 1 | 34 | 780 |
 | `main/dolphin/os/__start` | (no source yet) | 7 | 7 | 772 |
 | `main/dolphin/os/OSMemory` | (no source yet) | 8 | 8 | 752 |
 | `main/dolphin/pad/Padclamp` | (no source yet) | 2 | 2 | 692 |
