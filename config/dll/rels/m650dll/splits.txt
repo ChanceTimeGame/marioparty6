@@ -5,3 +5,13 @@ Sections:
 	.rodata     type:rodata align:32
 	.data       type:data align:8
 	.bss        type:bss align:8
+
+REL/m650dll/m650.c:
+	.text       start:0x00000000 end:0x000074F4
+	.rodata     start:0x00000000 end:0x00000348
+	.data       start:0x00000000 end:0x00000471
+	.bss        start:0x00000000 end:0x000004B8
+
+REL/runtime.c:
+	.text       start:0x000074F4 end:0x00007F38
+	.rodata     start:0x00000348 end:0x00000360
