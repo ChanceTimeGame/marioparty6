@@ -151,18 +151,22 @@ void fn_1_473C(s16 playerNo);
 void fn_1_48C0(s16 playerNo);
 void fn_1_49C8(s16 playerNo);
 void fn_1_4BD4(s16 playerNo);
-s16 fn_1_4D58(void);
+s16 fn_1_4D58(s16 time);
 void fn_1_5258(void);
 void fn_1_5308(void);
 void fn_1_5354(void);
 void fn_1_5394(void);
 void fn_1_54D4(void);
-void fn_1_5544(void);
+void fn_1_5544(s16 playerNo);
 void fn_1_5600(s16 playerNo, float y, float *speed, float *angle);
 s16 fn_1_5728(void);
 void fn_1_5A24(s16 playerNo);
+void fn_1_5E40(void);
 void fn_1_62E0(void);
+void fn_1_6478(HU3D_MODEL *modelP, Mtx *mtx);
+s16 fn_1_69B0(s16 playerNo);
 s16 fn_1_6D88(s16 playerNo, HuVecF *pos);
+s16 fn_1_6EE4(HuVecF *a, HuVecF *b, float radius);
 void fn_1_6F54(void);
 s16 fn_1_7000(s16 playerNo, HuVecF *pos, float angle, s16 obstNo);
 
@@ -378,8 +382,7 @@ void fn_1_550(void)
             }
             break;
         case 3:
-            lbl_1_bss_0.timeCnt++;
-            if (fn_1_4D58()) {
+            if (fn_1_4D58(lbl_1_bss_0.timeCnt++)) {
                 fn_1_484();
                 lbl_1_bss_0.timeCnt = 0;
                 lbl_1_bss_0.mode++;
