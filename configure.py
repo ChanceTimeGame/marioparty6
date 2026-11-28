@@ -781,7 +781,9 @@ config.libs = [
     Rel(
         "m650dll",
         objects={
-            Object(NonMatching, "REL/m650dll/m650.c"),
+            Object(Matching, "REL/m650dll/m650.c"),
+            Object(NonMatching, "REL/m650dll/player.c"),
+            Object(Matching, "REL/m650dll/obst.c"),
         },
     ),
     Rel(
