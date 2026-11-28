@@ -3,7 +3,7 @@
 /* .bss is laid out in reverse definition order */
 float lbl_1_bss_480;
 float lbl_1_bss_47C;
-s32 lbl_1_bss_418[M670_PILLAR_NUM];
+s32 lbl_1_bss_418[M670_PILLAR_NUM + 1];
 float lbl_1_bss_3B8[M670_PILLAR_NUM];
 
 void fn_1_2A24(s32 mode)

@@ -787,11 +787,11 @@ config.libs = [
     Rel(
         "m670dll",
         objects={
-            Object(NonMatching, "REL/m670dll/m670.c"),
-            Object(NonMatching, "REL/m670dll/setup.c"),
-            Object(NonMatching, "REL/m670dll/player.c"),
-            Object(NonMatching, "REL/m670dll/stage.c"),
-            Object(NonMatching, "REL/m670dll/com.c"),
+            Object(Matching, "REL/m670dll/m670.c"),
+            Object(Matching, "REL/m670dll/setup.c"),
+            Object(Matching, "REL/m670dll/player.c"),
+            Object(Matching, "REL/m670dll/stage.c"),
+            Object(Matching, "REL/m670dll/com.c"),
         },
     ),
     Rel(

@@ -82,6 +82,7 @@ void ObjectSetup(void)
 {
     s32 i;
     s32 j;
+    MGPLAYER *player;
     s8 *pattern;
     HU3D_MODELID modelId;
     OMOBJ *obj;
@@ -181,7 +182,6 @@ void ObjectSetup(void)
     {
         char *playerName[3] = { "P01", "P02", "P03" };
         MGACTOR_PARAM param;
-        MGPLAYER *player;
         param.height = 150.0f;
         param.radius = 60.0f;
         param.param = 0;
@@ -195,8 +195,7 @@ void ObjectSetup(void)
             lbl_1_bss_10.padNo[i] = GwPlayerConf[i].padNo;
             lbl_1_bss_10.playerMode[i] = 0;
             param.correctHookParam = i;
-            player = MgPlayerCreate(i, &param, 4, 1, 0xFFFFFFE3, lbl_1_data_110);
-            lbl_1_bss_10.player[i] = player;
+            lbl_1_bss_10.player[i] = player = MgPlayerCreate(i, &param, 4, 1, 0xFFFFFFE3, lbl_1_data_110);
             MgPlayerVibrateCreate(player);
             if (GwPlayerConf[i].grpNo == 0) {
                 lbl_1_bss_10.teamF[i] = 0;
