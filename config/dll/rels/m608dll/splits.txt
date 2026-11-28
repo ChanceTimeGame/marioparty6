@@ -7,10 +7,21 @@ Sections:
 	.bss        type:bss align:8
 
 REL/m608dll/m608.c:
-	.text       start:0x00000000 end:0x00006CB4
-	.rodata     start:0x00000000 end:0x000001B8
-	.data       start:0x00000000 end:0x00000700
-	.bss        start:0x00000000 end:0x000042D8
+	.text       start:0x00000000 end:0x000043C8
+	.rodata     start:0x00000000 end:0x00000088
+	.data       start:0x00000000 end:0x00000260
+	.bss        start:0x00000000 end:0x00003DF0
+
+REL/m608dll/setup.c:
+	.text       start:0x000043C8 end:0x00005DA4
+	.rodata     start:0x00000088 end:0x00000180
+	.data       start:0x00000260 end:0x000002F8
+
+REL/m608dll/sub.c:
+	.text       start:0x00005DA4 end:0x00006CB4
+	.rodata     start:0x00000180 end:0x000001B8
+	.data       start:0x000002F8 end:0x00000700
+	.bss        start:0x00003DF0 end:0x000042D8
 
 REL/runtime.c:
 	.text       start:0x00006CB4 end:0x000076F8
