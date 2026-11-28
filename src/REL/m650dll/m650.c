@@ -3,7 +3,6 @@
 #include "game/charman.h"
 #include "game/data.h"
 #include "game/flag.h"
-#include "game/frand.h"
 #include "game/gamework.h"
 #include "game/hu3d.h"
 #include "game/memory.h"
@@ -20,6 +19,8 @@
 #include "dolphin.h"
 
 #include "datadir_enum.h"
+
+/* frandmod is called unprototyped: game/frand.h stays out of this unit */
 
 typedef void (*VoidFunc)(void);
 extern const VoidFunc _ctors[];
@@ -157,10 +158,13 @@ void fn_1_5354(void);
 void fn_1_5394(void);
 void fn_1_54D4(void);
 void fn_1_5544(void);
+void fn_1_5600(s16 playerNo, float y, float *speed, float *angle);
 s16 fn_1_5728(void);
 void fn_1_5A24(s16 playerNo);
 void fn_1_62E0(void);
+s16 fn_1_6D88(s16 playerNo, HuVecF *pos);
 void fn_1_6F54(void);
+s16 fn_1_7000(s16 playerNo, HuVecF *pos, float angle, s16 obstNo);
 
 MGSEQ_PARAM lbl_1_data_0 = {
     300,
@@ -351,8 +355,8 @@ void fn_1_484(void)
 void fn_1_550(void)
 {
     HuVecF pos;
-    HuVecF up;
     HuVecF target;
+    HuVecF up;
     switch (lbl_1_bss_0.mode) {
         case 0:
             MgSeqModeChangeOff();
@@ -406,8 +410,8 @@ void fn_1_8EC(void)
     s32 j;
     M650_PLAYER *player;
     HuVecF pos;
-    HuVecF up;
     HuVecF target;
+    HuVecF up;
     switch (lbl_1_bss_0.mode) {
         case 0:
             MgSeqModeChangeOff();
@@ -573,9 +577,9 @@ void fn_1_14FC(void)
     OMOBJ *obj;
     for (i = 0; i < 4; i++) {
         Hu3DCameraCreate(cameraBit[i]);
-        Hu3DCameraViewportSet(cameraBit[i], 0.0f, 0.0f, (i == 0) ? 640.0f : 0.0f, (i == 0) ? 480.0f : 0.0f, 0.0f, 1.0f);
+        Hu3DCameraViewportSet(cameraBit[i], 0.0f, 0.0f, (i != 0) ? 0.0f : 640.0f, (i != 0) ? 0.0f : 480.0f, 0.0f, 1.0f);
         Hu3DCameraPerspectiveSet(cameraBit[i], 40.0f, 60.0f, 25000.0f, 1.2f);
-        Hu3DCameraScissorSet(cameraBit[i], 0, 0, (i == 0) ? 640.0f : 0.0f, (i == 0) ? 480.0f : 0.0f);
+        Hu3DCameraScissorSet(cameraBit[i], 0, 0, (i != 0) ? 0.0f : 640.0f, (i != 0) ? 0.0f : 480.0f);
     }
     obj = omAddObjEx(lbl_1_bss_1C.objman, 0x7FDA, 0, 0, -1, omOutViewMulti);
     omOutViewMultiCntSet(obj, 4);
@@ -595,8 +599,8 @@ void fn_1_1830(void)
     HU3D_MODELID modelId;
     HU3D_LIGHTID lightId;
     HuVecF pos;
-    HuVecF up;
     HuVecF target;
+    HuVecF up;
     lightId = Hu3DGLightCreateV(&lbl_1_data_28, &lbl_1_data_34, &lbl_1_data_40[lbl_1_bss_0.unkA]);
     Hu3DGLightStaticSet(lightId, FALSE);
     Hu3DGLightInfinitytSet(lightId);
@@ -767,7 +771,7 @@ void fn_1_21CC(OMOBJ *obj)
     }
     if (_CheckFlag(FLAG_INST_DECA)) {
         for (i = 0; i < 4; i++) {
-            if (lbl_1_bss_28[i].timer != NULL && MgTimerDoneCheck(lbl_1_bss_28[i].timer) == TRUE) {
+            if (lbl_1_bss_28[i].timer && MgTimerDoneCheck(lbl_1_bss_28[i].timer) == TRUE) {
                 break;
             }
         }
@@ -875,7 +879,6 @@ void fn_1_289C(s16 playerNo)
     s32 i;
     HuVecF pos;
     HuVecF dir;
-    float dist;
     player = &lbl_1_bss_28[playerNo];
     if (player->comDif == -1) {
         return;
@@ -908,8 +911,7 @@ void fn_1_289C(s16 playerNo)
         dir.x = lbl_1_data_248[i].pos.x - pos.x;
         dir.y = 0.0f;
         dir.z = lbl_1_data_248[i].pos.z - pos.z;
-        dist = sqrtf(VECSquareMag(&dir));
-        if (dist > 1000.0f) {
+        if (sqrtf(VECSquareMag(&dir)) > 1000.0f) {
             continue;
         }
         player->obstNo[player->obstNum] = i;
@@ -919,6 +921,220 @@ void fn_1_289C(s16 playerNo)
             return;
         }
     }
+}
+
+s16 fn_1_2CAC(s16 playerNo)
+{
+    M650_PLAYER *player = &lbl_1_bss_28[playerNo];
+    s32 i;
+    s16 hitF;
+    s16 outF;
+    float ofsX;
+    float ofsZ;
+    HuVecF pos;
+    Hu3DModelPosGet(player->mdlId, &pos);
+    if (player->comDif == -1) {
+        return HuPadBtnDown[player->padNo] & PAD_BUTTON_A;
+    }
+    if (player->unk98 != 0) {
+        player->unk98--;
+        return FALSE;
+    }
+    ofsX = 800.0 * HuSin(player->unk44);
+    ofsZ = 800.0 * HuCos(player->unk44);
+    if (pos.x + ofsX >= 1150.0f || pos.x + ofsX <= -1150.0f) {
+        outF = TRUE;
+    } else {
+        outF = FALSE;
+    }
+    hitF = FALSE;
+    for (i = 0; i < player->obstNum; i++) {
+        if (fn_1_7000(playerNo, &pos, player->unk44, player->obstNo[i])) {
+            hitF = TRUE;
+            break;
+        }
+    }
+    if (player->unk9A++ >= 70) {
+        if (player->unk9C) {
+            return TRUE;
+        }
+        if (outF) {
+            return FALSE;
+        }
+        return TRUE;
+    }
+    if (player->unk9C) {
+        if (hitF || outF || player->obstNum == 0) {
+            return TRUE;
+        }
+        return FALSE;
+    }
+    if (!hitF && !outF) {
+        return TRUE;
+    }
+    return FALSE;
+}
+
+void fn_1_2F1C(s16 playerNo)
+{
+    M650_PLAYER *player = &lbl_1_bss_28[playerNo];
+    HuVecF rot;
+    HuVecF pos;
+    HuVecF ofs;
+    s32 seNo[4] = { 2028, 2029, 2030, 2031 };
+    float angle;
+    float speed;
+    float time;
+    float maxTime;
+    Hu3DModelRotGet(player->mdlId, &rot);
+    if (rot.y > player->unk44) {
+        rot.y -= 2.0f;
+        if (rot.y < player->unk44) {
+            rot.y = player->unk44;
+        }
+    } else if (rot.y < player->unk44) {
+        rot.y += 2.0f;
+        if (rot.y > player->unk44) {
+            rot.y = player->unk44;
+        }
+    }
+    Hu3DModelRotSetV(player->mdlId, &rot);
+    if (player->unk18 == 30) {
+        fn_1_2320(playerNo, 2);
+        Hu3DModelPosSet(player->unk52, 0.0f, 0.0f, 0.0f);
+        Hu3DModelHookSet(player->charMdlId, "f-itemhook-r", player->unk52);
+        Hu3DModelRotSet(player->unk52, 0.0f, 0.0f, 0.0f);
+        Hu3DModelAttrReset(player->unk52, HU3D_ATTR_DISPOFF);
+    }
+    if (player->unk18 > 30) {
+        time = Hu3DMotionTimeGet(player->charMdlId);
+        maxTime = Hu3DMotionMaxTimeGet(player->charMdlId);
+        if (time >= maxTime && player->unk18 > 44) {
+            fn_1_2320(playerNo, 0);
+            player->mode = 3;
+            player->unk18 = 0;
+            return;
+        }
+        if (player->unk18 == 44) {
+            HuAudFXPlay(seNo[playerNo]);
+            Hu3DModelObjPosGet(player->charMdlId, "f-itemhook-r", &pos);
+            ofs.x = ofs.y = ofs.z = 0.0f;
+            Hu3DModelHookReset(player->charMdlId);
+            Hu3DModelPosSet(player->unk52, pos.x + ofs.x, pos.y + ofs.y, pos.z + ofs.z);
+            Hu3DModelAttrReset(player->unk54, HU3D_ATTR_DISPOFF);
+            Hu3DModelPosSet(player->unk54, pos.x + ofs.x, 0.2f, pos.z + ofs.z);
+            Hu3DModelRotSet(player->unk52, 0.0f, 45.0f, 0.0f);
+            fn_1_5600(playerNo, pos.y + ofs.y, &speed, &angle);
+            player->unk64.x = speed * HuCos(angle) * HuSin(player->unk44);
+            player->unk64.y = speed * HuSin(angle);
+            player->unk64.z = speed * HuCos(angle) * HuCos(player->unk44);
+            Hu3DModelAttrSet(player->unk1E, HU3D_ATTR_DISPOFF);
+        }
+    }
+    player->unk18++;
+}
+
+void fn_1_33F8(s16 playerNo)
+{
+    M650_PLAYER *player = &lbl_1_bss_28[playerNo];
+    HuVecF pos;
+    HuVecF dir;
+    HuVecF reflect;
+    HuVecF normal;
+    s32 wallSeNo[4] = { 2032, 2033, 2034, 2035 };
+    s32 landSeNo[4] = { 2036, 2037, 2038, 2039 };
+    s16 obstNo;
+    float speed;
+    float push;
+    float dist;
+    float distSq;
+    float radius;
+    if (0.0f == player->unk64.x && 0.0f == player->unk64.y && 0.0f == player->unk64.z) {
+        return;
+    }
+    player->unk1A++;
+    speed = HuMagVecF(&player->unk64);
+    Hu3DModelPosGet(player->unk52, &pos);
+    pos.x += player->unk64.x;
+    pos.y += player->unk64.y;
+    pos.z += player->unk64.z;
+    dir.x = player->unk64.x;
+    dir.y = 0.0f;
+    dir.z = player->unk64.z;
+    player->unk4C += sqrtf(VECSquareMag(&dir));
+    if (pos.y <= 0.5f) {
+        HuAudFXPlay(landSeNo[playerNo]);
+        pos.y = 0.5f;
+        player->unk64.x *= 0.4;
+        player->unk64.y *= -0.4;
+        player->unk64.z *= 0.4;
+        if (player->unk64.y < 1.0f) {
+            player->unk1A = 0;
+            if (lbl_1_bss_0.unk10 == 0) {
+                player->mode = 4;
+                fn_1_22A8(playerNo, 1);
+                (s16)playerNo; /* retail evaluates playerNo here and discards it */
+                HuAudFXPlayPan(1001, 32);
+            } else {
+                player->mode = 9;
+            }
+            player->unk64.x = player->unk64.y = player->unk64.z = 0.0f;
+        }
+    }
+    if (pos.x <= -1210.0f) {
+        HuAudFXPlay(wallSeNo[playerNo]);
+        pos.x = -1210.0f;
+        normal.x = 1.0f;
+        normal.y = normal.z = 0.0f;
+        C_VECReflect(&player->unk64, &normal, &reflect);
+        player->unk64.x = 0.5 * reflect.x * speed;
+        player->unk64.y = 0.5 * reflect.y * speed;
+        player->unk64.z = 0.5 * reflect.z * speed;
+    }
+    if (pos.x >= 1210.0f) {
+        HuAudFXPlay(wallSeNo[playerNo]);
+        pos.x = 1210.0f;
+        normal.x = -1.0f;
+        normal.y = normal.z = 0.0f;
+        C_VECReflect(&player->unk64, &normal, &reflect);
+        player->unk64.x = 0.5 * reflect.x * speed;
+        player->unk64.y = 0.5 * reflect.y * speed;
+        player->unk64.z = 0.5 * reflect.z * speed;
+    }
+    obstNo = fn_1_6D88(playerNo, &pos);
+    if (obstNo >= 0) {
+        HuAudFXPlay(wallSeNo[playerNo]);
+        dir.x = pos.x;
+        dir.y = 0.0f;
+        dir.z = pos.z;
+        distSq = VECSquareDistance(&lbl_1_data_248[obstNo].pos, &dir);
+        radius = 8100.0f;
+        if (distSq < radius) {
+            push = sqrtf(radius - distSq);
+            normal.x = normal.y = normal.z = 0.0f;
+            dist = sqrtf(VECSquareDistance(&player->unk64, &normal));
+            if (dist > 0.0f) {
+                pos.x -= player->unk64.x * push / dist;
+                pos.y -= player->unk64.y * push / dist;
+                pos.z -= player->unk64.z * push / dist;
+            }
+        }
+        normal.x = pos.x - lbl_1_data_248[obstNo].pos.x;
+        normal.y = 0.0f;
+        normal.z = pos.z - lbl_1_data_248[obstNo].pos.z;
+        VECNormalize(&normal, &normal);
+        if (player->unk64.x || player->unk64.y || player->unk64.z) {
+            C_VECReflect(&player->unk64, &normal, &reflect);
+            player->unk64.x = 0.4 * reflect.x * speed;
+            player->unk64.y = 0.4 * reflect.y * speed;
+            player->unk64.z = 0.4 * reflect.z * speed;
+        }
+        pos.x = 90.0f * normal.x + lbl_1_data_248[obstNo].pos.x;
+        pos.z = 90.0f * normal.z + lbl_1_data_248[obstNo].pos.z;
+    }
+    Hu3DModelPosSetV(player->unk52, &pos);
+    Hu3DModelPosSet(player->unk54, pos.x, 0.2f, pos.z);
+    player->unk64.y -= 1.6333333f;
 }
 
 /* @@PART2@@ */
