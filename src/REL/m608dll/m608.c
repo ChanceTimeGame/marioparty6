@@ -754,6 +754,159 @@ void fn_1_253C(s16 mode, s16 frameNo)
 {
 }
 
+/* MSL's sqrtf with plain constants (0.5 and 3.0 sit in this unit's .rodata pool) */
+static inline float M608Sqrtf(float x)
+{
+    const double _half = .5;
+    const double _three = 3.0;
+    volatile float y;
+    if (x > 0.0f) {
+        double guess = __frsqrte((double)x);
+        guess = _half * guess * (_three - guess * guess * x);
+        guess = _half * guess * (_three - guess * guess * x);
+        guess = _half * guess * (_three - guess * guess * x);
+        y = (float)(x * guess);
+        return y;
+    }
+    return x;
+}
+
+void fn_1_2540(void)
+{
+    HuVecF pos;
+    HuVecF target;
+    HuVecF up;
+    HuVecF dir;
+    HuVecF camPos;
+    HuVecF camTarget;
+    HuVecF newUp;
+    HuVecF camUp;
+    HuVecF axis;
+    float rotX;
+    float rotY;
+    float rotZ;
+
+    lbl_1_bss_3E80.camTime = Hu3DMotionTimeGet(lbl_1_bss_3E80.camModel);
+    Hu3DCameraPosGet(1, &pos, &up, &target);
+    Center = target;
+    dir.x = pos.x - target.x;
+    dir.y = pos.y - target.y;
+    dir.z = pos.z - target.z;
+    CRot.x = HuAtan(-dir.y, M608Sqrtf((dir.x * dir.x) + (dir.z * dir.z)));
+    CRot.y = HuAtan(dir.x, dir.z);
+    CRot.z = 0.0f;
+    CZoom = M608Sqrtf((dir.z * dir.z) + ((dir.x * dir.x) + (dir.y * dir.y)));
+    rotX = CRot.x;
+    rotY = CRot.y;
+    rotZ = CRot.z;
+    camPos.x = Center.x + (CZoom * (HuSin(rotY) * HuCos(rotX)));
+    camPos.y = Center.y + (CZoom * -HuSin(rotX));
+    camPos.z = Center.z + (CZoom * (HuCos(rotY) * HuCos(rotX)));
+    camTarget.x = Center.x;
+    camTarget.y = Center.y;
+    camTarget.z = Center.z;
+    camUp.x = HuSin(rotY) * HuSin(rotX);
+    camUp.y = HuCos(rotX);
+    camUp.z = HuCos(rotY) * HuSin(rotX);
+    PSVECSubtract(&camPos, &camTarget, &axis);
+    PSVECNormalize(&axis, &axis);
+    newUp.x = (camUp.x * ((axis.x * axis.x) + ((1.0f - (axis.x * axis.x)) * HuCos(rotZ))))
+        + (camUp.y * (((axis.x * axis.y) * (1.0 - HuCos(rotZ))) - (axis.z * HuSin(rotZ))))
+        + (camUp.z * (((axis.x * axis.z) * (1.0 - HuCos(rotZ))) + (axis.y * HuSin(rotZ))));
+    newUp.y = (camUp.y * ((axis.y * axis.y) + ((1.0f - (axis.y * axis.y)) * HuCos(rotZ))))
+        + (camUp.x * (((axis.x * axis.y) * (1.0 - HuCos(rotZ))) + (axis.z * HuSin(rotZ))))
+        + (camUp.z * (((axis.y * axis.z) * (1.0 - HuCos(rotZ))) - (axis.x * HuSin(rotZ))));
+    newUp.z = (camUp.z * ((axis.z * axis.z) + ((1.0f - (axis.z * axis.z)) * HuCos(rotZ))))
+        + ((camUp.x * (((axis.x * axis.z) * (1.0 - HuCos(rotZ))) - (axis.y * HuSin(rotZ))))
+        + (camUp.y * (((axis.y * axis.z) * (1.0 - HuCos(rotZ))) + (axis.x * HuSin(rotZ)))));
+    PSVECNormalize(&newUp, &newUp);
+    Hu3DCameraPosSet(1, camPos.x, camPos.y, camPos.z, newUp.x, newUp.y, newUp.z, camTarget.x, camTarget.y, camTarget.z);
+}
+
+void fn_1_2FD8(HU3D_MODELID modelId, HU3D_MOTIONID motId, BOOL lagF)
+{
+    s32 playerNo;
+    s32 model;
+    s32 charNo;
+    float rotY;
+
+    playerNo = lbl_1_bss_3E80.playerNo;
+    model = lbl_1_bss_3E80.charModel[playerNo];
+    charNo = lbl_1_bss_3E80.charNo[playerNo];
+    if (lagF == TRUE) {
+        switch (lbl_1_bss_3E80.jumpState) {
+            case 0:
+                lbl_1_bss_3E80.charObj[playerNo]->objFunc = fn_1_33A4;
+                CharMotionShiftSet(charNo, lbl_1_bss_3E80.charMot[playerNo][3], 0.0f, 8.0f, HU3D_MOTATTR_LOOP);
+                Hu3DMotionCalc(lbl_1_bss_3E80.charModel[playerNo]);
+                fn_1_605C(0);
+                OSReport("now timing(%d)\n", lbl_1_bss_3E80.time);
+                lbl_1_bss_3E80.mode = 6;
+                lbl_1_bss_3E80.time = 0;
+                HuAudFXPlay(1624);
+                HuAudFXStop(lbl_1_bss_3E80.seNo);
+                lbl_1_bss_3E80.jumpState++;
+                break;
+            case 1:
+                CharMotionShiftSet(charNo, lbl_1_bss_3E80.charMot[playerNo][0], 0.0f, 5.0f, HU3D_MOTATTR_LOOP);
+                lbl_1_bss_3E80.jumpState++;
+                break;
+            case 2:
+                CharMotionShiftSet(charNo, lbl_1_bss_3E80.charMot[playerNo][4], 0.0f, 8.0f, HU3D_MOTATTR_NONE);
+                CharMotionSpeedSet(charNo, 1.0f);
+                Hu3DAnimSpeedSet(lbl_1_bss_3E80.charModel[playerNo], 1.0f);
+                Hu3DModelAttrReset(lbl_1_bss_3E80.charModel[playerNo], HU3D_MOTATTR_LOOP);
+                Hu3DMotionCalc(lbl_1_bss_3E80.charModel[playerNo]);
+                lbl_1_bss_3E80.charObj[playerNo]->objFunc = fn_1_34D0;
+                lbl_1_bss_3E80.mode = 7;
+                lbl_1_bss_3E80.time = 0;
+                for (rotY = lbl_1_bss_3E80.rotY; rotY < -360.0f; rotY += 360.0f) {
+                }
+                if (0.0f == rotY || 360.0f == rotY) {
+                    lbl_1_bss_3E80.rotYStart = 0.0f;
+                    lbl_1_bss_3E80.rotYEnd = 0.0f;
+                } else {
+                    lbl_1_bss_3E80.rotYStart = rotY;
+                    lbl_1_bss_3E80.rotYEnd = -360.0f;
+                }
+                lbl_1_bss_3E80.rotY = rotY;
+                lbl_1_bss_3E80.rotTime = 0;
+                fn_1_605C(1);
+                fn_1_605C(7);
+                lbl_1_bss_3E80.jumpState++;
+                break;
+        }
+    }
+}
+
+void fn_1_33A4(OMOBJ *obj)
+{
+    lbl_1_bss_3E80.rotY = lbl_1_bss_3E80.rotYStart + (lbl_1_bss_3E80.rotTime * ((lbl_1_bss_3E80.rotYEnd - lbl_1_bss_3E80.rotYStart) / 5.0f));
+    if (lbl_1_bss_3E80.rotTime < 5) {
+        lbl_1_bss_3E80.rotTime += 1.0f;
+    }
+    omSetRot(obj, 0.0f, lbl_1_bss_3E80.rotY, 0.0f);
+}
+
+void fn_1_34D0(OMOBJ *obj)
+{
+    s32 charNo;
+
+    lbl_1_bss_3E80.rotY = lbl_1_bss_3E80.rotYStart + (lbl_1_bss_3E80.rotTime * ((lbl_1_bss_3E80.rotYEnd - lbl_1_bss_3E80.rotYStart) / 10.0f));
+    if (lbl_1_bss_3E80.rotTime < 10) {
+        lbl_1_bss_3E80.rotTime += 1.0f;
+    }
+    CharMotionSpeedSet(lbl_1_bss_3E80.charNo[lbl_1_bss_3E80.playerNo], 0.5f);
+    Hu3DAnimSpeedSet(lbl_1_bss_3E80.charModel[lbl_1_bss_3E80.playerNo], 1.0f);
+    omSetRot(obj, 0.0f, lbl_1_bss_3E80.rotY, 0.0f);
+    if (Hu3DMotionEndCheck(lbl_1_bss_3E80.charModel[lbl_1_bss_3E80.playerNo]) == TRUE) {
+        charNo = lbl_1_bss_3E80.charNo[lbl_1_bss_3E80.playerNo];
+        CharMotionShiftSet(charNo, lbl_1_bss_3E80.charMot[lbl_1_bss_3E80.playerNo][0], 0.0f, 5.0f, HU3D_MOTATTR_LOOP);
+        OSReport("*** loop ***\n");
+        obj->objFunc = NULL;
+    }
+}
+
 /* @@PART2@@ */
 /* Part 1's scoring stubs: the splice replaces this section with part 2's functions */
 void fn_1_3718(void) {}
