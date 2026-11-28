@@ -6,6 +6,8 @@
 #include "game/gamemes.h"
 #include "game/gamework.h"
 #include "game/hu3d.h"
+#include "game/mgscore.h"
+#include "game/sprite.h"
 #include "game/memory.h"
 #include "game/object.h"
 #include "game/pad.h"
@@ -45,7 +47,9 @@ typedef struct M608Work_s {
     HU3D_MODELID lsBModel[4]; /* 0x064: "p1lsB" */
     HU3D_MODELID kuruModel; /* 0x06C: "608kurukuru" */
     HU3D_MOTIONID kuruMot; /* 0x06E */
-    u8 unk70[0x90]; /* 0x070 */
+    HuVecF unk70[4]; /* 0x070 */
+    HuVecF unkA0[4]; /* 0x0A0 */
+    HuVecF unkD0[4]; /* 0x0D0 */
     s16 charNo[4]; /* 0x100 */
     s16 padNo[4]; /* 0x108 */
     HU3D_MODELID charModel[4]; /* 0x110 */
@@ -86,8 +90,8 @@ typedef struct M608Work_s {
 typedef struct M608Work3DF0_s {
     s16 unk0;
     s16 unk2;
-    s32 unk4;
-    s32 unk8;
+    MGSCORE *unk4;
+    ANIMDATA *unk8;
     s16 unkC;
     s16 unkE;
     s32 unk10;
@@ -97,7 +101,7 @@ typedef struct M608Work3DF0_s {
 typedef struct M608Work3E68_s {
     s16 unk0;
     s16 unk2;
-    s32 unk4[5];
+    ANIMDATA *unk4[5];
 } M608_WORK3E68; /* size 0x18 */
 
 /* .bss is laid out in reverse definition order */
@@ -122,11 +126,11 @@ void fn_1_1DD8(s16 mode, s16 frameNo);
 void fn_1_2374(s16 mode, s16 frameNo);
 void fn_1_2538(s16 mode, s16 frameNo);
 void fn_1_253C(s16 mode, s16 frameNo);
-void fn_1_2540(void);
+void fn_1_2540(OMOBJ *obj);
 void fn_1_2FD8(HU3D_MODELID modelId, HU3D_MOTIONID motId, BOOL lagF);
 void fn_1_33A4(OMOBJ *obj);
 void fn_1_34D0(OMOBJ *obj);
-void fn_1_3718(void);
+void fn_1_3718(OMOBJ *obj);
 void fn_1_388C(OMOBJ *obj);
 void fn_1_38E8(HU3D_MODEL *modelP, Mtx *mtx);
 void fn_1_38EC(HuVecF pos);
@@ -771,7 +775,7 @@ static inline float M608Sqrtf(float x)
     return x;
 }
 
-void fn_1_2540(void)
+void fn_1_2540(OMOBJ *obj)
 {
     HuVecF pos;
     HuVecF target;
@@ -909,7 +913,7 @@ void fn_1_34D0(OMOBJ *obj)
 
 /* @@PART2@@ */
 /* Part 1's scoring stubs: the splice replaces this section with part 2's functions */
-void fn_1_3718(void) {}
+void fn_1_3718(OMOBJ *obj) {}
 void fn_1_388C(OMOBJ *obj) {}
 void fn_1_38E8(HU3D_MODEL *modelP, Mtx *mtx) {}
 void fn_1_38EC(HuVecF pos) {}
